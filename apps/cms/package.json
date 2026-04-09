@@ -1,0 +1,31 @@
+{
+  "name": "cms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "generate:types": "payload generate:types",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@my-store/types": "workspace:*",
+    "@payloadcms/db-postgres": "latest",
+    "@payloadcms/richtext-lexical": "latest",
+    "@payloadcms/storage-s3": "latest",
+    "@payloadcms/next": "latest",
+    "graphql": "^16.8.1",
+    "next": "15.2.9",
+    "payload": "latest",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "sharp": "0.32.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.4.5"
+  }
+}
