@@ -1,0 +1,33 @@
+{
+  "name": "my-store",
+  "private": true,
+  "scripts": {
+    "dev:storefront": "pnpm --filter storefront dev",
+    "dev:cms": "pnpm --filter cms dev",
+    "dev": "pnpm run --parallel dev:storefront dev:cms",
+    "build:storefront": "pnpm --filter storefront build",
+    "build:cms": "pnpm --filter cms build",
+    "build": "pnpm run --parallel build:storefront build:cms",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0",
+    "prettier-plugin-tailwindcss": "^0.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "@swc/core",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
+  }
+}

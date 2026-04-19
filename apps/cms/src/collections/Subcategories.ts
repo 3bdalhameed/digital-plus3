@@ -1,65 +1,60 @@
-import type { CollectionConfig } from 'payload'
+import { CollectionConfig } from "payload/types";
 
 export const Subcategories: CollectionConfig = {
-  slug: 'subcategories',
-  labels: { singular: 'تصنيف فرعي', plural: 'التصنيفات الفرعية' },
+  slug: "subcategories",
   admin: {
-    useAsTitle: 'name_ar',
-    defaultColumns: ['name_ar', 'category', 'isActive', 'position'],
+    useAsTitle: "nameAr",
+    defaultColumns: ["nameAr", "category", "position", "isActive"],
+    group: "Catalog",
   },
-  access: { read: () => true },
+  access: {
+    read: () => true,
+  },
   fields: [
     {
-      type: 'row',
+      type: "row",
       fields: [
         {
-          name: 'name_ar',
-          label: 'الاسم (عربي)',
-          type: 'text',
+          name: "nameAr",
+          label: "الاسم (عربي)",
+          type: "text",
           required: true,
-          admin: { width: '50%' },
         },
         {
-          name: 'name_en',
-          label: 'الاسم (إنجليزي)',
-          type: 'text',
+          name: "nameEn",
+          label: "Name (English)",
+          type: "text",
           required: true,
-          admin: { width: '50%' },
         },
       ],
     },
     {
-      name: 'slug',
-      label: 'الرابط المختصر',
-      type: 'text',
+      name: "slug",
+      type: "text",
       required: true,
       unique: true,
     },
     {
-      name: 'category',
-      label: 'التصنيف الرئيسي',
-      type: 'relationship',
-      relationTo: 'categories',
+      name: "category",
+      label: "التصنيف الأب",
+      type: "relationship",
+      relationTo: "categories",
       required: true,
     },
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'position',
-          label: 'الترتيب',
-          type: 'number',
-          defaultValue: 0,
-          admin: { width: '50%' },
-        },
-        {
-          name: 'isActive',
-          label: 'نشط',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: { width: '50%' },
-        },
-      ],
+      name: "position",
+      label: "الترتيب",
+      type: "number",
+      defaultValue: 0,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "isActive",
+      label: "نشط",
+      type: "checkbox",
+      defaultValue: true,
+      admin: { position: "sidebar" },
     },
   ],
-}
+  timestamps: true,
+};

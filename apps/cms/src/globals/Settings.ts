@@ -1,81 +1,70 @@
-import type { GlobalConfig } from 'payload'
+import { GlobalConfig } from "payload/types";
 
 export const Settings: GlobalConfig = {
-  slug: 'settings',
-  label: 'إعدادات الموقع',
+  slug: "settings",
+  label: "Site Settings",
+  admin: {
+    group: "Settings",
+  },
   access: {
     read: () => true,
-    update: ({ req: { user } }) => user?.role === 'super_admin' || user?.role === 'admin',
   },
   fields: [
     {
-      name: 'siteName',
-      label: 'اسم الموقع',
-      type: 'text',
+      name: "siteName",
+      label: "اسم الموقع",
+      type: "text",
       required: true,
-      defaultValue: 'متجري',
+      defaultValue: "ديجيتال بلس",
     },
     {
-      type: 'row',
+      name: "logo",
+      label: "الشعار",
+      type: "upload",
+      relationTo: "media",
+    },
+    {
+      name: "favicon",
+      label: "أيقونة المتصفح",
+      type: "upload",
+      relationTo: "media",
+    },
+    {
+      name: "contactEmail",
+      label: "البريد الإلكتروني",
+      type: "email",
+      required: true,
+    },
+    {
+      name: "whatsappNumber",
+      label: "رقم الواتساب",
+      type: "text",
+    },
+    {
+      name: "supportHours",
+      label: "ساعات الدعم",
+      type: "text",
+    },
+    {
+      name: "socialLinks",
+      label: "روابط التواصل",
+      type: "array",
       fields: [
         {
-          name: 'logo',
-          label: 'الشعار',
-          type: 'upload',
-          relationTo: 'media',
-          admin: { width: '50%' },
-        },
-        {
-          name: 'favicon',
-          label: 'أيقونة المتصفح',
-          type: 'upload',
-          relationTo: 'media',
-          admin: { width: '50%' },
-        },
-      ],
-    },
-    {
-      name: 'contactEmail',
-      label: 'بريد التواصل',
-      type: 'email',
-    },
-    {
-      name: 'whatsappNumber',
-      label: 'رقم واتساب',
-      type: 'text',
-      admin: { description: 'مثال: +966501234567' },
-    },
-    {
-      name: 'supportHours',
-      label: 'ساعات الدعم',
-      type: 'text',
-      admin: { description: 'مثال: 9 ص - 9 م (بتوقيت الرياض)' },
-    },
-    {
-      name: 'socialLinks',
-      label: 'روابط التواصل الاجتماعي',
-      type: 'array',
-      fields: [
-        {
-          name: 'platform',
-          label: 'المنصة',
-          type: 'select',
+          name: "platform",
+          label: "المنصة",
+          type: "select",
           options: [
-            { label: 'تويتر / X', value: 'twitter' },
-            { label: 'إنستغرام', value: 'instagram' },
-            { label: 'تيليغرام', value: 'telegram' },
-            { label: 'يوتيوب', value: 'youtube' },
-            { label: 'لينكدإن', value: 'linkedin' },
-            { label: 'سناب شات', value: 'snapchat' },
-            { label: 'تيك توك', value: 'tiktok' },
+            { label: "Instagram", value: "instagram" },
+            { label: "Twitter / X", value: "twitter" },
+            { label: "Facebook", value: "facebook" },
+            { label: "TikTok", value: "tiktok" },
+            { label: "YouTube", value: "youtube" },
+            { label: "Telegram", value: "telegram" },
           ],
         },
-        {
-          name: 'url',
-          label: 'الرابط',
-          type: 'text',
-        },
+        { name: "url", label: "الرابط", type: "text", required: true },
       ],
     },
   ],
-}
+};

@@ -1,35 +1,33 @@
-import type { CollectionConfig } from 'payload'
+import { CollectionConfig } from "payload/types";
 
 export const Users: CollectionConfig = {
-  slug: 'users',
-  labels: { singular: 'مسؤول', plural: 'المسؤولون' },
+  slug: "users",
   auth: true,
-  admin: { useAsTitle: 'email' },
-  access: {
-    read: ({ req: { user } }) => !!user,
-    create: ({ req: { user } }) => user?.role === 'super_admin',
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => user?.role === 'super_admin',
+  admin: {
+    useAsTitle: "email",
+    group: "Settings",
   },
   fields: [
     {
-      name: 'name',
-      label: 'الاسم',
-      type: 'text',
+      name: "name",
+      label: "الاسم",
+      type: "text",
       required: true,
     },
     {
-      name: 'role',
-      label: 'الدور',
-      type: 'select',
+      name: "role",
+      label: "الدور",
+      type: "select",
       required: true,
-      defaultValue: 'support',
+      defaultValue: "viewer",
       options: [
-        { label: 'مدير عام', value: 'super_admin' },
-        { label: 'مسؤول', value: 'admin' },
-        { label: 'دعم فني', value: 'support' },
-        { label: 'مشاهد', value: 'viewer' },
+        { label: "مدير عام", value: "super_admin" },
+        { label: "مدير", value: "admin" },
+        { label: "دعم", value: "support" },
+        { label: "مشاهد", value: "viewer" },
       ],
+      admin: { position: "sidebar" },
     },
   ],
-}
+  timestamps: true,
+};

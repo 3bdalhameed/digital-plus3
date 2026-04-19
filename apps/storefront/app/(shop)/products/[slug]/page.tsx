@@ -1,165 +1,147 @@
-import type { Metadata } from 'next'
-import Image from 'next/image'
-import { notFound } from 'next/navigation'
-import { getProductBySlug } from '@/lib/payload'
-import { AddToCartButton } from '@/components/product/AddToCartButton'
-import { Badge } from '@/components/ui/badge'
-import { formatPrice, getProductName } from '@/lib/utils'
-import { Shield, Zap, CheckCircle2 } from 'lucide-react'
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { getProductBySlug } from "@/lib/payload";
+import { formatPrice } from "@/lib/utils";
+import { AddToCartButton } from "./AddToCartButton";
 
-interface Props {
-  params: { slug: string }
+export const revalidate = 60;
+
+// Helper — works whether the API returns nameAr or name.ar
+function productName(product: any): string {
+  return product.nameAr ?? product.name?.ar ?? product.nameEn ?? product.name?.en ?? "";
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await getProductBySlug(params.slug).catch(() => null)
-  if (!product) return {}
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const product = await getProductBySlug(params.slug).catch(() => null);
+  if (!product) return { title: "منتج غير موجود" };
+  const name = productName(product);
   return {
-    title: getProductName(product),
-    description: product.seoDescription || '',
-    openGraph: product.seoImage?.url
-      ? { images: [product.seoImage.url] }
-      : undefined,
-  }
+    title: name,
+    description: product.seoDescription || name,
+  };
 }
 
-const typeLabels: Record<string, string> = {
-  software_subscription: 'اشتراك برمجي',
-  license_key: 'مفتاح ترخيص',
-  invitation: 'دعوة',
-  gaming_card: 'بطاقة ألعاب',
-  ai_subscription: 'اشتراك AI',
-}
+export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
+  const product = await getProductBySlug(params.slug).catch(() => null);
+  if (!product) notFound();
 
-const deliveryLabels: Record<string, string> = {
-  email: 'يُسلَّم عبر البريد الإلكتروني',
-  on_site: 'يُسلَّم داخل المنصة فور الدفع',
-  both: 'يُسلَّم عبر البريد الإلكتروني وداخل المنصة',
-}
+  const name = productName(product);
 
-export default async function ProductDetailPage({ params }: Props) {
-  const product = await getProductBySlug(params.slug).catch(() => null)
-  if (!product) notFound()
+  const typeLabels: Record<string, string> = {
+    software_subscription: "اشتراك برمجيات",
+    license_key: "مفتاح ترخيص",
+    invitation: "دعوة",
+    gaming_card: "بطاقة ألعاب",
+    ai_subscription: "اشتراك أدوات ذكاء اصطناعي",
+  };
 
-  const thumbnail = product.images?.[0]?.image?.url
+  const deliveryLabels: Record<string, string> = {
+    email: "بريد إلكتروني",
+    on_site: "على الموقع",
+    both: "بريد إلكتروني + الموقع",
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Images */}
-        <div>
-          <div className="relative aspect-square bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl overflow-hidden mb-4">
-            {thumbnail ? (
-              <Image
-                src={thumbnail}
-                alt={getProductName(product)}
-                fill
-                className="object-contain p-8"
-                priority
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-8xl opacity-30">
-                📦
+    <div className="grid gap-8 lg:grid-cols-2">
+
+      {/* Image Gallery */}
+      <div className="space-y-4">
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f5f3ff]">
+          {product.images?.[0]?.image?.url ? (
+            <Image
+              src={product.images[0].image.url}
+              alt={name}
+              fill
+              className="object-contain p-8"
+              priority
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-6xl">📦</div>
+          )}
+        </div>
+        {product.images?.length > 1 && (
+          <div className="grid grid-cols-4 gap-2">
+            {product.images.slice(1, 5).map((img: any, i: number) => (
+              <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-[#f5f3ff]">
+                <Image src={img.image?.url || ""} alt="" fill className="object-contain p-2" />
               </div>
-            )}
+            ))}
           </div>
-          {/* Thumbnail strip */}
-          {product.images?.length > 1 && (
-            <div className="flex gap-2">
-              {product.images.map((img: any, i: number) => (
-                <div
-                  key={i}
-                  className="w-16 h-16 relative rounded-lg overflow-hidden border-2 border-purple-200"
-                >
-                  <Image
-                    src={img.image?.url || img.url}
-                    alt={img.alt || ''}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+        )}
+      </div>
+
+      {/* Product Info */}
+      <div className="space-y-6">
+
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-[#9ca3af]">
+          <a href="/products" className="hover:text-[#7C3AED]">المنتجات</a>
+          <span>/</span>
+          {product.category && (
+            <>
+              <a href={`/products?category=${product.category.slug}`} className="hover:text-[#7C3AED]">
+                {product.category.nameAr ?? product.category.name?.ar}
+              </a>
+              <span>/</span>
+            </>
+          )}
+          <span className="text-[#7C3AED]">{name}</span>
+        </div>
+
+        <h1 className="text-2xl font-black text-[#1e1b4b] md:text-3xl">{name}</h1>
+
+        {/* Price */}
+        <div className="flex items-center gap-3">
+          <span className="text-3xl font-extrabold text-[#7C3AED]">
+            {formatPrice(product.price, product.currency)}
+          </span>
+          {product.comparePrice && product.comparePrice > product.price && (
+            <>
+              <span className="text-lg text-[#9ca3af] line-through">
+                {formatPrice(product.comparePrice, product.currency)}
+              </span>
+              <span className="rounded-full bg-[#EDE9FE] px-3 py-1 text-xs font-bold text-[#7C3AED]">
+                وفر {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
+              </span>
+            </>
           )}
         </div>
 
-        {/* Info */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            {product.category && (
-              <Badge variant="secondary">{product.category.name_ar}</Badge>
-            )}
-            <Badge variant="outline">{typeLabels[product.type] || product.type}</Badge>
+        {/* Meta */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-[#f5f3ff] p-3">
+            <p className="text-xs text-[#9ca3af]">نوع المنتج</p>
+            <p className="text-sm font-bold text-[#7C3AED]">{typeLabels[product.type] || product.type}</p>
           </div>
-
-          <h1 className="text-3xl font-black text-primary-dark mb-4">
-            {getProductName(product)}
-          </h1>
-
-          {/* Price */}
-          <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-4xl font-extrabold text-primary">
-              {formatPrice(product.price, product.currency)}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-xl text-gray-400 line-through">
-                {formatPrice(product.comparePrice, product.currency)}
-              </span>
-            )}
+          <div className="rounded-xl bg-[#f5f3ff] p-3">
+            <p className="text-xs text-[#9ca3af]">طريقة التسليم</p>
+            <p className="text-sm font-bold text-[#7C3AED]">{deliveryLabels[product.deliveryMethod] || product.deliveryMethod}</p>
           </div>
+        </div>
 
-          {/* Trust badges */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="text-center p-3 bg-green-50 rounded-xl">
-              <Zap className="h-5 w-5 text-green-600 mx-auto mb-1" />
-              <span className="text-xs text-green-700 font-medium">تسليم فوري</span>
-            </div>
-            <div className="text-center p-3 bg-blue-50 rounded-xl">
-              <Shield className="h-5 w-5 text-blue-600 mx-auto mb-1" />
-              <span className="text-xs text-blue-700 font-medium">دفع آمن</span>
-            </div>
-            <div className="text-center p-3 bg-purple-50 rounded-xl">
-              <CheckCircle2 className="h-5 w-5 text-purple-600 mx-auto mb-1" />
-              <span className="text-xs text-purple-700 font-medium">مضمون</span>
-            </div>
-          </div>
+        {/* Custom HTML description */}
+        {product.descriptionHtml && (
+          <div
+            className="rounded-xl border border-[#e8e4f8] bg-white p-4"
+            dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+          />
+        )}
 
-          {/* Delivery info */}
-          <div className="bg-purple-50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-primary-dark font-medium">
-              🚀 {deliveryLabels[product.deliveryMethod] || product.deliveryMethod}
-            </p>
-          </div>
+        {/* Add to cart */}
+        <AddToCartButton product={product} />
 
-          {/* Add to cart */}
-          <AddToCartButton product={product} />
-
-          {/* Refund policy */}
-          {product.refundable && product.refundPolicy && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
-              <p className="font-medium text-gray-700 mb-1">سياسة الاسترجاع:</p>
-              {product.refundPolicy}
-            </div>
-          )}
-
-          {!product.refundable && (
-            <p className="mt-4 text-xs text-gray-400">
-              * المنتجات الرقمية غير قابلة للاسترجاع بعد التسليم
-            </p>
+        {/* Refund */}
+        <div className="rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] p-4">
+          <p className="text-sm font-bold text-[#4c1d95]">
+            {product.refundable
+              ? "✓ قابل للاسترداد وفقاً لسياسة الاسترداد"
+              : "✕ غير قابل للاسترداد بعد التسليم والاستخدام"}
+          </p>
+          {product.refundPolicy && (
+            <p className="mt-2 text-xs text-[#6b7280]">{product.refundPolicy}</p>
           )}
         </div>
       </div>
-
-      {/* Description */}
-      {product.description && (
-        <div className="mt-12 card-purple p-8">
-          <h2 className="text-xl font-bold text-primary-dark mb-4">وصف المنتج</h2>
-          <div className="prose prose-purple max-w-none text-gray-600">
-            {/* Rich text would be rendered here */}
-            <p>تفاصيل المنتج متاحة في لوحة التحكم</p>
-          </div>
-        </div>
-      )}
     </div>
-  )
+  );
 }

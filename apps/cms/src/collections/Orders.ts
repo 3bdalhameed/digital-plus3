@@ -1,186 +1,148 @@
-import type { CollectionConfig } from 'payload'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { CollectionConfig } from "payload/types";
 
 export const Orders: CollectionConfig = {
-  slug: 'orders',
-  labels: { singular: 'طلب', plural: 'الطلبات' },
+  slug: "orders",
   admin: {
-    useAsTitle: 'orderNumber',
-    defaultColumns: ['orderNumber', 'customer', 'status', 'totalAmount', 'createdAt'],
+    useAsTitle: "orderNumber",
+    defaultColumns: ["orderNumber", "customer", "status", "totalAmount", "createdAt"],
+    group: "Orders",
   },
   access: {
-    read: ({ req: { user } }) => !!user,
-    create: () => true, // webhook + API driven
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => user?.role === 'super_admin',
+    read: ({ req: { user } }) => {
+      if (user) return true;
+      return false;
+    },
   },
   hooks: {
     beforeChange: [
-      async ({ data, operation, req }) => {
-        if (operation === 'create' && !data.orderNumber) {
-          // Generate order number: ORD-YYYYMMDD-XXXX
-          const date = new Date()
-          const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
-          const rand = Math.floor(1000 + Math.random() * 9000)
-          data.orderNumber = `ORD-${dateStr}-${rand}`
+      ({ data, operation }) => {
+        if (operation === "create" && !data.orderNumber) {
+          data.orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
         }
-        return data
+        return data;
       },
     ],
   },
   fields: [
     {
-      type: 'row',
-      fields: [
-        {
-          name: 'orderNumber',
-          label: 'رقم الطلب',
-          type: 'text',
-          unique: true,
-          admin: { readOnly: true, width: '50%' },
-        },
-        {
-          name: 'status',
-          label: 'الحالة',
-          type: 'select',
-          required: true,
-          defaultValue: 'pending',
-          options: [
-            { label: 'في الانتظار', value: 'pending' },
-            { label: 'مدفوع', value: 'paid' },
-            { label: 'تم التسليم', value: 'delivered' },
-            { label: 'متنازع عليه', value: 'disputed' },
-            { label: 'مسترجع', value: 'refunded' },
-            { label: 'ملغي', value: 'cancelled' },
-          ],
-          admin: { width: '50%' },
-        },
-      ],
+      name: "orderNumber",
+      label: "رقم الطلب",
+      type: "text",
+      unique: true,
+      admin: { readOnly: true },
     },
     {
-      name: 'customer',
-      label: 'العميل',
-      type: 'relationship',
-      relationTo: 'customers',
+      name: "customer",
+      label: "العميل",
+      type: "relationship",
+      relationTo: "customers",
       required: true,
     },
     {
-      name: 'items',
-      label: 'المنتجات',
-      type: 'array',
+      name: "items",
+      label: "المنتجات",
+      type: "array",
       required: true,
       fields: [
         {
-          name: 'product',
-          label: 'المنتج',
-          type: 'relationship',
-          relationTo: 'products',
+          name: "product",
+          type: "relationship",
+          relationTo: "products",
           required: true,
         },
         {
-          name: 'quantity',
-          label: 'الكمية',
-          type: 'number',
+          name: "quantity",
+          type: "number",
           required: true,
           min: 1,
           defaultValue: 1,
         },
         {
-          name: 'price',
-          label: 'السعر وقت الشراء',
-          type: 'number',
+          name: "unitPrice",
+          type: "number",
           required: true,
         },
         {
-          name: 'currency',
-          label: 'العملة',
-          type: 'text',
+          name: "totalPrice",
+          type: "number",
           required: true,
-        },
-        {
-          name: 'deliveryData',
-          label: 'بيانات التسليم',
-          type: 'json',
-          admin: {
-            description: 'مفاتيح الترخيص أو بيانات التسليم المشفرة',
-          },
         },
       ],
     },
     {
-      type: 'row',
+      name: "status",
+      label: "حالة الطلب",
+      type: "select",
+      required: true,
+      defaultValue: "pending",
+      options: [
+        { label: "قيد الانتظار", value: "pending" },
+        { label: "مدفوع", value: "paid" },
+        { label: "تم التسليم", value: "delivered" },
+        { label: "متنازع عليه", value: "disputed" },
+        { label: "مسترد", value: "refunded" },
+        { label: "ملغي", value: "cancelled" },
+      ],
+      admin: { position: "sidebar" },
+    },
+    {
+      type: "row",
       fields: [
         {
-          name: 'totalAmount',
-          label: 'المبلغ الإجمالي',
-          type: 'number',
+          name: "totalAmount",
+          label: "المبلغ الإجمالي",
+          type: "number",
           required: true,
-          admin: { width: '33%' },
         },
         {
-          name: 'currency',
-          label: 'العملة',
-          type: 'text',
-          required: true,
-          defaultValue: 'USD',
-          admin: { width: '33%' },
-        },
-        {
-          name: 'deliveryStatus',
-          label: 'حالة التسليم',
-          type: 'select',
+          name: "currency",
+          label: "العملة",
+          type: "select",
+          defaultValue: "USD",
           options: [
-            { label: 'في الانتظار', value: 'pending' },
-            { label: 'تم التسليم', value: 'delivered' },
-            { label: 'فشل التسليم', value: 'failed' },
+            { label: "USD", value: "USD" },
+            { label: "JOD", value: "JOD" },
+            { label: "SAR", value: "SAR" },
+            { label: "AED", value: "AED" },
           ],
-          admin: { width: '33%' },
         },
       ],
     },
     {
-      name: 'paymentReference',
-      label: 'مرجع الدفع',
-      type: 'text',
-      admin: { readOnly: true },
+      type: "collapsible",
+      label: "بيانات الدفع",
+      fields: [
+        { name: "paymentReference", label: "مرجع الدفع", type: "text" },
+        { name: "airwallexPaymentIntentId", label: "Airwallex Intent ID", type: "text" },
+      ],
     },
     {
-      name: 'airwallexPaymentIntentId',
-      label: 'معرف نية الدفع (Airwallex)',
-      type: 'text',
-      admin: { readOnly: true },
+      type: "collapsible",
+      label: "قبول الشروط",
+      fields: [
+        { name: "termsAcceptedAt", label: "وقت القبول", type: "date" },
+        { name: "termsAcceptedIP", label: "عنوان IP", type: "text" },
+        { name: "termsAcceptedUserAgent", label: "User Agent", type: "textarea" },
+      ],
     },
     {
-      name: 'termsAcceptedAt',
-      label: 'وقت قبول الشروط',
-      type: 'date',
-      admin: { readOnly: true },
-    },
-    {
-      name: 'termsAcceptedIP',
-      label: 'عنوان IP عند قبول الشروط',
-      type: 'text',
-      admin: { readOnly: true },
-    },
-    {
-      name: 'termsAcceptedUserAgent',
-      label: 'معرف المتصفح عند القبول',
-      type: 'text',
-      admin: { readOnly: true },
-    },
-    {
-      name: 'deliveredAt',
-      label: 'وقت التسليم',
-      type: 'date',
-      admin: { readOnly: true },
-    },
-    {
-      name: 'digitalDeliveryLog',
-      label: 'سجل التسليم الرقمي',
-      type: 'richText',
-      editor: lexicalEditor({}),
-      admin: { readOnly: true },
+      type: "collapsible",
+      label: "التسليم الرقمي",
+      fields: [
+        {
+          name: "deliveryStatus",
+          label: "حالة التسليم",
+          type: "select",
+          options: [
+            { label: "قيد الانتظار", value: "pending" },
+            { label: "تم الإرسال", value: "sent" },
+            { label: "تم التأكيد", value: "confirmed" },
+          ],
+        },
+        { name: "deliveredAt", label: "تاريخ التسليم", type: "date" },
+        { name: "digitalDeliveryLog", label: "سجل التسليم", type: "json" },
+      ],
     },
   ],
   timestamps: true,
-}
+};

@@ -1,16 +1,30 @@
-import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { getSettings, getNavbarConfig } from "@/lib/payload";
+import type { SiteSettings, NavbarConfig } from "@my-store/types";
 
-export default function ShopLayout({
+export default async function ShopLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  let settings: SiteSettings | null = null;
+  let navbarConfig: NavbarConfig | null = null;
+
+  try {
+    [settings, navbarConfig] = await Promise.all([
+      getSettings(),
+      getNavbarConfig(),
+    ]);
+  } catch {}
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-1">{children}</main>
+    <>
+      <Header settings={settings} navbarConfig={navbarConfig} />
+      <main className="mx-auto min-h-screen max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {children}
+      </main>
       <Footer />
-    </div>
-  )
+    </>
+  );
 }

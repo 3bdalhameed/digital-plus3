@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls C:/Users/user/Desktop/my-store/apps/storefront/.env*)",
+      "Bash(ls C:/Users/user/Desktop/my-store/apps/cms/.env*)",
+      "Bash(pnpm dev *)"
+    ]
+  }
+}

@@ -1,27 +1,185 @@
-import type { Metadata } from 'next'
-import { getHomePage } from '@/lib/payload'
-import { SectionRenderer } from '@/components/sections/SectionRenderer'
+import { getHomePage } from "@/lib/payload";
+import { SectionRenderer } from "@/components/sections/SectionRenderer";
+import Link from "next/link";
+import { ArrowLeft, Zap, Shield, Headphones, Star } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: 'الرئيسية',
-}
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const homePage = await getHomePage().catch(() => null) as any
+  let homeData;
+  try {
+    homeData = await getHomePage();
+  } catch {
+    homeData = null;
+  }
+
+  if (!homeData?.sections?.length) {
+    return <FallbackHome />;
+  }
 
   return (
-    <div>
-      {homePage?.sections?.length ? (
-        <SectionRenderer sections={homePage.sections} />
-      ) : (
-        // Fallback if no CMS content configured yet
-        <div className="gradient-header min-h-[400px] flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="text-5xl font-black text-white mb-4">مرحباً بك في متجرنا</h1>
-            <p className="text-purple-200 text-xl">اشتراكات برمجية • مفاتيح ترخيص • بطاقات ألعاب</p>
-          </div>
-        </div>
-      )}
+    <div className="space-y-12">
+      {homeData.sections.map((section: any, index: number) => (
+        <SectionRenderer key={index} section={section} />
+      ))}
     </div>
-  )
+  );
+}
+
+function FallbackHome() {
+  const categories = [
+    {
+      emoji: "🎓",
+      name: "إشتراكات الدورات والتعليم",
+      desc: "قسم يشمل بيع الإشتراكات الخاصة بتقديم البرامج والدورات التعليمية",
+      href: "/products?type=software_subscription",
+    },
+    {
+      emoji: "🛍️",
+      name: "خدمات المتاجر الإلكترونية",
+      desc: "قسم يشمل بيع توفير الخدمات التي تفيد من يدير متجرًا إلكترونيًا أو بيع منتجات",
+      href: "/products",
+    },
+    {
+      emoji: "🎮",
+      name: "GAMING",
+      desc: "قسم يشمل بيع مفاتيح وإشتراكات الألعاب التي تفي في الألعاب",
+      href: "/products?type=gaming_card",
+    },
+    {
+      emoji: "💼",
+      name: "إشتراكات الأعمال والمحاسبة",
+      desc: "قسم يشمل بيع مفاتيح وإشتراكات البرامج الإنتاجية والكاتب والشهادات الإلينية",
+      href: "/products?type=license_key",
+    },
+  ];
+
+  const features = [
+    { icon: Zap,        title: "تسليم فوري",     desc: "استلم منتجك الرقمي فور إتمام الدفع" },
+    { icon: Shield,     title: "دفع آمن 100%",    desc: "تشفير متقدم لحماية جميع المعاملات" },
+    { icon: Headphones, title: "دعم متواصل",      desc: "فريق دعم متخصص متاح على مدار الساعة" },
+  ];
+
+  const testimonials = [
+    { name: "أحمد م.", text: "تسليم سريع جداً وخدمة ممتازة!", stars: 5 },
+    { name: "سارة ع.", text: "أفضل متجر رقمي جربته بدون منازع", stars: 5 },
+    { name: "خالد ر.", text: "أسعار تنافسية ومنتجات أصلية", stars: 5 },
+  ];
+
+  return (
+    <div className="space-y-14">
+
+      {/* ── Hero Banner ── */}
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-8 py-14 md:px-14 md:py-20">
+        <div className="flex flex-col-reverse items-center gap-8 md:flex-row md:justify-between">
+
+          {/* Text side */}
+          <div className="text-right md:max-w-lg">
+            <p className="mb-3 text-sm font-semibold text-[#c4b5fd]">مرحبًا في عالم</p>
+            <h1 className="text-4xl font-black leading-tight text-white md:text-5xl lg:text-6xl">
+              متجري<br />
+              <span className="text-[#e9d5ff]">للمنتجات الرقمية</span>
+            </h1>
+            <ul className="mt-6 space-y-2 text-sm text-[#ddd6fe] md:text-base">
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c4b5fd]" />
+                إكتشف أقوى الاشتراكات الرقمية بأفضل الأسعار
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c4b5fd]" />
+                تفعيل فوري وخدمة دعم على مدار الساعة
+              </li>
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/products" className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-black text-[#7C3AED] shadow-[0_4px_16px_rgba(0,0,0,0.2)] transition-all hover:bg-[#f5f3ff] hover:shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
+                تصفح المنتجات
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+              <Link href="/about" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/40 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-white/10">
+                تعرف علينا
+              </Link>
+            </div>
+          </div>
+
+          {/* Illustration side */}
+          <div className="flex items-center justify-center">
+            <div className="relative flex h-48 w-48 items-center justify-center rounded-full bg-white/10 md:h-64 md:w-64">
+              <span className="text-8xl md:text-9xl">🛒</span>
+              {/* Floating badges */}
+              <div className="absolute -right-4 -top-4 animate-float rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#7C3AED] shadow-lg">
+                ⚡ تسليم فوري
+              </div>
+              <div className="absolute -bottom-2 -left-4 animate-float rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#7C3AED] shadow-lg" style={{ animationDelay: "1.2s" }}>
+                🔒 دفع آمن
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Categories ── */}
+      <section>
+        <div className="section-title">اقسام المتجر</div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {categories.map(({ emoji, name, desc, href }) => (
+            <Link key={name} href={href} className="cat-card group">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-[0_4px_12px_rgba(124,58,237,0.15)] transition-transform duration-300 group-hover:scale-110">
+                <span className="text-4xl">{emoji}</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold leading-snug text-[#1e1b4b]">{name}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Features ── */}
+      <section className="grid gap-4 md:grid-cols-3">
+        {features.map(({ icon: Icon, title, desc }) => (
+          <div key={title} className="brand-card flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EDE9FE]">
+              <Icon className="h-5 w-5 text-[#7C3AED]" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="font-bold text-[#1e1b4b]">{title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-[#6b7280]">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ── Testimonials ── */}
+      <section>
+        <div className="section-title">ماذا يقول عملاؤنا</div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {testimonials.map(({ name, text, stars }) => (
+            <div key={name} className="brand-card">
+              <div className="flex gap-0.5 text-amber-400">
+                {Array.from({ length: stars }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-[#6b7280]">"{text}"</p>
+              <p className="mt-3 text-sm font-bold text-[#1e1b4b]">{name}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── CTA Banner ── */}
+      <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-8 py-12 text-center">
+        <h2 className="text-2xl font-black text-white md:text-3xl">هل أنت مستعد للبدء؟</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-[#ddd6fe]">
+          انضم إلى آلاف العملاء الراضين واحصل على منتجاتك الرقمية فورياً
+        </p>
+        <Link href="/products" className="mt-6 inline-flex rounded-xl bg-white px-10 py-3.5 text-sm font-black text-[#7C3AED] shadow-lg transition-all hover:bg-[#f5f3ff]">
+          تسوق الآن
+        </Link>
+      </section>
+
+    </div>
+  );
 }

@@ -1,0 +1,376 @@
+// ========================
+// PRODUCT TYPES
+// ========================
+
+export type ProductType =
+  | "software_subscription"
+  | "license_key"
+  | "invitation"
+  | "gaming_card"
+  | "ai_subscription";
+
+export type DeliveryMethod = "email" | "on_site" | "both";
+
+export type ProductStatus = "draft" | "published" | "archived";
+
+export type UsageProofType =
+  | "license_redeemed"
+  | "invitation_accepted"
+  | "subscription_activated"
+  | "first_login";
+
+export interface LocalizedString {
+  ar: string;
+  en: string;
+}
+
+export interface Product {
+  id: string;
+  name: LocalizedString;
+  slug: string;
+  description: any; // richtext
+  images: Media[];
+  category: Category;
+  subcategory?: Subcategory;
+  type: ProductType;
+  deliveryMethod: DeliveryMethod;
+  price: number;
+  comparePrice?: number;
+  currency: string;
+  status: ProductStatus;
+  refundable: boolean;
+  refundPolicy?: string;
+  usageProofType: UsageProofType;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoImage?: Media;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ========================
+// CATEGORY TYPES
+// ========================
+
+export interface Category {
+  id: string;
+  name: LocalizedString;
+  slug: string;
+  image?: Media;
+  description?: string;
+  icon?: Media;
+  brandLogos?: Media[];
+  position: number;
+  isActive: boolean;
+}
+
+export interface Subcategory {
+  id: string;
+  name: LocalizedString;
+  slug: string;
+  category: Category;
+  position: number;
+  isActive: boolean;
+}
+
+// ========================
+// ORDER TYPES
+// ========================
+
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "delivered"
+  | "disputed"
+  | "refunded"
+  | "cancelled";
+
+export interface OrderItem {
+  product: Product;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  customer: Customer;
+  items: OrderItem[];
+  status: OrderStatus;
+  paymentReference?: string;
+  airwallexPaymentIntentId?: string;
+  totalAmount: number;
+  currency: string;
+  termsAcceptedAt?: string;
+  termsAcceptedIP?: string;
+  termsAcceptedUserAgent?: string;
+  deliveryStatus?: string;
+  deliveredAt?: string;
+  digitalDeliveryLog?: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ========================
+// CUSTOMER TYPES
+// ========================
+
+export interface Customer {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  twoFactorEnabled: boolean;
+  twoFactorSecret?: string;
+  orders?: Order[];
+  ipHistory?: string[];
+  deviceHistory?: string[];
+  createdAt: string;
+}
+
+// ========================
+// EVIDENCE TYPES
+// ========================
+
+export type EvidenceType =
+  | "terms_acceptance"
+  | "payment"
+  | "delivery"
+  | "access"
+  | "usage_confirmation"
+  | "support_note"
+  | "screenshot";
+
+export interface EvidenceLog {
+  id: string;
+  order: Order;
+  customer: Customer;
+  type: EvidenceType;
+  timestamp: string;
+  ipAddress: string;
+  userAgent: string;
+  device?: string;
+  browser?: string;
+  sessionId?: string;
+  data?: Record<string, any>;
+  attachments?: Media[];
+  internalNote?: string;
+}
+
+// ========================
+// SUPPORT TYPES
+// ========================
+
+export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+export type TicketChannel = "platform" | "whatsapp" | "email";
+
+export interface SupportMessage {
+  sender: "customer" | "admin";
+  text: string;
+  attachments?: Media[];
+  timestamp: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  order: Order;
+  customer: Customer;
+  status: TicketStatus;
+  channel: TicketChannel;
+  messages: SupportMessage[];
+  internalNotes?: string[];
+  disputeEvidence?: EvidenceLog[];
+}
+
+// ========================
+// MEDIA
+// ========================
+
+export interface Media {
+  id: string;
+  url: string;
+  alt?: string;
+  filename: string;
+  mimeType: string;
+  width?: number;
+  height?: number;
+}
+
+// ========================
+// ADMIN TYPES
+// ========================
+
+export type AdminRole = "super_admin" | "admin" | "support" | "viewer";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+}
+
+// ========================
+// CMS GLOBALS
+// ========================
+
+export interface HeroBanner {
+  blockType: "heroBanner";
+  title: string;
+  subtitle: string;
+  cta: { label: string; link: string };
+  backgroundImage?: Media;
+  enabled: boolean;
+}
+
+export interface CategoryGrid {
+  blockType: "categoryGrid";
+  title: string;
+  categories: Category[];
+  enabled: boolean;
+}
+
+export interface FeaturedProducts {
+  blockType: "featuredProducts";
+  title: string;
+  products: Product[];
+  enabled: boolean;
+}
+
+export interface PromoBar {
+  blockType: "promoBar";
+  text: string;
+  couponCode?: string;
+  enabled: boolean;
+}
+
+export interface Testimonial {
+  name: string;
+  text: string;
+  rating: number;
+}
+
+export interface TestimonialsSection {
+  blockType: "testimonials";
+  items: Testimonial[];
+  enabled: boolean;
+}
+
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+export interface FAQSection {
+  blockType: "faqSection";
+  items: FAQItem[];
+  enabled: boolean;
+}
+
+export interface FeatureBlock {
+  title: string;
+  description: string;
+  icon?: Media;
+}
+
+export interface FeatureBlocks {
+  blockType: "featureBlocks";
+  items: FeatureBlock[];
+  enabled: boolean;
+}
+
+export type HomePageSection =
+  | HeroBanner
+  | CategoryGrid
+  | FeaturedProducts
+  | PromoBar
+  | TestimonialsSection
+  | FAQSection
+  | FeatureBlocks;
+
+export interface HomePage {
+  sections: HomePageSection[];
+}
+
+export interface SiteSettings {
+  siteName: string;
+  logo?: Media;
+  favicon?: Media;
+  socialLinks?: {
+    platform: string;
+    url: string;
+  }[];
+  contactEmail: string;
+  whatsappNumber?: string;
+  supportHours?: string;
+}
+
+export interface NavLink {
+  label: LocalizedString;
+  href: string;
+  children?: NavLink[];
+}
+
+export interface NavbarConfig {
+  links: NavLink[];
+}
+
+export interface FooterColumn {
+  title: LocalizedString;
+  links: { label: LocalizedString; href: string }[];
+}
+
+export interface FooterConfig {
+  columns: FooterColumn[];
+  bottomText?: string;
+}
+
+export interface PoliciesContent {
+  termsAndConditions: any; // richtext
+  refundPolicy: any; // richtext
+  privacyPolicy: any; // richtext
+}
+
+// ========================
+// API PAYLOADS
+// ========================
+
+export interface CreateOrderPayload {
+  customerId: string;
+  items: { productId: string; quantity: number }[];
+  currency: string;
+}
+
+export interface LogEvidencePayload {
+  orderId?: string;
+  customerId: string;
+  type: EvidenceType;
+  data?: Record<string, any>;
+  sessionId?: string;
+}
+
+export interface UsageConfirmPayload {
+  orderId: string;
+  customerId: string;
+  productId: string;
+  sessionId: string;
+}
+
+// ========================
+// CART
+// ========================
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface CartState {
+  items: CartItem[];
+  addItem: (product: Product) => void;
+  removeItem: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  totalItems: () => number;
+  totalPrice: () => number;
+}

@@ -1,91 +1,109 @@
-import { buildConfig } from 'payload'
-import { postgresAdapter } from '@payloadcms/db-postgres'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { s3Storage } from '@payloadcms/storage-s3'
-import { fileURLToPath } from 'url'
-import path from 'path'
+import { buildConfig } from "payload/config";
+import { postgresAdapter } from "@payloadcms/db-postgres";
+import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { webpackBundler } from "@payloadcms/bundler-webpack";
+import path from "path";
+import dotenv from "dotenv";
+import Dashboard from "./admin/components/Dashboard";
 
 // Collections
-import { Media } from './collections/Media'
-import { Users } from './collections/Users'
-import { Categories } from './collections/Categories'
-import { Subcategories } from './collections/Subcategories'
-import { Products } from './collections/Products'
-import { Customers } from './collections/Customers'
-import { Orders } from './collections/Orders'
-import { EvidenceLogs } from './collections/EvidenceLogs'
-import { SupportTickets } from './collections/SupportTickets'
+import { Products } from "./collections/Products";
+import { Categories } from "./collections/Categories";
+import { Subcategories } from "./collections/Subcategories";
+import { Orders } from "./collections/Orders";
+import { Customers } from "./collections/Customers";
+import { EvidenceLogs } from "./collections/EvidenceLogs";
+import { SupportTickets } from "./collections/SupportTickets";
+import { Media } from "./collections/Media";
+import { Users } from "./collections/Users";
 
 // Globals
-import { HomePage } from './globals/HomePage'
-import { Settings } from './globals/Settings'
-import { NavbarConfig } from './globals/NavbarConfig'
-import { FooterConfig } from './globals/FooterConfig'
-import { PoliciesContent } from './globals/PoliciesContent'
+import { HomePage } from "./globals/HomePage";
+import { Settings } from "./globals/Settings";
+import { NavbarConfig } from "./globals/NavbarConfig";
+import { FooterConfig } from "./globals/FooterConfig";
+import { PoliciesContent } from "./globals/PoliciesContent";
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+dotenv.config();
+
+// Only load S3 plugin if env vars are set
+const plugins: any[] = [];
+
+if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
+  // Dynamic import to avoid crash when S3 not configured
+  try {
+    const { s3Storage } = require("@payloadcms/storage-s3");
+    plugins.push(
+      s3Storage({
+        collections: {
+          media: { prefix: "media" },
+        },
+        bucket: process.env.S3_BUCKET,
+        config: {
+          credentials: {
+            accessKeyId: process.env.S3_ACCESS_KEY_ID,
+            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+          },
+          endpoint: process.env.S3_ENDPOINT,
+          region: process.env.S3_REGION || "auto",
+          forcePathStyle: true,
+        },
+      })
+    );
+  } catch (e) {
+    console.warn("S3 storage plugin not loaded — install @payloadcms/storage-s3 to enable");
+  }
+}
 
 export default buildConfig({
-  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3001',
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001",
+
   admin: {
     user: Users.slug,
+    bundler: webpackBundler(),
+    css: path.resolve(__dirname, "admin/custom.css"),
+    components: {
+      views: {
+        Dashboard: Dashboard as any,
+      },
+    },
     meta: {
-      titleSuffix: '- لوحة التحكم',
+      titleSuffix: " — My Store",
+      favicon: "/favicon.ico",
+      ogImage: "/og-image.png",
     },
   },
-  editor: lexicalEditor(),
-  collections: [
-    Media,
-    Users,
-    Categories,
-    Subcategories,
-    Products,
-    Customers,
-    Orders,
-    EvidenceLogs,
-    SupportTickets,
-  ],
-  globals: [
-    HomePage,
-    Settings,
-    NavbarConfig,
-    FooterConfig,
-    PoliciesContent,
-  ],
+
+  editor: lexicalEditor({}),
+
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URI || '',
+      connectionString:
+        process.env.DATABASE_URI ||
+        "postgresql://postgres:postgres@localhost:5432/my_store",
     },
   }),
-  plugins: [
-    s3Storage({
-      collections: {
-        media: true,
-      },
-      bucket: process.env.S3_BUCKET || '',
-      config: {
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-        },
-        region: process.env.S3_REGION || 'auto',
-        endpoint: process.env.S3_ENDPOINT,
-      },
-    }),
+
+  plugins,
+
+  collections: [
+    Products,
+    Categories,
+    Subcategories,
+    Orders,
+    Customers,
+    EvidenceLogs,
+    SupportTickets,
+    Media,
+    Users,
   ],
-  cors: [
-    process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3001',
-    'http://localhost:3000',
-    process.env.STOREFRONT_URL || '',
-  ].filter(Boolean),
-  csrf: [
-    process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3001',
-    'http://localhost:3000',
-    process.env.STOREFRONT_URL || '',
-  ].filter(Boolean),
-  secret: process.env.PAYLOAD_SECRET || 'fallback-secret-change-me-min-32-chars',
+
+  globals: [HomePage, Settings, NavbarConfig, FooterConfig, PoliciesContent],
+
+  cors: [process.env.STOREFRONT_URL || "http://localhost:3000"],
+  csrf: [process.env.STOREFRONT_URL || "http://localhost:3000"],
+
   typescript: {
-    outputFile: path.resolve(dirname, 'payload-types.ts'),
+    outputFile: path.resolve(__dirname, "payload-types.ts"),
   },
-})
+});

@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap");
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 260 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 260 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 20% 10%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 60% 95%;
+    --secondary-foreground: 262 83% 40%;
+    --muted: 260 20% 96%;
+    --muted-foreground: 260 10% 55%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 260 20% 90%;
+    --input: 260 20% 93%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+
+    --purple: #7C3AED;
+    --purple-light: #8B5CF6;
+    --purple-soft: #EDE9FE;
+    --purple-muted: #F5F3FF;
+  }
+
+  * { @apply border-border; }
+
+  html {
+    direction: rtl;
+    font-family: "Cairo", "Tajawal", sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #f8f7ff;
+    color: #1e1b4b;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* ── Brand button (purple) ── */
+  .brand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+  .brand-btn:hover {
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.55);
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%);
+  }
+  .brand-btn:active { transform: scale(0.98); }
+
+  /* ── Outline button ── */
+  .brand-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #7C3AED;
+    border: 2px solid #7C3AED;
+    background: transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .brand-btn-outline:hover {
+    background: #EDE9FE;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2);
+  }
+
+  /* ── Product / generic card ── */
+  .brand-card {
+    background: #ffffff;
+    border: 1px solid #e8e4f8;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+  .brand-card:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* ── Category card ── */
+  .cat-card {
+    background: #EDE9FE;
+    border-radius: 1.5rem;
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .cat-card:hover {
+    background: #DDD6FE;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18);
+    transform: translateY(-3px);
+    border-color: #a78bfa;
+  }
+
+  /* ── Section divider heading ── */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin-bottom: 2rem;
+  }
+  .section-title::before,
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    max-width: 120px;
+    background: linear-gradient(to right, transparent, #c4b5fd);
+  }
+  .section-title::after {
+    background: linear-gradient(to left, transparent, #c4b5fd);
+  }
+
+  /* ── Input / search ── */
+  .search-input {
+    width: 100%;
+    background: #f5f3ff;
+    border: 1.5px solid #ddd6fe;
+    border-radius: 2rem;
+    padding: 0.6rem 1.25rem 0.6rem 2.75rem;
+    font-size: 0.875rem;
+    color: #1e1b4b;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .search-input:focus {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    background: #fff;
+  }
+  .search-input::placeholder { color: #a78bfa; }
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes seamless-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-fade-up { animation: fadeUp 0.5s ease both; }
+.animate-fade-in { animation: fadeIn 0.4s ease both; }
+.animate-float   { animation: float 3.5s ease-in-out infinite; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #f5f3ff; }
+::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #7C3AED; }
+
+/* ── Selection ── */
+::selection { background: rgba(124, 58, 237, 0.15); color: #7C3AED; }

@@ -1,80 +1,95 @@
-import Link from 'next/link'
-import { getFooterConfig, getSettings } from '@/lib/payload'
+import Link from "next/link";
 
-export async function Footer() {
-  const [footer, settings] = await Promise.all([
-    getFooterConfig().catch(() => null),
-    getSettings().catch(() => null),
-  ]) as [any, any]
+const footerLinks = [
+  {
+    title: "المتجر",
+    links: [
+      { label: "جميع المنتجات", href: "/products" },
+      { label: "العروض", href: "/products?type=offers" },
+    ],
+  },
+  {
+    title: "الدعم",
+    links: [
+      { label: "تواصل معنا", href: "/support" },
+      { label: "من نحن", href: "/about" },
+    ],
+  },
+  {
+    title: "السياسات",
+    links: [
+      { label: "الشروط والأحكام", href: "/policies/terms" },
+      { label: "سياسة الاسترداد", href: "/policies/refund" },
+      { label: "سياسة الخصوصية", href: "/policies/privacy" },
+    ],
+  },
+];
 
+export function Footer() {
   return (
-    <footer className="bg-primary-dark text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Columns */}
-        {footer?.columns?.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-            {footer.columns.map((col: any, i: number) => (
-              <div key={i}>
-                <h4 className="font-bold text-purple-200 mb-4">{col.title}</h4>
-                <ul className="space-y-2">
-                  {col.links?.map((link: any, j: number) => (
-                    <li key={j}>
-                      <Link
-                        href={link.url}
-                        className="text-purple-300 hover:text-white text-sm transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+    <footer className="mt-20 border-t border-[#e8e4f8] bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+
+          {/* Brand column */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#9333EA] shadow-[0_4px_12px_rgba(124,58,237,0.35)]">
+                <span className="text-lg font-black text-white">م</span>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Default links if no CMS config */}
-        {(!footer?.columns?.length) && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <h4 className="font-bold text-purple-200 mb-4">المتجر</h4>
-              <ul className="space-y-2 text-sm text-purple-300">
-                <li><Link href="/products" className="hover:text-white transition-colors">جميع المنتجات</Link></li>
-                <li><Link href="/about" className="hover:text-white transition-colors">عن المتجر</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-purple-200 mb-4">حسابي</h4>
-              <ul className="space-y-2 text-sm text-purple-300">
-                <li><Link href="/orders" className="hover:text-white transition-colors">طلباتي</Link></li>
-                <li><Link href="/account" className="hover:text-white transition-colors">الملف الشخصي</Link></li>
-                <li><Link href="/support" className="hover:text-white transition-colors">الدعم الفني</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-purple-200 mb-4">السياسات</h4>
-              <ul className="space-y-2 text-sm text-purple-300">
-                <li><Link href="/policies/terms" className="hover:text-white transition-colors">الشروط والأحكام</Link></li>
-                <li><Link href="/policies/refund" className="hover:text-white transition-colors">سياسة الاسترجاع</Link></li>
-                <li><Link href="/policies/privacy" className="hover:text-white transition-colors">سياسة الخصوصية</Link></li>
-              </ul>
+              <span className="text-lg font-black text-[#1e1b4b]">
+                متجري<span className="text-[#7C3AED]">.</span>
+              </span>
+            </Link>
+            <p className="mt-4 text-sm leading-relaxed text-[#6b7280]">
+              متجرك الموثوق للمنتجات الرقمية — اشتراكات، مفاتيح، بطاقات ألعاب والمزيد.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {["⚡ تسليم فوري", "🔒 دفع آمن"].map((b) => (
+                <span
+                  key={b}
+                  className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-3 py-1 text-xs font-semibold text-[#7C3AED]"
+                >
+                  {b}
+                </span>
+              ))}
             </div>
           </div>
-        )}
 
-        <div className="border-t border-purple-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-purple-400 text-sm">
-            {footer?.bottomText || `© ${new Date().getFullYear()} ${settings?.siteName || 'متجري'}. جميع الحقوق محفوظة.`}
+          {/* Link columns */}
+          {footerLinks.map((col) => (
+            <div key={col.title}>
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-[#7C3AED]">
+                {col.title}
+              </h3>
+              <ul className="space-y-3">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-[#6b7280] transition-colors hover:text-[#7C3AED]"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="mt-12 flex flex-col items-center gap-2 border-t border-[#f3f0ff] pt-6 sm:flex-row sm:justify-between">
+          <p className="text-sm text-[#9ca3af]">
+            © {new Date().getFullYear()} متجري. جميع الحقوق محفوظة.
           </p>
-          <div className="flex gap-4">
-            {footer?.policyLinks?.map((link: any, i: number) => (
-              <Link key={i} href={link.url} className="text-purple-400 hover:text-white text-xs transition-colors">
-                {link.label}
-              </Link>
-            ))}
+          <div className="flex items-center gap-1 text-sm text-[#9ca3af]">
+            <span>مصنوع بـ</span>
+            <span className="text-[#7C3AED]">♥</span>
+            <span>في العالم العربي</span>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

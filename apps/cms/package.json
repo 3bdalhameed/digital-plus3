@@ -1,31 +1,35 @@
 {
   "name": "cms",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
-    "build": "next build",
-    "start": "next start --port 3001",
-    "generate:types": "payload generate:types",
-    "type-check": "tsc --noEmit"
+    "dev": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts nodemon",
+    "build:payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload build",
+    "build:server": "tsc",
+    "build": "pnpm build:payload && pnpm build:server",
+    "serve": "cross-env PAYLOAD_CONFIG_PATH=dist/payload.config.js node dist/server.js",
+    "generate:types": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload generate:types",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@my-store/types": "workspace:*",
-    "@payloadcms/db-postgres": "latest",
-    "@payloadcms/richtext-lexical": "latest",
-    "@payloadcms/storage-s3": "latest",
-    "@payloadcms/next": "latest",
-    "graphql": "^16.8.1",
-    "next": "15.2.9",
-    "payload": "latest",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "sharp": "0.32.6"
+    "@payloadcms/bundler-webpack": "^1.0.7",
+    "@payloadcms/db-postgres": "^0.8.0",
+    "@payloadcms/richtext-lexical": "^0.11.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "payload": "^2.30.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.2",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "typescript": "^5.4.5"
+    "@types/express": "^4.17.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "csv-parse": "^6.2.1",
+    "form-data": "^4.0.5",
+    "nodemon": "^3.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.4.0"
   }
 }
