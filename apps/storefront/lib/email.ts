@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface OrderEmailData {
   customerName: string;
   customerEmail: string;
@@ -19,6 +17,7 @@ interface OrderEmailData {
 export async function sendOrderConfirmationEmail(
   data: OrderEmailData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     const itemsHtml = data.items
       .map(
