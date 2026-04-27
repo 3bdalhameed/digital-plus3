@@ -29,7 +29,7 @@ export interface Product {
   name: LocalizedString;
   slug: string;
   description: any; // richtext
-  images: Media[];
+  images: { image: Media }[];
   category: Category;
   subcategory?: Subcategory;
   type: ProductType;
