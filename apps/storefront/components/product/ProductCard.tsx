@@ -54,21 +54,28 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-[#ddd6fe] to-transparent" />
 
       {/* Info */}
-      <div className="flex flex-1 flex-col p-4">
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1e1b4b] transition-colors group-hover:text-[#7C3AED]">
-            {product.name?.ar ?? product.name?.en ?? ""}
-          </h3>
+      <div className="flex flex-1 flex-col items-center p-4 text-center">
+        <Link href={`/products/${product.slug}`} className="w-full">
+          {product.name?.ar && (
+            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1e1b4b] transition-colors group-hover:text-[#7C3AED]">
+              {product.name.ar}
+            </h3>
+          )}
+          {product.name?.en && (
+            <p className="mt-1 line-clamp-1 text-xs font-semibold text-[#6b7280]">
+              {product.name.en}
+            </p>
+          )}
         </Link>
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto w-full pt-4">
           {/* Price */}
-          <div className="flex items-end gap-2">
-            <span className="text-xl font-black text-[#7C3AED]">
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-2xl font-black text-[#7C3AED]">
               {formatPrice(product.price, product.currency)}
             </span>
             {hasDiscount && (
-              <span className="mb-0.5 text-xs text-[#9ca3af] line-through">
+              <span className="text-xs text-[#9ca3af] line-through">
                 {formatPrice(product.comparePrice!, product.currency)}
               </span>
             )}
@@ -77,10 +84,10 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Add to cart */}
           <button
             onClick={() => addItem(product)}
-            className="brand-btn mt-3 w-full gap-2 py-2.5 text-xs"
+            className="brand-btn mt-3 w-full justify-center gap-2 py-2.5 text-xs"
           >
             <ShoppingCart className="h-4 w-4" />
-            أضف للسلة
+            أضف إلى السلة
           </button>
         </div>
       </div>

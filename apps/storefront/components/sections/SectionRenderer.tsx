@@ -289,13 +289,13 @@ function CategoryBannersSection({ title, banners, cardWidth, speed = 25, pauseOn
   if (!banners?.length) return null;
 
   const cards = banners.map((b: any, i: number) => {
-    const sub = b.subcategory;
-    const href = sub?.slug ? `/products?subcategory=${sub.slug}` : "#";
+    const cat = b.category;
+    const href = cat?.slug ? `/category/${cat.slug}` : "#";
     return (
       <Link key={i} href={href} className="group block" style={{ width: "100%", height: "100%" }}>
         <div className="relative h-full w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
           {b.image?.url ? (
-            <Image src={b.image.url} alt={sub?.nameAr ?? ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+            <Image src={b.image.url} alt={cat?.nameAr ?? ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
           ) : (
             <div className="flex h-full items-center justify-center bg-[#EDE9FE] text-6xl">📦</div>
           )}

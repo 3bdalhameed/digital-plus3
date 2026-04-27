@@ -42,6 +42,12 @@ export const Subcategories: CollectionConfig = {
       required: true,
     },
     {
+      name: "icon",
+      label: "الأيقونة",
+      type: "upload",
+      relationTo: "media",
+    },
+    {
       name: "position",
       label: "الترتيب",
       type: "number",

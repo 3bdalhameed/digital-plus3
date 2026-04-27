@@ -177,10 +177,10 @@ export const HomePage: GlobalConfig = {
               fields: [
                 { name: "image", label: "الصورة", type: "upload", relationTo: "media", required: true },
                 {
-                  name: "subcategory",
-                  label: "الفئة الفرعية (الرابط)",
+                  name: "category",
+                  label: "الفئة (الرابط)",
                   type: "relationship",
-                  relationTo: "subcategories",
+                  relationTo: "categories",
                   required: true,
                 },
               ],

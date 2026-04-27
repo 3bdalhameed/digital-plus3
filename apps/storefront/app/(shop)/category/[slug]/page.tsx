@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { getCategoryBySlug, getProducts, getSubcategories } from "@/lib/payload";
 import { ProductCard } from "@/components/product/ProductCard";
-import Link from "next/link";
 
 export const revalidate = 60;
 
@@ -24,16 +25,33 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       )}
 
       {subcategories.length > 0 && (
-        <div className="mb-8 flex flex-wrap gap-2">
-          {subcategories.map((sub: any) => (
-            <Link
-              key={sub.id}
-              href={`/products?category=${params.slug}&subcategory=${sub.slug}`}
-              className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-brand-600 shadow-sm transition-colors hover:bg-brand-50"
-            >
-              {sub.nameAr}
-            </Link>
-          ))}
+        <div className="mb-8 rounded-3xl border border-brand-100 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-center text-sm font-bold text-brand-600">الأقسام الفرعية</h2>
+          <div className="flex flex-wrap items-start justify-center gap-6">
+            {subcategories.map((sub: any) => {
+              const iconUrl = sub.icon?.url;
+              return (
+                <Link
+                  key={sub.id}
+                  href={`/products?category=${params.slug}&subcategory=${sub.slug}`}
+                  className="group flex w-20 flex-col items-center gap-2"
+                >
+                  <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md transition-transform group-hover:scale-105">
+                    {iconUrl ? (
+                      <Image src={iconUrl} alt={sub.nameAr} fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
+                        {sub.nameAr?.[0] ?? "•"}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-center text-xs font-medium text-brand-800 line-clamp-2">
+                    {sub.nameAr}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
 
