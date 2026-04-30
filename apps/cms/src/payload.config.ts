@@ -39,6 +39,8 @@ if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
           media: { prefix: "media" },
         },
         bucket: process.env.S3_BUCKET,
+        generateFileURL: ({ filename }) =>
+          `${process.env.S3_PUBLIC_URL}/${filename}`,
         config: {
           credentials: {
             accessKeyId: process.env.S3_ACCESS_KEY_ID,
