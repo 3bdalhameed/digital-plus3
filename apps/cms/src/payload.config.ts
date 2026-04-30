@@ -36,7 +36,7 @@ if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
     plugins.push(
       s3Storage({
         collections: {
-          media: { prefix: "media" },
+          media: { prefix: "New folder" },
         },
         bucket: process.env.S3_BUCKET,
         generateFileURL: ({ filename }) =>
