@@ -22,6 +22,6 @@ WORKDIR /app/apps/cms
 ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
 ENV NODE_ENV=production
 
-EXPOSE 3001
+EXPOSE 8080
 
 CMD ["node", "dist/server.js"]
