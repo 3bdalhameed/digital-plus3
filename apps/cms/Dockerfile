@@ -14,6 +14,9 @@ COPY apps/cms/ ./apps/cms/
 # Install all dependencies from root
 RUN pnpm install --no-frozen-lockfile
 
+# Set build-time env so Payload bakes the correct URL into the admin webpack bundle
+ENV PAYLOAD_PUBLIC_SERVER_URL=https://cms-production-27da.up.railway.app
+
 # Build cms
 RUN cd apps/cms && pnpm build
 
