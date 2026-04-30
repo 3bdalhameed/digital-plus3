@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install -g pnpm", "pnpm install --no-frozen-lockfile"]
+
+[phases.build]
+cmds = ["cd apps/cms && pnpm build"]
+
+[start]
+cmd = "cd apps/cms && node dist/server.js"
