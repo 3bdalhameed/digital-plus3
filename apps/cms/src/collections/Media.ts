@@ -33,7 +33,16 @@ export const Media: CollectionConfig = {
     afterRead: [
       ({ doc }) => {
         if (doc?.filename && process.env.S3_PUBLIC_URL) {
-          doc.url = `${process.env.S3_PUBLIC_URL}/New folder/${doc.filename}`;
+          const base = process.env.S3_PUBLIC_URL;
+          doc.url = `${base}/New%20folder/${doc.filename}`;
+          const sizes = doc.sizes as Record<string, { filename?: string; url?: string }> | undefined;
+          if (sizes) {
+            for (const key of Object.keys(sizes)) {
+              if (sizes[key]?.filename) {
+                sizes[key] = { ...sizes[key], url: `${base}/New%20folder/${sizes[key].filename}` };
+              }
+            }
+          }
         }
         return doc;
       },
