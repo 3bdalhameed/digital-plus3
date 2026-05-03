@@ -1,10 +1,11 @@
 import { CollectionConfig } from "payload/types";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-function getS3Client() {
-  return new S3Client({
+async function uploadFileToR2(filename: string, mimeType: string) {
+  // webpackIgnore: loaded at runtime only, not bundled into admin webpack build
+  const { S3Client, PutObjectCommand } = require(/* webpackIgnore: true */ "@aws-sdk/client-s3");
+  const s3 = new S3Client({
     region: process.env.S3_REGION || "auto",
     endpoint: process.env.S3_ENDPOINT,
     credentials: {
@@ -13,12 +14,8 @@ function getS3Client() {
     },
     forcePathStyle: true,
   });
-}
-
-async function uploadFileToR2(filename: string, mimeType: string) {
-  const filePath = join(process.cwd(), "media", filename);
-  const body = await readFile(filePath);
-  await getS3Client().send(new PutObjectCommand({
+  const body = await readFile(join(process.cwd(), "media", filename));
+  await s3.send(new PutObjectCommand({
     Bucket: process.env.S3_BUCKET!,
     Key: `New folder/${filename}`,
     Body: body,
@@ -28,12 +25,8 @@ async function uploadFileToR2(filename: string, mimeType: string) {
 
 export const Media: CollectionConfig = {
   slug: "media",
-  admin: {
-    group: "Settings",
-  },
-  access: {
-    read: () => true,
-  },
+  admin: { group: "Settings" },
+  access: { read: () => true },
   hooks: {
     afterRead: [
       ({ doc }) => {
