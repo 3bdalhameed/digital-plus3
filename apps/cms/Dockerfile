@@ -24,6 +24,7 @@ WORKDIR /app/apps/cms
 
 ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
 ENV NODE_ENV=production
+ENV PORT=8080
 
 EXPOSE 8080
 

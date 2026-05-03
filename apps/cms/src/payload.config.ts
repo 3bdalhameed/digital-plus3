@@ -28,40 +28,6 @@ dotenv.config();
 
 const plugins: any[] = [];
 
-if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
-  try {
-    const { cloudStorage } = require("@payloadcms/plugin-cloud-storage");
-    const { s3Adapter } = require("@payloadcms/plugin-cloud-storage/s3");
-    plugins.push(
-      cloudStorage({
-        collections: {
-          media: {
-            prefix: "New folder",
-            disablePayloadAccessControl: true,
-            generateFileURL: ({ filename, prefix }: { filename: string; prefix?: string }) =>
-              `${process.env.S3_PUBLIC_URL}/${prefix ? prefix + "/" : ""}${filename}`,
-            adapter: s3Adapter({
-              bucket: process.env.S3_BUCKET,
-              config: {
-                credentials: {
-                  accessKeyId: process.env.S3_ACCESS_KEY_ID,
-                  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-                },
-                endpoint: process.env.S3_ENDPOINT,
-                region: process.env.S3_REGION || "auto",
-                forcePathStyle: true,
-              },
-            }),
-          },
-        },
-      })
-    );
-    console.log("R2 cloud storage plugin loaded");
-  } catch (e: any) {
-    console.warn("Cloud storage plugin not loaded:", e.message);
-  }
-}
-
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001",
 
