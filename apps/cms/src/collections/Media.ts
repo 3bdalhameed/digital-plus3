@@ -6,7 +6,7 @@ async function uploadFileToR2(filename: string, mimeType: string) {
   const { readFile } = r("fs/promises");
   const { join } = r("path");
 
-  const filePath = join(process.cwd(), "media", filename);
+  const filePath = join(__dirname, "..", "media", filename);
   console.log(`[R2] reading file: ${filePath}`);
   console.log(`[R2] env: bucket=${process.env.S3_BUCKET} endpoint=${process.env.S3_ENDPOINT} key=${(process.env.S3_ACCESS_KEY_ID || "").slice(0, 8)}...`);
 
