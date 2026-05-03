@@ -3,8 +3,9 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 async function uploadFileToR2(filename: string, mimeType: string) {
-  // webpackIgnore: loaded at runtime only, not bundled into admin webpack build
-  const { S3Client, PutObjectCommand } = require(/* webpackIgnore: true */ "@aws-sdk/client-s3");
+  // eval('require') prevents webpack from statically analyzing this import
+  const r: NodeRequire = eval("require");
+  const { S3Client, PutObjectCommand } = r("@aws-sdk/client-s3");
   const s3 = new S3Client({
     region: process.env.S3_REGION || "auto",
     endpoint: process.env.S3_ENDPOINT,
