@@ -1,11 +1,13 @@
 import { CollectionConfig } from "payload/types";
-import { readFile } from "fs/promises";
-import { join } from "path";
 
 async function uploadFileToR2(filename: string, mimeType: string) {
-  // eval('require') prevents webpack from statically analyzing this import
+  // All Node.js-only imports inside the function so webpack (browser build) ignores them
   const r: NodeRequire = eval("require");
   const { S3Client, PutObjectCommand } = r("@aws-sdk/client-s3");
+  const { readFile } = r("fs/promises");
+  const { join } = r("path");
+
+  const body = await readFile(join(process.cwd(), "media", filename));
   const s3 = new S3Client({
     region: process.env.S3_REGION || "auto",
     endpoint: process.env.S3_ENDPOINT,
@@ -15,7 +17,6 @@ async function uploadFileToR2(filename: string, mimeType: string) {
     },
     forcePathStyle: true,
   });
-  const body = await readFile(join(process.cwd(), "media", filename));
   await s3.send(new PutObjectCommand({
     Bucket: process.env.S3_BUCKET!,
     Key: `New folder/${filename}`,
