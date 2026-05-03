@@ -30,8 +30,9 @@ const plugins: any[] = [];
 
 if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID && process.env.S3_PUBLIC_URL) {
   try {
-    const { cloudStorage } = require("@payloadcms/plugin-cloud-storage");
-    const { s3Adapter } = require("@payloadcms/plugin-cloud-storage/s3");
+    // webpackIgnore prevents webpack from bundling these heavy server-only packages
+    const { cloudStorage } = require(/* webpackIgnore: true */ "@payloadcms/plugin-cloud-storage");
+    const { s3Adapter } = require(/* webpackIgnore: true */ "@payloadcms/plugin-cloud-storage/s3");
     const adapter = s3Adapter({
       bucket: process.env.S3_BUCKET,
       config: {
