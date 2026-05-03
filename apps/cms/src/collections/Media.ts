@@ -1,13 +1,16 @@
 import { CollectionConfig } from "payload/types";
 
 async function uploadFileToR2(filename: string, mimeType: string) {
-  // All Node.js-only imports inside the function so webpack (browser build) ignores them
   const r: NodeRequire = eval("require");
   const { S3Client, PutObjectCommand } = r("@aws-sdk/client-s3");
   const { readFile } = r("fs/promises");
   const { join } = r("path");
 
-  const body = await readFile(join(process.cwd(), "media", filename));
+  const filePath = join(process.cwd(), "media", filename);
+  console.log(`[R2] reading file: ${filePath}`);
+  console.log(`[R2] env: bucket=${process.env.S3_BUCKET} endpoint=${process.env.S3_ENDPOINT} key=${(process.env.S3_ACCESS_KEY_ID || "").slice(0, 8)}...`);
+
+  const body = await readFile(filePath);
   const s3 = new S3Client({
     region: process.env.S3_REGION || "auto",
     endpoint: process.env.S3_ENDPOINT,
@@ -23,6 +26,7 @@ async function uploadFileToR2(filename: string, mimeType: string) {
     Body: body,
     ContentType: mimeType,
   }));
+  console.log(`[R2] uploaded OK: New folder/${filename}`);
 }
 
 export const Media: CollectionConfig = {
@@ -63,7 +67,8 @@ export const Media: CollectionConfig = {
           }
           console.log(`Uploaded ${doc.filename} to R2`);
         } catch (err: any) {
-          console.error(`R2 upload failed for ${doc.filename}:`, err.message);
+          console.error(`[R2] upload FAILED for ${doc.filename}:`, err.message);
+          console.error(`[R2] stack:`, err.stack);
         }
         return doc;
       },
