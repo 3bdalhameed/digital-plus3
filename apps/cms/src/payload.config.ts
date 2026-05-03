@@ -26,34 +26,39 @@ import { PoliciesContent } from "./globals/PoliciesContent";
 
 dotenv.config();
 
-// Only load S3 plugin if env vars are set
 const plugins: any[] = [];
 
 if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
-  // Dynamic import to avoid crash when S3 not configured
   try {
-    const { s3Storage } = require("@payloadcms/storage-s3");
+    const { cloudStorage } = require("@payloadcms/plugin-cloud-storage");
+    const { s3Adapter } = require("@payloadcms/plugin-cloud-storage/s3");
     plugins.push(
-      s3Storage({
+      cloudStorage({
         collections: {
-          media: { prefix: "New folder" },
-        },
-        bucket: process.env.S3_BUCKET,
-        generateFileURL: ({ filename, prefix }) =>
-          `${process.env.S3_PUBLIC_URL}/${prefix ? prefix + '/' : ''}${filename}`,
-        config: {
-          credentials: {
-            accessKeyId: process.env.S3_ACCESS_KEY_ID,
-            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+          media: {
+            prefix: "New folder",
+            disablePayloadAccessControl: true,
+            generateFileURL: ({ filename, prefix }: { filename: string; prefix?: string }) =>
+              `${process.env.S3_PUBLIC_URL}/${prefix ? prefix + "/" : ""}${filename}`,
+            adapter: s3Adapter({
+              bucket: process.env.S3_BUCKET,
+              config: {
+                credentials: {
+                  accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+                },
+                endpoint: process.env.S3_ENDPOINT,
+                region: process.env.S3_REGION || "auto",
+                forcePathStyle: true,
+              },
+            }),
           },
-          endpoint: process.env.S3_ENDPOINT,
-          region: process.env.S3_REGION || "auto",
-          forcePathStyle: true,
         },
       })
     );
-  } catch (e) {
-    console.warn("S3 storage plugin not loaded — install @payloadcms/storage-s3 to enable");
+    console.log("R2 cloud storage plugin loaded");
+  } catch (e: any) {
+    console.warn("Cloud storage plugin not loaded:", e.message);
   }
 }
 
