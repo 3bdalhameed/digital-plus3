@@ -31,12 +31,12 @@ async function payloadFetch<T>(
   }
 
   const res = await fetch(url.toString(), {
+    ...(fetchOptions.cache ? {} : { next: { revalidate: 60 } }),
     ...fetchOptions,
     headers: {
       "Content-Type": "application/json",
       ...(fetchOptions?.headers || {}),
     },
-    next: { revalidate: 60 }, // ISR: revalidate every 60s
   });
 
   if (!res.ok) {
@@ -88,11 +88,14 @@ export async function getProductBySlug(
 ): Promise<Product | null> {
   const data = await payloadFetch<PayloadDocs<Product>>("/products", {
     params: {
-      where: JSON.stringify({ slug: { equals: slug }, status: { equals: "published" } }),
+      "where[slug][equals]": slug,
+      "where[status][equals]": "published",
       depth: "2",
       limit: "1",
     },
+    cache: "no-store",
   });
+  console.log(`[getProductBySlug] slug=${slug} totalDocs=${data.totalDocs} returned=${data.docs[0]?.slug ?? "none"}`);
   return data.docs[0] || null;
 }
 
