@@ -12,7 +12,7 @@ export const NavbarConfig: GlobalConfig = {
       type: "array",
       fields: [
         { name: "labelAr", label: "النص (عربي)", type: "text", required: true },
-        { name: "labelEn", label: "Label (English)", type: "text", required: true },
+        { name: "labelEn", label: "Label (English)", type: "text" },
         { name: "href", label: "الرابط", type: "text", required: true },
         {
           name: "children",
@@ -20,7 +20,7 @@ export const NavbarConfig: GlobalConfig = {
           type: "array",
           fields: [
             { name: "labelAr", label: "النص (عربي)", type: "text", required: true },
-            { name: "labelEn", label: "Label (English)", type: "text", required: true },
+            { name: "labelEn", label: "Label (English)", type: "text" },
             { name: "href", label: "الرابط", type: "text", required: true },
           ],
         },

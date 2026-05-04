@@ -145,7 +145,7 @@ function MultiImageBanner({ slides, autoplay }: any) {
           {slide.title && <h2 className="text-2xl font-black md:text-4xl">{slide.title}</h2>}
           {slide.subtitle && <p className="mt-2 text-sm text-white/80 md:text-base">{slide.subtitle}</p>}
           {slide.ctaLabel && slide.ctaLink && (
-            <Link href={slide.ctaLink} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-[#7C3AED] shadow transition-all hover:bg-[#f5f3ff]">
+            <Link href={slide.ctaLink} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-[#7C3AED] transition-all hover:bg-[#f5f3ff]">
               {slide.ctaLabel} <ArrowLeft className="h-4 w-4" />
             </Link>
           )}
@@ -153,10 +153,10 @@ function MultiImageBanner({ slides, autoplay }: any) {
       </div>
       {total > 1 && (
         <>
-          <button onClick={() => setCurrent(p => (p - 1 + total) % total)} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 shadow hover:bg-white">
+          <button onClick={() => setCurrent(p => (p - 1 + total) % total)} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 hover:bg-white">
             <ArrowRight className="h-4 w-4 text-[#7C3AED]" />
           </button>
-          <button onClick={() => setCurrent(p => (p + 1) % total)} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 shadow hover:bg-white">
+          <button onClick={() => setCurrent(p => (p + 1) % total)} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 hover:bg-white">
             <ArrowLeft className="h-4 w-4 text-[#7C3AED]" />
           </button>
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">

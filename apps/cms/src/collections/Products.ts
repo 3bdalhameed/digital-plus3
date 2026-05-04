@@ -4,7 +4,7 @@ export const Products: CollectionConfig = {
   slug: "products",
   admin: {
     useAsTitle: "nameAr",
-    defaultColumns: ["nameAr", "type", "price", "status", "updatedAt"],
+    defaultColumns: ["nameAr", "description", "type", "price", "status", "updatedAt"],
     group: "Catalog",
   },
   access: {
@@ -24,7 +24,6 @@ export const Products: CollectionConfig = {
           name: "nameEn",
           label: "Name (English)",
           type: "text",
-          required: true,
         },
       ],
     },

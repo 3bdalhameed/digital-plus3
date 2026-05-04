@@ -24,7 +24,6 @@ export const Subcategories: CollectionConfig = {
           name: "nameEn",
           label: "Name (English)",
           type: "text",
-          required: true,
         },
       ],
     },
