@@ -60,6 +60,21 @@ export default buildConfig({
 
   plugins,
 
+  endpoints: [
+    {
+      path: "/preview-redirect",
+      method: "get",
+      handler: (req, res) => {
+        const slug = req.query?.slug as string | undefined;
+        const collection = (req.query?.collection as string | undefined) ?? "products";
+        const storefrontUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
+        const secret = process.env.PREVIEW_SECRET || "";
+        const target = `${storefrontUrl}/api/preview?secret=${encodeURIComponent(secret)}&collection=${encodeURIComponent(collection)}${slug ? `&slug=${encodeURIComponent(slug)}` : ""}`;
+        res.redirect(target);
+      },
+    },
+  ],
+
   collections: [
     Products,
     Categories,

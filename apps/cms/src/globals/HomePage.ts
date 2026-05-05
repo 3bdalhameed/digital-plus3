@@ -45,9 +45,8 @@ export const HomePage: GlobalConfig = {
   admin: {
     group: "Pages",
     preview: () => {
-      const base = process.env.STOREFRONT_URL || "http://localhost:3000";
-      const secret = process.env.PREVIEW_SECRET || "";
-      return `${base}/api/preview?secret=${secret}&collection=home-page`;
+      const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
+      return `${cmsUrl}/api/preview-redirect?collection=home-page`;
     },
   },
   access: { read: () => true },

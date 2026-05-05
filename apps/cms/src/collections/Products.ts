@@ -7,9 +7,8 @@ export const Products: CollectionConfig = {
     defaultColumns: ["nameAr", "descriptionHtml", "type", "price", "status", "updatedAt"],
     group: "Catalog",
     preview: (doc) => {
-      const base = process.env.STOREFRONT_URL || "http://localhost:3000";
-      const secret = process.env.PREVIEW_SECRET || "";
-      return `${base}/api/preview?secret=${secret}&slug=${doc.slug}&collection=products`;
+      const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
+      return `${cmsUrl}/api/preview-redirect?slug=${doc.slug}&collection=products`;
     },
   },
   access: {
