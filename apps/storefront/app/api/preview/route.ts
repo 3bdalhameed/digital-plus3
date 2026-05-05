@@ -7,8 +7,14 @@ export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug");
   const collection = request.nextUrl.searchParams.get("collection") ?? "products";
 
-  if (!process.env.PREVIEW_SECRET || secret !== process.env.PREVIEW_SECRET) {
-    return new Response("Invalid preview token", { status: 401 });
+  const expectedSecret = process.env.PREVIEW_SECRET;
+
+  // Require a secret — reject if missing or wrong
+  if (!expectedSecret || secret !== expectedSecret) {
+    return new Response(
+      `Invalid preview token. Make sure PREVIEW_SECRET is set in both CMS and storefront env vars.`,
+      { status: 401 }
+    );
   }
 
   draftMode().enable();
@@ -16,5 +22,7 @@ export async function GET(request: NextRequest) {
   if (collection === "products" && slug) {
     redirect(`/products/${slug}`);
   }
+
+  // home-page global or any other collection → go to homepage
   redirect("/");
 }

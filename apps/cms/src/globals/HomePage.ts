@@ -42,7 +42,14 @@ const layoutFields: Field[] = [
 export const HomePage: GlobalConfig = {
   slug: "home-page",
   label: "Home Page",
-  admin: { group: "Pages" },
+  admin: {
+    group: "Pages",
+    preview: () => {
+      const base = process.env.STOREFRONT_URL || "http://localhost:3000";
+      const secret = process.env.PREVIEW_SECRET || "";
+      return `${base}/api/preview?secret=${secret}&collection=home-page`;
+    },
+  },
   access: { read: () => true },
   fields: [
     {
