@@ -1,3 +1,4 @@
+import { draftMode } from "next/headers";
 import type {
   Product,
   Category,
@@ -86,16 +87,20 @@ export async function getProducts(params?: {
 export async function getProductBySlug(
   slug: string
 ): Promise<Product | null> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
+  const params: Record<string, string> = {
+    "where[slug][equals]": slug,
+    depth: "2",
+    limit: "1",
+  };
+  if (!isPreview) params["where[status][equals]"] = "published";
+
   const data = await payloadFetch<PayloadDocs<Product>>("/products", {
-    params: {
-      "where[slug][equals]": slug,
-      "where[status][equals]": "published",
-      depth: "2",
-      limit: "1",
-    },
+    params,
     cache: "no-store",
   });
-  console.log(`[getProductBySlug] slug=${slug} totalDocs=${data.totalDocs} returned=${data.docs[0]?.slug ?? "none"}`);
   return data.docs[0] || null;
 }
 

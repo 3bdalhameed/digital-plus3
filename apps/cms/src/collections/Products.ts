@@ -4,8 +4,13 @@ export const Products: CollectionConfig = {
   slug: "products",
   admin: {
     useAsTitle: "nameAr",
-    defaultColumns: ["nameAr", "description", "type", "price", "status", "updatedAt"],
+    defaultColumns: ["nameAr", "descriptionHtml", "type", "price", "status", "updatedAt"],
     group: "Catalog",
+    preview: (doc) => {
+      const base = process.env.STOREFRONT_URL || "http://localhost:3000";
+      const secret = process.env.PREVIEW_SECRET || "";
+      return `${base}/api/preview?secret=${secret}&slug=${doc.slug}&collection=products`;
+    },
   },
   access: {
     read: () => true,

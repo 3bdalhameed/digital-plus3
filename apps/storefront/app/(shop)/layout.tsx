@@ -1,5 +1,6 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { PreviewBanner } from "@/components/layout/PreviewBanner";
 import { getSettings, getNavbarConfig } from "@/lib/payload";
 import type { SiteSettings, NavbarConfig } from "@my-store/types";
 
@@ -20,6 +21,7 @@ export default async function ShopLayout({
 
   return (
     <>
+      <PreviewBanner />
       <Header settings={settings} navbarConfig={navbarConfig} />
       <main className="mx-auto min-h-screen max-w-7xl px-2 py-8 sm:px-3 lg:px-4">
         {children}
