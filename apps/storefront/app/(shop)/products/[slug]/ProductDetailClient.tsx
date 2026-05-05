@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
+import { lexicalToHtml } from "@/lib/lexical";
 import type { Product } from "@my-store/types";
 
 interface Props {
@@ -257,15 +258,18 @@ export function ProductDetailClient({ product, productName }: Props) {
 
         {tab === "desc" ? (
           <div className="rounded-2xl border border-[#e8e4f8] bg-white p-6">
-            {product.descriptionHtml ? (
-              <div
-                className="prose prose-sm max-w-none text-right"
-                dir="rtl"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-              />
-            ) : (
-              <p className="text-center text-sm text-[#6b7280]">لا يوجد وصف مفصل لهذا المنتج.</p>
-            )}
+            {(() => {
+              const html = product.descriptionHtml || lexicalToHtml(product.description);
+              return html ? (
+                <div
+                  className="prose prose-sm max-w-none text-right"
+                  dir="rtl"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              ) : (
+                <p className="text-center text-sm text-[#6b7280]">لا يوجد وصف مفصل لهذا المنتج.</p>
+              );
+            })()}
           </div>
         ) : (
           <div className="rounded-2xl border border-[#e8e4f8] bg-white p-6 text-center">
