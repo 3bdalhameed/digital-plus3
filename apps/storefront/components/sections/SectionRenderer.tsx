@@ -32,7 +32,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
       {/* Track */}
       <div
         ref={trackRef}
-        className="flex gap-4 overflow-x-auto pb-3 scroll-smooth"
+        className="flex gap-4 overflow-x-auto pt-2 pb-3 scroll-smooth"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}
@@ -262,7 +262,7 @@ function SeamlessMarquee({
   );
 
   return (
-    <div className="overflow-hidden" style={{ direction: "ltr" }}>
+    <div className="overflow-x-clip" style={{ direction: "ltr" }}>
       <div
         style={{
           display: "flex",
@@ -282,9 +282,10 @@ function SeamlessMarquee({
 /* ═══════════════════════════════════════
    5. CATEGORY BANNERS — seamless marquee
 ═══════════════════════════════════════ */
-function CategoryBannersSection({ title, banners, cardWidth, speed = 25, pauseOnHover }: any) {
-  const wMap: Record<string, number> = { sm: 160, md: 220, lg: 300 };
+function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, speed = 25, pauseOnHover }: any) {
+  const wMap: Record<string, number> = { xs: 120, sm: 160, md: 220, lg: 280, xl: 360 };
   const wNum = wMap[cardWidth ?? "md"] ?? 220;
+  const ratio = cardAspectRatio ?? "3/4";
 
   if (!banners?.length) return null;
 
@@ -292,8 +293,8 @@ function CategoryBannersSection({ title, banners, cardWidth, speed = 25, pauseOn
     const cat = b.category;
     const href = cat?.slug ? `/category/${cat.slug}` : "#";
     return (
-      <Link key={i} href={href} className="group block" style={{ width: "100%", height: "100%" }}>
-        <div className="relative h-full w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
+      <Link key={i} href={href} className="group block rounded-2xl overflow-hidden" style={{ width: "100%" }}>
+        <div className="relative w-full" style={{ aspectRatio: ratio }}>
           {b.image?.url ? (
             <Image src={b.image.url} alt={cat?.nameAr ?? ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
           ) : (
