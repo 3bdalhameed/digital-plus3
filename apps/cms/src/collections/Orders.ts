@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { ordersAccess, hiddenUnless } from "../access";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -6,13 +7,9 @@ export const Orders: CollectionConfig = {
     useAsTitle: "orderNumber",
     defaultColumns: ["orderNumber", "customer", "status", "totalAmount", "createdAt"],
     group: "Orders",
+    hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
   },
-  access: {
-    read: ({ req: { user } }) => {
-      if (user) return true;
-      return false;
-    },
-  },
+  access: ordersAccess,
   hooks: {
     beforeChange: [
       ({ data, operation }) => {

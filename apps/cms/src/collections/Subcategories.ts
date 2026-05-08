@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { catalogAccess, hiddenUnless } from "../access";
 
 export const Subcategories: CollectionConfig = {
   slug: "subcategories",
@@ -6,10 +7,9 @@ export const Subcategories: CollectionConfig = {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "category", "position", "isActive"],
     group: "Catalog",
+    hidden: hiddenUnless("super_admin", "admin", "catalog"),
   },
-  access: {
-    read: () => true,
-  },
+  access: catalogAccess,
   fields: [
     {
       type: "row",

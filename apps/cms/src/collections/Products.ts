@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { catalogAccess, hiddenUnless } from "../access";
 
 export const Products: CollectionConfig = {
   slug: "products",
@@ -6,14 +7,13 @@ export const Products: CollectionConfig = {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "descriptionHtml", "type", "price", "status", "updatedAt"],
     group: "Catalog",
+    hidden: hiddenUnless("super_admin", "admin", "catalog"),
     preview: (doc) => {
       const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
       return `${cmsUrl}/api/preview-redirect?slug=${doc.slug}&collection=products`;
     },
   },
-  access: {
-    read: () => true,
-  },
+  access: catalogAccess,
   fields: [
     {
       type: "row",

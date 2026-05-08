@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { ordersAccess, hiddenUnless } from "../access";
 
 export const EvidenceLogs: CollectionConfig = {
   slug: "evidence-logs",
@@ -6,10 +7,11 @@ export const EvidenceLogs: CollectionConfig = {
     useAsTitle: "type",
     defaultColumns: ["type", "order", "customer", "timestamp"],
     group: "Orders",
+    hidden: hiddenUnless("super_admin", "admin", "orders"),
   },
   access: {
-    read: ({ req: { user } }) => Boolean(user),
-    create: () => true, // Allow API to create
+    ...ordersAccess,
+    create: () => true, // storefront API can create evidence logs without auth
   },
   fields: [
     {

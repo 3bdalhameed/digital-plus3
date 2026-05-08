@@ -1,16 +1,16 @@
 import { CollectionConfig } from "payload/types";
+import { ordersAccess, hiddenUnless } from "../access";
 
 export const Customers: CollectionConfig = {
   slug: "customers",
   admin: {
     useAsTitle: "email",
     defaultColumns: ["email", "name", "createdAt"],
-    group: "Customers",
+    group: "Orders",
+    hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
   },
   auth: false,
-  access: {
-    read: ({ req: { user } }) => Boolean(user),
-  },
+  access: ordersAccess,
   fields: [
     {
       name: "email",

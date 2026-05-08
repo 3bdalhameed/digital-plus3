@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { supportAccess, hiddenUnless } from "../access";
 
 export const SupportTickets: CollectionConfig = {
   slug: "support-tickets",
@@ -6,10 +7,9 @@ export const SupportTickets: CollectionConfig = {
     useAsTitle: "id",
     defaultColumns: ["order", "customer", "status", "channel", "createdAt"],
     group: "Support",
+    hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
   },
-  access: {
-    read: ({ req: { user } }) => Boolean(user),
-  },
+  access: supportAccess,
   fields: [
     {
       name: "order",

@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import { usersAccess } from "../access";
 
 export const Users: CollectionConfig = {
   slug: "users",
@@ -6,7 +7,10 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: "email",
     group: "Settings",
+    // Only super_admin sees the Users section in the sidebar
+    hidden: ({ user }) => (user as any)?.role !== "super_admin",
   },
+  access: usersAccess,
   fields: [
     {
       name: "name",
@@ -16,15 +20,17 @@ export const Users: CollectionConfig = {
     },
     {
       name: "role",
-      label: "الدور",
+      label: "الصلاحية",
       type: "select",
       required: true,
       defaultValue: "viewer",
       options: [
-        { label: "مدير عام", value: "super_admin" },
-        { label: "مدير", value: "admin" },
-        { label: "دعم", value: "support" },
-        { label: "مشاهد", value: "viewer" },
+        { label: "🔑 مدير عام  (كل الصلاحيات + إدارة المستخدمين)", value: "super_admin" },
+        { label: "⚙️  مدير  (كل الصلاحيات)", value: "admin" },
+        { label: "📦 مدير الكتالوج  (منتجات + تصنيفات + صور)", value: "catalog" },
+        { label: "🛒 مدير الطلبات  (طلبات + عملاء)", value: "orders" },
+        { label: "🎧 دعم فني  (تذاكر + عرض الطلبات)", value: "support" },
+        { label: "👁️  مشاهد  (قراءة فقط)", value: "viewer" },
       ],
       admin: { position: "sidebar" },
     },
