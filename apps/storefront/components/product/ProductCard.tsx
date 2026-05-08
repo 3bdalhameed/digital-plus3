@@ -13,6 +13,9 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const p = product as any;
+  const nameAr = p.nameAr ?? product.name?.ar;
+  const nameEn = p.nameEn ?? product.name?.en;
   const imageUrl = product.images?.[0]?.image?.url;
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
   const discountPct = hasDiscount
@@ -56,14 +59,14 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Info */}
       <div className="flex flex-1 flex-col items-center p-4 text-center">
         <Link href={`/products/${product.slug}`} className="w-full">
-          {product.name?.ar && (
+          {nameAr && (
             <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1e1b4b] transition-colors group-hover:text-[#7C3AED]">
-              {product.name.ar}
+              {nameAr}
             </h3>
           )}
-          {product.name?.en && (
+          {nameEn && nameEn !== nameAr && (
             <p className="mt-1 line-clamp-1 text-xs font-semibold text-[#6b7280]">
-              {product.name.en}
+              {nameEn}
             </p>
           )}
         </Link>

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/payload";
 import { ProductDetailClient } from "./ProductDetailClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 function productName(product: any): string {
   return product.nameAr ?? product.name?.ar ?? product.nameEn ?? product.name?.en ?? "";

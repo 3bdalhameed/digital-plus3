@@ -23,7 +23,7 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   return (
     <div>
-      <h1 className="mb-8 text-2xl font-black text-brand-800">المنتجات</h1>
+      <h1 className="mb-4 text-2xl font-black text-brand-800">المنتجات</h1>
 
       {/* Category Filter */}
       <div className="mb-8 flex flex-wrap gap-2">

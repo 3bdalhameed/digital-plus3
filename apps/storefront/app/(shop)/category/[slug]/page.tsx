@@ -17,7 +17,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-black text-brand-800">
+      <h1 className="mb-1 text-xl font-black text-brand-800">
         {(category as any).nameAr || category.name?.ar}
       </h1>
       {category.description && (
