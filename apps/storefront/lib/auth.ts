@@ -9,15 +9,15 @@ const prisma = new PrismaClient();
 
 async function syncPayloadCustomer(email: string, name: string): Promise<string | null> {
   try {
-    const cmsUrl = process.env.PAYLOAD_CMS_URL || "http://localhost:3001";
+    const apiUrl = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
     const existing = await fetch(
-      `${cmsUrl}/api/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
+      `${apiUrl}/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
       { cache: "no-store" }
     );
     const existingData = await existing.json();
     if (existingData?.docs?.[0]?.id) return existingData.docs[0].id;
 
-    const created = await fetch(`${cmsUrl}/api/customers`, {
+    const created = await fetch(`${apiUrl}/customers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, name: name || email }),

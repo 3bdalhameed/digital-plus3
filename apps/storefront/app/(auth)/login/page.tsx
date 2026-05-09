@@ -31,13 +31,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient">
-          <span className="text-2xl font-black text-white">م</span>
-        </div>
+    <div className="w-full">
+      <div className="mb-6 text-center">
         <h1 className="text-2xl font-black text-brand-800">تسجيل الدخول</h1>
-        <p className="mt-2 text-sm text-gray-500">مرحباً بعودتك</p>
+        <p className="mt-1 text-sm text-gray-500">مرحباً بعودتك</p>
       </div>
 
       <div className="brand-card">

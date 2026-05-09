@@ -36,9 +36,18 @@ export async function POST(req: NextRequest) {
 
     // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
-    });
+    let user: any;
+    try {
+      user = await prisma.user.create({
+        data: { name, email, password: hashedPassword },
+      });
+    } catch (dbErr: any) {
+      console.error("DB error:", dbErr?.message);
+      if (dbErr?.message?.includes("does not exist") || dbErr?.code === "P1001") {
+        return NextResponse.json({ error: "قاعدة البيانات غير مهيأة. يرجى التواصل مع الدعم." }, { status: 503 });
+      }
+      throw dbErr;
+    }
 
     // Also create a matching customer record in Payload CMS
     try {
