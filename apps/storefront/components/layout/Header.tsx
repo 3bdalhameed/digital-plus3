@@ -140,7 +140,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
             <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
               {logoUrl ? (
-                <div className="relative h-16 w-32 shrink-0 overflow-hidden rounded-full sm:h-20 sm:w-30">
+                <div className="relative h-20 w-40 shrink-0 overflow-hidden rounded-full sm:h-24 sm:w-48">
                   <Image src={logoUrl} alt={storeName} fill className="object-contain" />
                 </div>
               ) : (
