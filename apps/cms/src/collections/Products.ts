@@ -233,7 +233,6 @@ export const Products: CollectionConfig = {
       type: "relationship",
       relationTo: "products",
       hasMany: true,
-      admin: { initCollapsed: true },
     },
     {
       name: "totalSales",
