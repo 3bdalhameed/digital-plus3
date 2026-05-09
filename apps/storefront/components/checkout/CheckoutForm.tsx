@@ -33,7 +33,7 @@ export function CheckoutForm() {
           acceptedAt: new Date().toISOString(),
           cartItems: items.map((i) => ({
             productId: i.product.id,
-            name: i.product.name.ar,
+            name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
             quantity: i.quantity,
             price: i.product.price,
           })),
@@ -65,7 +65,7 @@ export function CheckoutForm() {
           customerId: session.user.id,
           items: items.map((i) => ({
             productId: i.product.id,
-            name: i.product.name.ar,
+            name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
             quantity: i.quantity,
             unitPrice: i.product.price,
           })),
@@ -171,7 +171,7 @@ export function CheckoutForm() {
               >
                 <div>
                   <p className="text-sm font-bold text-brand-800">
-                    {item.product.name.ar}
+                    {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                   </p>
                   <p className="text-xs text-gray-500">
                     الكمية: {item.quantity}
