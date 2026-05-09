@@ -3,8 +3,31 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+async function syncPayloadCustomer(email: string, name: string): Promise<string | null> {
+  try {
+    const cmsUrl = process.env.PAYLOAD_CMS_URL || "http://localhost:3001";
+    const existing = await fetch(
+      `${cmsUrl}/api/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
+      { cache: "no-store" }
+    );
+    const existingData = await existing.json();
+    if (existingData?.docs?.[0]?.id) return existingData.docs[0].id;
+
+    const created = await fetch(`${cmsUrl}/api/customers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name: name || email }),
+    });
+    const createdData = await created.json();
+    return createdData?.doc?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const {
   handlers: { GET, POST },
@@ -38,8 +61,6 @@ export const {
 
         if (!user || !user.password) return null;
 
-        // In production, use bcrypt to compare
-        const bcrypt = require("bcryptjs");
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.password
@@ -47,24 +68,38 @@ export const {
 
         if (!isValid) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google" && user.email) {
+        const prismaUser = await prisma.user.findUnique({ where: { email: user.email } });
+        if (prismaUser && !prismaUser.payloadCustomerId) {
+          const payloadId = await syncPayloadCustomer(user.email, user.name ?? "");
+          if (payloadId) {
+            await prisma.user.update({
+              where: { id: prismaUser.id },
+              data: { payloadCustomerId: payloadId },
+            });
+          }
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+        token.payloadCustomerId = dbUser?.payloadCustomerId ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        (session.user as any).payloadCustomerId = token.payloadCustomerId;
       }
       return session;
     },
