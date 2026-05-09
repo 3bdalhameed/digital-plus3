@@ -50,7 +50,7 @@ export default buildConfig({
   editor: lexicalEditor({}),
 
   db: postgresAdapter({
-    push: false,
+    push: true,
     pool: {
       connectionString:
         process.env.DATABASE_URI ||
