@@ -18,17 +18,32 @@ export function ProductDetailClient({ product, productName }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const [tab, setTab] = useState<"desc" | "reviews">("desc");
   const [qty, setQty] = useState(1);
-  const [phone, setPhone] = useState("");
-  const [agreement, setAgreement] = useState("");
-  const [source, setSource] = useState("");
+  const [deliveryInfo, setDeliveryInfo] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
 
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
-  const purchaseCount = product.purchaseCount ?? 544;
+  const purchaseCount = product.totalSales ?? product.purchaseCount ?? 0;
   const rating = product.rating ?? 5;
   const reviewCount = product.reviewCount ?? 4;
+  const deliveryFields: any[] = product.deliveryFields || [];
+  const relatedProducts: any[] = product.relatedProducts || [];
 
   const handleAdd = () => {
-    for (let i = 0; i < qty; i++) addItem(product as Product);
+    const errors: string[] = [];
+    for (let idx = 0; idx < deliveryFields.length; idx++) {
+      const field = deliveryFields[idx];
+      const key = field.id || String(idx);
+      if (field.required && !deliveryInfo[key]?.trim()) {
+        errors.push(key);
+      }
+    }
+    if (errors.length > 0) {
+      setFieldErrors(errors);
+      document.getElementById("delivery-fields")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setFieldErrors([]);
+    for (let i = 0; i < qty; i++) addItem(product as Product, deliveryInfo);
   };
 
   return (
@@ -50,7 +65,7 @@ export function ProductDetailClient({ product, productName }: Props) {
 
       <div className="grid gap-8 lg:grid-cols-2">
 
-        {/* Info column — first so it lands on the right in RTL */}
+        {/* Info column */}
         <div className="order-2 space-y-5 lg:order-1">
 
           {/* Title + actions */}
@@ -118,55 +133,52 @@ export function ProductDetailClient({ product, productName }: Props) {
             </span>
           </div>
 
-          {/* WhatsApp phone */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
-              رقم الواتساب لتسليم طلبك والتواصل <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+9665XXXXXXXX"
-              className="w-full rounded-xl border border-[#e8e4f8] bg-white px-4 py-3 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe]"
-              required
-            />
-          </div>
+          {/* Dynamic Delivery Fields */}
+          {deliveryFields.length > 0 && (
+            <div id="delivery-fields" className="space-y-4">
+              {deliveryFields.map((field: any, idx: number) => {
+                const key = field.id || String(idx);
+                const hasError = fieldErrors.includes(key);
+                const inputClass = `w-full rounded-xl border px-4 py-3 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe] bg-white ${hasError ? "border-red-400" : "border-[#e8e4f8]"}`;
 
-          {/* Agreement */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
-              الموافقة على وصف المنتج ✅ <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={agreement}
-              onChange={(e) => setAgreement(e.target.value)}
-              required
-              className="w-full rounded-xl border border-[#e8e4f8] bg-white px-4 py-3 text-sm text-[#1e1b4b] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe]"
-            >
-              <option value="">-- الرجاء التحديد --</option>
-              <option value="agree">أوافق على وصف المنتج</option>
-            </select>
-          </div>
-
-          {/* Source */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
-              كيف تعرفت علينا؟ (اختياري)
-            </label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              className="w-full rounded-xl border border-[#e8e4f8] bg-white px-4 py-3 text-sm text-[#1e1b4b] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe]"
-            >
-              <option value="">صديق , جوجل , سوشل ميديا , اعلان , شات جي بي تي ؟</option>
-              <option value="friend">صديق</option>
-              <option value="google">جوجل</option>
-              <option value="social">سوشل ميديا</option>
-              <option value="ad">إعلان</option>
-              <option value="chatgpt">شات جي بي تي</option>
-            </select>
-          </div>
+                return (
+                  <div key={key}>
+                    <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
+                      {field.labelAr}
+                      {field.required && <span className="text-red-500"> *</span>}
+                    </label>
+                    {field.helpText && (
+                      <p className="mb-1 text-xs text-[#6b7280]">{field.helpText}</p>
+                    )}
+                    {field.fieldType === "select" ? (
+                      <select
+                        value={deliveryInfo[key] || ""}
+                        onChange={(e) => setDeliveryInfo((prev) => ({ ...prev, [key]: e.target.value }))}
+                        className={inputClass}
+                      >
+                        <option value="">-- الرجاء التحديد --</option>
+                        {(field.selectOptions || "").split(",").map((opt: string) => opt.trim()).filter(Boolean).map((opt: string) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.fieldType === "tel" ? "tel" : field.fieldType === "email" ? "email" : "text"}
+                        value={deliveryInfo[key] || ""}
+                        onChange={(e) => setDeliveryInfo((prev) => ({ ...prev, [key]: e.target.value }))}
+                        placeholder={field.placeholder || ""}
+                        className={inputClass}
+                        dir={field.fieldType === "tel" || field.fieldType === "email" ? "ltr" : undefined}
+                      />
+                    )}
+                    {hasError && (
+                      <p className="mt-1 text-xs text-red-500">هذا الحقل مطلوب</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Payment methods */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white">
@@ -277,6 +289,41 @@ export function ProductDetailClient({ product, productName }: Props) {
           </div>
         )}
       </div>
+
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-5 text-center text-lg font-black text-[#1e1b4b]">منتجات مشابهة</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {relatedProducts.map((related: any) => (
+              <Link
+                key={related.id}
+                href={`/products/${related.slug}`}
+                className="group rounded-2xl border border-[#e8e4f8] bg-white p-4 transition-all hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-[#f5f3ff]">
+                  {related.images?.[0]?.image?.url ? (
+                    <Image
+                      src={related.images[0].image.url}
+                      alt={related.nameAr || ""}
+                      fill
+                      className="object-contain p-3"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-4xl">📦</div>
+                  )}
+                </div>
+                <p className="line-clamp-2 text-sm font-bold text-[#1e1b4b] group-hover:text-[#7C3AED]">
+                  {related.nameAr || related.name?.ar || ""}
+                </p>
+                <p className="mt-1 text-sm font-extrabold text-[#7C3AED]">
+                  {formatPrice(related.price, related.currency)}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e8e4f8] bg-gradient-to-r from-[#7C3AED]/95 to-[#9333EA]/95 backdrop-blur">

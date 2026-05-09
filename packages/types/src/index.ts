@@ -24,6 +24,17 @@ export interface LocalizedString {
   en: string;
 }
 
+export interface DeliveryField {
+  id: string;
+  labelAr: string;
+  labelEn?: string;
+  fieldType: "text" | "email" | "tel" | "username" | "select";
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  selectOptions?: string;
+}
+
 export interface Product {
   id: string;
   name: LocalizedString;
@@ -41,6 +52,9 @@ export interface Product {
   refundable: boolean;
   refundPolicy?: string;
   usageProofType: UsageProofType;
+  deliveryFields?: DeliveryField[];
+  relatedProducts?: Product[];
+  totalSales?: number;
   seoTitle?: string;
   seoDescription?: string;
   seoImage?: Media;
@@ -440,11 +454,12 @@ export interface UsageConfirmPayload {
 export interface CartItem {
   product: Product;
   quantity: number;
+  deliveryInfo?: Record<string, string>;
 }
 
 export interface CartState {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: Product, deliveryInfo?: Record<string, string>) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;

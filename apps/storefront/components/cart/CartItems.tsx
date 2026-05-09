@@ -61,6 +61,20 @@ export function CartItems() {
               <p className="mt-1 text-sm font-semibold text-brand-600">
                 {formatPrice(item.product.price, item.product.currency)}
               </p>
+              {item.deliveryInfo && (item.product as any).deliveryFields?.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {((item.product as any).deliveryFields as any[]).map((field: any, idx: number) => {
+                    const key = field.id || String(idx);
+                    const value = item.deliveryInfo?.[key];
+                    if (!value) return null;
+                    return (
+                      <p key={key} className="text-xs text-gray-500">
+                        <span className="font-medium text-brand-700">{field.labelAr}:</span> {value}
+                      </p>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Quantity */}

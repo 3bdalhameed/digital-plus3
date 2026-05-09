@@ -19,6 +19,32 @@ export const Orders: CollectionConfig = {
         return data;
       },
     ],
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        const isPaid = doc.status === "paid";
+        const wasPaid = previousDoc?.status === "paid";
+        if (!isPaid || wasPaid) return;
+
+        for (const item of doc.items || []) {
+          const productId =
+            typeof item.product === "string" ? item.product : item.product?.id;
+          if (!productId) continue;
+          try {
+            const product = await req.payload.findByID({
+              collection: "products",
+              id: productId,
+            });
+            await req.payload.update({
+              collection: "products",
+              id: productId,
+              data: { totalSales: (product.totalSales || 0) + (item.quantity || 1) },
+            });
+          } catch (e) {
+            console.error("Failed to increment totalSales for product", productId, e);
+          }
+        }
+      },
+    ],
   },
   fields: [
     {
@@ -63,6 +89,14 @@ export const Orders: CollectionConfig = {
           name: "totalPrice",
           type: "number",
           required: true,
+        },
+        {
+          name: "deliveryInfo",
+          label: "معلومات التسليم",
+          type: "json",
+          admin: {
+            description: "البيانات التي أدخلها العميل (واتساب، إيميل، اسم مستخدم...)",
+          },
         },
       ],
     },

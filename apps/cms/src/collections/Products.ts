@@ -180,6 +180,73 @@ export const Products: CollectionConfig = {
       ],
     },
     {
+      name: "deliveryFields",
+      label: "حقول التسليم",
+      type: "array",
+      admin: {
+        description: "الحقول التي يملؤها العميل عند الشراء (واتساب، إيميل، اسم مستخدم...)",
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "labelAr", label: "التسمية (عربي)", type: "text", required: true },
+            { name: "labelEn", label: "Label (English)", type: "text" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            {
+              name: "fieldType",
+              label: "النوع",
+              type: "select",
+              required: true,
+              defaultValue: "text",
+              options: [
+                { label: "نص عادي", value: "text" },
+                { label: "بريد إلكتروني", value: "email" },
+                { label: "رقم هاتف / واتساب", value: "tel" },
+                { label: "اسم مستخدم", value: "username" },
+                { label: "قائمة اختيار", value: "select" },
+              ],
+            },
+            { name: "required", label: "مطلوب", type: "checkbox", defaultValue: true },
+          ],
+        },
+        { name: "placeholder", label: "نص توضيحي", type: "text" },
+        { name: "helpText", label: "نص المساعدة", type: "text" },
+        {
+          name: "selectOptions",
+          label: "خيارات القائمة (مفصولة بفاصلة)",
+          type: "text",
+          admin: {
+            condition: (_: any, siblingData: any) => siblingData?.fieldType === "select",
+          },
+        },
+      ],
+    },
+    {
+      name: "relatedProducts",
+      label: "منتجات مشابهة",
+      type: "relationship",
+      relationTo: "products",
+      hasMany: true,
+      admin: { initCollapsed: true },
+    },
+    {
+      name: "totalSales",
+      label: "عدد المبيعات",
+      type: "number",
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+        position: "sidebar",
+        description: "يزداد تلقائياً عند كل عملية شراء",
+      },
+    },
+    {
       type: "collapsible",
       label: "SEO",
       admin: {
