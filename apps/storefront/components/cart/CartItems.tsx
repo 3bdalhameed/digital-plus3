@@ -39,7 +39,7 @@ export function CartItems() {
               {imageUrl ? (
                 <Image
                   src={imageUrl}
-                  alt={item.product.name.ar}
+                  alt={(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                   fill
                   className="object-contain p-2"
                 />
@@ -56,7 +56,7 @@ export function CartItems() {
                 href={`/products/${item.product.slug}`}
                 className="text-sm font-bold text-brand-800 hover:text-brand-500"
               >
-                {item.product.name.ar}
+                {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
               </Link>
               <p className="mt-1 text-sm font-semibold text-brand-600">
                 {formatPrice(item.product.price, item.product.currency)}
