@@ -3,9 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Loader2, Mail, Lock } from "lucide-react";
 
 export default function LoginPage() {
+  const params = useSearchParams();
+  const justRegistered = params.get("registered") === "true";
+  const justVerified = params.get("verified") === "true";
+  const linkExpired = params.get("error") === "link-expired";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,6 +43,15 @@ export default function LoginPage() {
       </div>
 
       <div className="brand-card">
+        {justVerified && (
+          <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن</div>
+        )}
+        {justRegistered && !justVerified && (
+          <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك</div>
+        )}
+        {linkExpired && (
+          <div className="mb-4 rounded-xl bg-orange-50 p-3 text-sm text-orange-700">⚠️ انتهت صلاحية رابط التحقق. سجّل الدخول وسنرسل لك رابطاً جديداً</div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>

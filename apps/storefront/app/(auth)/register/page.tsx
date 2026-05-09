@@ -28,7 +28,7 @@ export default function RegisterPage() {
         throw new Error(data.error || "فشل إنشاء الحساب");
       }
 
-      router.push("/login?registered=true");
+      router.push("/login?registered=true&verify=true");
     } catch (err: any) {
       setError(err.message);
     } finally {

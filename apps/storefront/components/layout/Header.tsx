@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown } from "lucide-react";
+import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown, LogOut } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useSession, signOut } from "next-auth/react";
 import type { SiteSettings, NavbarConfig, NavLink } from "@my-store/types";
 
 const DEFAULT_NAV: NavLink[] = [
@@ -28,6 +29,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const totalItems = useCartStore((s) => s.totalItems());
 
+  const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
   const logoUrl = settings?.logo?.url;
   const navLinks = navbarConfig?.links?.length ? navbarConfig.links : DEFAULT_NAV;
@@ -117,14 +119,23 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             <ShoppingCart className="h-4 w-4" />
             السلة
           </Link>
-          <Link
-            href="/account"
-            onClick={() => setDrawerOpen(false)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white"
-          >
-            <User className="h-4 w-4" />
-            تسجيل الدخول
-          </Link>
+          {session?.user ? (
+            <>
+              <Link href="/account" onClick={() => setDrawerOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white">
+                <User className="h-4 w-4" />
+                {session.user.name?.split(" ")[0] ?? "حسابي"}
+              </Link>
+              <button onClick={() => signOut({ callbackUrl: "/" })} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600">
+                <LogOut className="h-4 w-4" />
+                تسجيل الخروج
+              </button>
+            </>
+          ) : (
+            <Link href="/login" onClick={() => setDrawerOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white">
+              <User className="h-4 w-4" />
+              تسجيل الدخول
+            </Link>
+          )}
         </div>
       </div>
 
@@ -186,13 +197,22 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 <Menu className="h-6 w-6" />
               </button>
 
-              {/* Login button — desktop only */}
-              <Link
-                href="/account"
-                className="hidden items-center gap-1.5 rounded-xl border-2 border-white/80 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/10 sm:flex"
-              >
-                تسجيل الدخول
-              </Link>
+              {/* Auth — desktop only */}
+              {session?.user ? (
+                <div className="hidden items-center gap-1.5 sm:flex">
+                  <Link href="/account" className="flex items-center gap-1.5 rounded-xl border-2 border-white/80 px-3 py-1.5 text-sm font-bold text-white transition hover:bg-white/10">
+                    <User className="h-4 w-4" />
+                    {session.user.name?.split(" ")[0] ?? "حسابي"}
+                  </Link>
+                  <button onClick={() => signOut({ callbackUrl: "/" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label="تسجيل الخروج">
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link href="/login" className="hidden items-center gap-1.5 rounded-xl border-2 border-white/80 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/10 sm:flex">
+                  تسجيل الدخول
+                </Link>
+              )}
 
               {/* Wishlist */}
               <button
