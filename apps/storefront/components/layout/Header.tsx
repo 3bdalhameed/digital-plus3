@@ -108,7 +108,15 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-full border-t border-gray-100 p-6">
+        <div className="absolute bottom-0 w-full border-t border-gray-100 p-6 flex flex-col gap-3">
+          <Link
+            href="/cart"
+            onClick={() => setDrawerOpen(false)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#7C3AED] py-3 text-sm font-bold text-[#7C3AED]"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            السلة
+          </Link>
           <Link
             href="/account"
             onClick={() => setDrawerOpen(false)}
@@ -149,7 +157,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             </Link>
 
             {/* Search — center, capped width */}
-            <form action="/products" method="get" className="relative mx-auto w-full max-w-xs sm:max-w-sm">
+            <form action="/products" method="get" className="relative mx-auto hidden w-full max-w-xs sm:block sm:max-w-sm">
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
@@ -188,7 +196,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
               {/* Wishlist */}
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
+                className="hidden h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10 sm:flex"
                 aria-label="المفضلة"
               >
                 <Heart className="h-5 w-5" strokeWidth={2} />
@@ -197,7 +205,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               {/* Cart */}
               <Link
                 href="/cart"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
+                className="relative hidden h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10 sm:flex"
                 aria-label="السلة"
               >
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} />
