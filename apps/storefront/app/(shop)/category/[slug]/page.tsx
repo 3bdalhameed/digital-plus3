@@ -12,7 +12,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   const [products, subcategories] = await Promise.all([
     getProducts({ category: params.slug }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false })),
-    getSubcategories(category.id).catch(() => []),
+    getSubcategories(params.slug).catch(() => []),
   ]);
 
   return (

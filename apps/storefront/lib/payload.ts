@@ -136,12 +136,11 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 // ---------------------
 
 export async function getSubcategories(
-  categoryId?: string
+  categorySlug?: string
 ): Promise<Subcategory[]> {
   const where: Record<string, any> = { isActive: { equals: true } };
-  if (categoryId) {
-    const numId = Number(categoryId);
-    where["category.id"] = { equals: isNaN(numId) ? categoryId : numId };
+  if (categorySlug) {
+    where["category.slug"] = { equals: categorySlug };
   }
 
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
