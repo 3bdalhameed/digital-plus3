@@ -135,7 +135,7 @@ function MultiImageBanner({ slides, autoplay }: any) {
   const slide = slides[current];
 
   return (
-    <section className="relative overflow-hidden rounded-3xl">
+    <section className="relative overflow-hidden rounded-3xl shadow-none">
       <div className="relative aspect-[16/6] w-full">
         {slide.image?.url && (
           <Image src={slide.image.url} alt={slide.title ?? ""} fill className="object-cover" />
