@@ -60,15 +60,16 @@ const widthClass: Record<string, string> = {
 };
 const paddingClass: Record<string, string> = {
   none: "py-0",
+  xs:   "py-2",
   sm:   "py-4",
-  md:   "py-8",
-  lg:   "py-14",
-  xl:   "py-24",
+  md:   "py-6",
+  lg:   "py-10",
+  xl:   "py-16",
 };
 
 function SectionWrapper({ section, children }: { section: any; children: React.ReactNode }) {
   const w = widthClass[section.width  ?? "xl"] ?? widthClass.xl;
-  const p = paddingClass[section.paddingY ?? "md"] ?? paddingClass.md;
+  const p = paddingClass[section.paddingY ?? "sm"] ?? paddingClass.sm;
   return <div className={`${w} ${p}`}>{children}</div>;
 }
 
