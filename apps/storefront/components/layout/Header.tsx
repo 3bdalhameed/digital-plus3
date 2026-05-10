@@ -150,8 +150,8 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
         </div>
 
         {/* ── Main header — purple gradient with bow-curved bottom ── */}
-        <div className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA]">
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5 sm:px-6 sm:py-4 lg:px-8">
+        <div className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA]" style={{ borderRadius: "0 0 50% 50% / 0 0 14px 14px" }}>
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 pb-5 sm:gap-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
 
             {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
             <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
