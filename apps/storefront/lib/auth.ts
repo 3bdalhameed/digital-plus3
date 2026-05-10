@@ -68,6 +68,8 @@ export const {
 
         if (!isValid) return null;
 
+        if (!user.emailVerified) return null;
+
         return { id: user.id, email: user.email, name: user.name };
       },
     }),

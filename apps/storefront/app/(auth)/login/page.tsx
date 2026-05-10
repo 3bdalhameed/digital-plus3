@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail, Lock, RefreshCw } from "lucide-react";
 
 function StatusNotices() {
   const params = useSearchParams();
@@ -16,7 +16,7 @@ function StatusNotices() {
     return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن</div>;
   }
   if (justRegistered) {
-    return <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك</div>;
+    return <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك قبل تسجيل الدخول</div>;
   }
   if (linkExpired) {
     return <div className="mb-4 rounded-xl bg-orange-50 p-3 text-sm text-orange-700">⚠️ انتهت صلاحية رابط التحقق. سجّل الدخول وسنرسل لك رابطاً جديداً</div>;
@@ -29,24 +29,54 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [unverified, setUnverified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setUnverified(false);
+    setResendSent(false);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
+    const check = await fetch("/api/auth/pre-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+    const { status } = await check.json();
 
+    if (status === "email_not_verified") {
+      setUnverified(true);
+      setLoading(false);
+      return;
+    }
+
+    if (status !== "ok") {
+      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      setLoading(false);
+      return;
+    }
+
+    const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
       setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       setLoading(false);
     } else {
       window.location.href = "/";
     }
+  };
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setResendLoading(false);
+    setResendSent(true);
   };
 
   return (
@@ -64,6 +94,30 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
+          )}
+
+          {unverified && (
+            <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-bold">📧 بريدك الإلكتروني غير مؤكد بعد</p>
+              <p className="mt-1 text-xs text-amber-700">
+                يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول. تحقق من صندوق الوارد والبريد المزعج.
+              </p>
+              {resendSent ? (
+                <p className="mt-2 text-xs font-bold text-green-700">✓ تم إرسال رابط تحقق جديد إلى بريدك</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  className="mt-2 flex items-center gap-1.5 text-xs font-bold text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
+                >
+                  {resendLoading
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <RefreshCw className="h-3 w-3" />}
+                  أعد إرسال رابط التحقق
+                </button>
+              )}
+            </div>
           )}
 
           <div>
