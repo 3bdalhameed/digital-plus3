@@ -154,12 +154,12 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
           className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA] shadow-lg"
           style={{ borderRadius: "0 0 50% 50% / 0 0 30px 30px" }}
         >
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 pb-8 sm:gap-5 sm:px-6 sm:py-4 sm:pb-10 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 pb-5 sm:gap-5 sm:px-6 sm:py-3 sm:pb-6 lg:px-8">
 
             {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
             <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
               {logoUrl ? (
-                <div className="relative h-20 w-40 shrink-0 overflow-hidden rounded-full sm:h-24 sm:w-48">
+                <div className="relative h-10 w-28 shrink-0 overflow-hidden sm:h-12 sm:w-32">
                   <Image src={logoUrl} alt={storeName} fill className="object-contain" />
                 </div>
               ) : (
