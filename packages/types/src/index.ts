@@ -68,6 +68,8 @@ export interface Product {
 
 export interface Category {
   id: string;
+  nameAr: string;
+  nameEn?: string;
   name: LocalizedString;
   slug: string;
   image?: Media;
@@ -80,9 +82,11 @@ export interface Category {
 
 export interface Subcategory {
   id: string;
-  name: LocalizedString;
+  nameAr: string;
+  nameEn?: string;
   slug: string;
-  category: Category;
+  category: Category | string;
+  icon?: Media;
   position: number;
   isActive: boolean;
 }

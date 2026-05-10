@@ -139,7 +139,10 @@ export async function getSubcategories(
   categoryId?: string
 ): Promise<Subcategory[]> {
   const where: Record<string, any> = { isActive: { equals: true } };
-  if (categoryId) where.category = { equals: categoryId };
+  if (categoryId) {
+    const numId = Number(categoryId);
+    where["category.id"] = { equals: isNaN(numId) ? categoryId : numId };
+  }
 
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
     params: {
