@@ -140,7 +140,6 @@ function MultiImageBanner({ slides, autoplay }: any) {
         {slide.image?.url && (
           <Image src={slide.image.url} alt={slide.title ?? ""} fill className="object-cover" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-l from-black/60 to-transparent" />
         <div className="absolute inset-0 flex flex-col items-end justify-center p-8 text-right text-white md:p-16">
           {slide.title && <h2 className="text-2xl font-black md:text-4xl">{slide.title}</h2>}
           {slide.subtitle && <p className="mt-2 text-sm text-white/80 md:text-base">{slide.subtitle}</p>}
