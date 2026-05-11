@@ -10,8 +10,12 @@ export default async function CategoryPage({ params }: { params: { slug: string 
   const category = await getCategoryBySlug(params.slug).catch(() => null);
   if (!category) notFound();
 
+  const categoryId = Number(category.id);
   const [products, subcategories] = await Promise.all([
-    getProducts({ category: params.slug }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false })),
+    getProducts({
+      category: params.slug,
+      ...(isNaN(categoryId) ? {} : { categoryId }),
+    }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false })),
     getSubcategories(params.slug).catch(() => []),
   ]);
 

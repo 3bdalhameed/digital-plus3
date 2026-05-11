@@ -62,15 +62,23 @@ interface PayloadDocs<T> {
 
 export async function getProducts(params?: {
   category?: string;
+  categoryId?: number;
   subcategory?: string;
+  subcategoryId?: number;
   type?: string;
   page?: number;
   limit?: number;
 }): Promise<PayloadDocs<Product>> {
   const where: Record<string, any> = { status: { equals: "published" } };
 
-  if (params?.category) where["category.slug"] = { equals: params.category };
-  if (params?.subcategory) where["subcategory.slug"] = { equals: params.subcategory };
+  // Use numeric IDs when available — dot-notation slug filtering is unreliable
+  // with Payload v2 PostgreSQL REST API
+  if (params?.categoryId) where["category"] = { equals: params.categoryId };
+  else if (params?.category) where["category.slug"] = { equals: params.category };
+
+  if (params?.subcategoryId) where["subcategory"] = { equals: params.subcategoryId };
+  else if (params?.subcategory) where["subcategory.slug"] = { equals: params.subcategory };
+
   if (params?.type) where.type = { equals: params.type };
 
   return payloadFetch("/products", {

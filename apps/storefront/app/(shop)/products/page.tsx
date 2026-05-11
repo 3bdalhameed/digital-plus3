@@ -11,15 +11,18 @@ interface Props {
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
-  const [productsData, categories] = await Promise.all([
-    getProducts({
-      category: searchParams.category,
-      subcategory: searchParams.subcategory,
-      type: searchParams.type,
-      page: searchParams.page ? parseInt(searchParams.page) : 1,
-    }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false })),
-    getCategories().catch(() => []),
-  ]);
+  const categories = await getCategories().catch(() => []);
+
+  const matchedCat = categories.find((c: any) => c.slug === searchParams.category);
+  const categoryId = matchedCat ? Number((matchedCat as any).id) : undefined;
+
+  const productsData = await getProducts({
+    category: searchParams.category,
+    ...(categoryId && !isNaN(categoryId) ? { categoryId } : {}),
+    subcategory: searchParams.subcategory,
+    type: searchParams.type,
+    page: searchParams.page ? parseInt(searchParams.page) : 1,
+  }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false }));
 
   return (
     <div>
