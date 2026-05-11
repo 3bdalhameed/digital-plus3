@@ -138,20 +138,24 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 export async function getSubcategories(
   categorySlug?: string
 ): Promise<Subcategory[]> {
-  const where: Record<string, any> = { isActive: { equals: true } };
-  if (categorySlug) {
-    where["category.slug"] = { equals: categorySlug };
-  }
-
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
     params: {
-      where: JSON.stringify(where),
+      where: JSON.stringify({ isActive: { equals: true } }),
       sort: "position",
       depth: "1",
-      limit: "100",
+      limit: "500",
     },
   });
-  return data.docs;
+
+  if (!categorySlug) return data.docs;
+
+  // Filter client-side since Payload v2 REST API doesn't reliably support
+  // relationship field filtering by nested slug in JSON where format
+  return data.docs.filter((sub: any) => {
+    const cat = sub.category;
+    if (!cat) return false;
+    return typeof cat === "object" ? cat.slug === categorySlug : false;
+  });
 }
 
 // ---------------------
