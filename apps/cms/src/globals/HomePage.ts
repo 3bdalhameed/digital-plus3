@@ -28,11 +28,11 @@ const layoutFields: Field[] = [
         defaultValue: "sm",
         options: [
           { label: "بلا مسافة — 0px",   value: "none" },
-          { label: "ضيقة جداً — 8px",   value: "xs"   },
           { label: "ضيقة — 16px",       value: "sm"   },
           { label: "متوسطة — 24px",     value: "md"   },
           { label: "كبيرة — 40px",      value: "lg"   },
           { label: "كبيرة جداً — 64px", value: "xl"   },
+          { label: "ضيقة جداً — 8px",   value: "xs"   },
         ],
       },
     ],
@@ -165,10 +165,10 @@ export const HomePage: GlobalConfig = {
             {
               name: "cardWidth", label: "عرض البطاقة", type: "select", defaultValue: "md",
               options: [
-                { label: "صغير جداً — 120px",  value: "xs" },
                 { label: "ضيق  — 160px",        value: "sm" },
                 { label: "متوسط — 220px",       value: "md" },
                 { label: "واسع  — 280px",       value: "lg" },
+                { label: "صغير جداً — 120px",  value: "xs" },
                 { label: "واسع جداً — 360px",   value: "xl" },
               ],
             },

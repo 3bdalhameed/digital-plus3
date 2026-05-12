@@ -27,10 +27,10 @@ export const Users: CollectionConfig = {
       options: [
         { label: "🔑 مدير عام  (كل الصلاحيات + إدارة المستخدمين)", value: "super_admin" },
         { label: "⚙️  مدير  (كل الصلاحيات)", value: "admin" },
-        { label: "📦 مدير الكتالوج  (منتجات + تصنيفات + صور)", value: "catalog" },
-        { label: "🛒 مدير الطلبات  (طلبات + عملاء)", value: "orders" },
         { label: "🎧 دعم فني  (تذاكر + عرض الطلبات)", value: "support" },
         { label: "👁️  مشاهد  (قراءة فقط)", value: "viewer" },
+        { label: "📦 مدير الكتالوج  (منتجات + تصنيفات + صور)", value: "catalog" },
+        { label: "🛒 مدير الطلبات  (طلبات + عملاء)", value: "orders" },
       ],
       admin: { position: "sidebar" },
     },

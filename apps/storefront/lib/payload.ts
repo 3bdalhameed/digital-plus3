@@ -1,4 +1,5 @@
 import { draftMode } from "next/headers";
+import { PrismaClient } from "@prisma/client";
 import type {
   Product,
   Category,
@@ -13,6 +14,12 @@ import type {
 
 const PAYLOAD_API_URL =
   process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
+
+const globalForPrisma = global as unknown as { __payloadPrisma: PrismaClient };
+const prisma =
+  globalForPrisma.__payloadPrisma || new PrismaClient();
+if (process.env.NODE_ENV !== "production")
+  globalForPrisma.__payloadPrisma = prisma;
 
 // ---------------------
 // Generic fetch helper
@@ -69,13 +76,14 @@ export async function getProducts(params?: {
   page?: number;
   limit?: number;
 }): Promise<PayloadDocs<Product>> {
+  // When filtering by category or subcategory, use direct DB query to get IDs
+  // because Payload v2 REST API silently ignores WHERE on relationship/denormalized fields
+  // until the CMS redeploys with the updated schema.
+  if (params?.category || params?.subcategory) {
+    return getProductsFiltered(params);
+  }
+
   const where: Record<string, any> = { status: { equals: "published" } };
-
-  // Filter by denormalized slug columns (set by CMS beforeChange hook)
-  // This avoids unreliable rels-table JOIN filtering in Payload v2 REST API
-  if (params?.category) where["categorySlug"] = { equals: params.category };
-  if (params?.subcategory) where["subcategorySlug"] = { equals: params.subcategory };
-
   if (params?.type) where.type = { equals: params.type };
 
   return payloadFetch("/products", {
@@ -87,6 +95,97 @@ export async function getProducts(params?: {
       sort: "-createdAt",
     },
   });
+}
+
+async function getProductsFiltered(params: {
+  category?: string;
+  subcategory?: string;
+  type?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PayloadDocs<Product>> {
+  const page = params.page || 1;
+  const limitNum = params.limit || 12;
+  const offset = (page - 1) * limitNum;
+
+  type IdRow = { id: number | bigint };
+  type CountRow = { count: bigint };
+
+  const cat = params.category ?? null;
+  const sub = params.subcategory ?? null;
+
+  let idRows: IdRow[];
+  let countRows: CountRow[];
+
+  if (cat && sub) {
+    [idRows, countRows] = await Promise.all([
+      prisma.$queryRaw<IdRow[]>`
+        SELECT id FROM products
+        WHERE status = 'published'
+          AND category_slug = ${cat}
+          AND subcategory_slug = ${sub}
+        ORDER BY created_at DESC
+        LIMIT ${limitNum} OFFSET ${offset}`,
+      prisma.$queryRaw<CountRow[]>`
+        SELECT COUNT(*) AS count FROM products
+        WHERE status = 'published'
+          AND category_slug = ${cat}
+          AND subcategory_slug = ${sub}`,
+    ]);
+  } else if (cat) {
+    [idRows, countRows] = await Promise.all([
+      prisma.$queryRaw<IdRow[]>`
+        SELECT id FROM products
+        WHERE status = 'published'
+          AND category_slug = ${cat}
+        ORDER BY created_at DESC
+        LIMIT ${limitNum} OFFSET ${offset}`,
+      prisma.$queryRaw<CountRow[]>`
+        SELECT COUNT(*) AS count FROM products
+        WHERE status = 'published'
+          AND category_slug = ${cat}`,
+    ]);
+  } else {
+    [idRows, countRows] = await Promise.all([
+      prisma.$queryRaw<IdRow[]>`
+        SELECT id FROM products
+        WHERE status = 'published'
+          AND subcategory_slug = ${sub}
+        ORDER BY created_at DESC
+        LIMIT ${limitNum} OFFSET ${offset}`,
+      prisma.$queryRaw<CountRow[]>`
+        SELECT COUNT(*) AS count FROM products
+        WHERE status = 'published'
+          AND subcategory_slug = ${sub}`,
+    ]);
+  }
+
+  const totalDocs = Number(countRows[0]?.count ?? 0);
+  const totalPages = Math.ceil(totalDocs / limitNum) || 0;
+
+  if (idRows.length === 0) {
+    return { docs: [], totalDocs, totalPages, page, hasNextPage: false, hasPrevPage: page > 1 };
+  }
+
+  // Fetch full product data from Payload using the filtered IDs
+  const orWhere = idRows.map((r) => ({ id: { equals: String(Number(r.id)) } }));
+  const data = await payloadFetch<PayloadDocs<Product>>("/products", {
+    params: {
+      where: JSON.stringify({ or: orWhere }),
+      depth: "2",
+      limit: String(idRows.length),
+      sort: "-createdAt",
+    },
+  });
+
+  return {
+    ...data,
+    totalDocs,
+    totalPages,
+    page,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
 }
 
 export async function getProductBySlug(
