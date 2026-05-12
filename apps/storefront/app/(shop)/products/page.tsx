@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getProducts, getCategories, getSubcategories } from "@/lib/payload";
+import { getProducts, getCategories, getSubcategoryBySlug } from "@/lib/payload";
 import { ProductCard } from "@/components/product/ProductCard";
 import Link from "next/link";
 
@@ -7,19 +7,29 @@ export const metadata = { title: "المنتجات" };
 export const revalidate = 60;
 
 interface Props {
-  searchParams: { category?: string; subcategory?: string; type?: string; page?: string };
+  searchParams: { category?: string; subcategory?: string; subcategoryId?: string; type?: string; page?: string };
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
-  const categories = await getCategories().catch(() => []);
+  const [categories, subcategoryData] = await Promise.all([
+    getCategories().catch(() => []),
+    searchParams.subcategory
+      ? getSubcategoryBySlug(searchParams.subcategory).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   const matchedCat = categories.find((c: any) => c.slug === searchParams.category);
   const categoryId = matchedCat ? Number((matchedCat as any).id) : undefined;
+  // Prefer URL-encoded subcategoryId (faster, no extra API call needed)
+  const subcategoryId = searchParams.subcategoryId
+    ? Number(searchParams.subcategoryId)
+    : subcategoryData ? Number((subcategoryData as any).id) : undefined;
 
   const productsData = await getProducts({
     category: searchParams.category,
     ...(categoryId && !isNaN(categoryId) ? { categoryId } : {}),
     subcategory: searchParams.subcategory,
+    ...(subcategoryId && !isNaN(subcategoryId) ? { subcategoryId } : {}),
     type: searchParams.type,
     page: searchParams.page ? parseInt(searchParams.page) : 1,
   }).catch(() => ({ docs: [], totalPages: 0, page: 1, totalDocs: 0, hasNextPage: false, hasPrevPage: false }));

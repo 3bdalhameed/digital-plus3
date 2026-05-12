@@ -166,6 +166,17 @@ export async function getSubcategories(
   });
 }
 
+export async function getSubcategoryBySlug(slug: string): Promise<Subcategory | null> {
+  const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
+    params: {
+      where: JSON.stringify({ slug: { equals: slug } }),
+      depth: "0",
+      limit: "1",
+    },
+  });
+  return data.docs[0] || null;
+}
+
 // ---------------------
 // Orders
 // ---------------------
