@@ -3,6 +3,37 @@ import { catalogAccess, hiddenUnless } from "../access";
 
 export const Products: CollectionConfig = {
   slug: "products",
+  hooks: {
+    beforeChange: [
+      async ({ data, req }) => {
+        if (data.category !== undefined) {
+          try {
+            const catId = typeof data.category === "object" && data.category !== null
+              ? data.category.id : data.category;
+            if (catId) {
+              const cat = await req.payload.findByID({ collection: "categories", id: catId });
+              data.categorySlug = (cat as any)?.slug || null;
+            } else {
+              data.categorySlug = null;
+            }
+          } catch {}
+        }
+        if (data.subcategory !== undefined) {
+          try {
+            const subId = typeof data.subcategory === "object" && data.subcategory !== null
+              ? data.subcategory.id : data.subcategory;
+            if (subId) {
+              const sub = await req.payload.findByID({ collection: "subcategories", id: subId });
+              data.subcategorySlug = (sub as any)?.slug || null;
+            } else {
+              data.subcategorySlug = null;
+            }
+          } catch {}
+        }
+        return data;
+      },
+    ],
+  },
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "nameEn", "type", "price", "status", "totalSales", "updatedAt"],
@@ -203,6 +234,8 @@ export const Products: CollectionConfig = {
         description: 'مصفوفة JSON للحقول | JSON array of fields. Example: [{"labelAr":"رقم واتساب","labelEn":"WhatsApp Number","fieldType":"tel","required":true,"placeholder":"+966..."}] — fieldType: text | email | tel | username | select',
       },
     },
+    { name: "categorySlug", type: "text", admin: { hidden: true } },
+    { name: "subcategorySlug", type: "text", admin: { hidden: true } },
     {
       name: "relatedProducts",
       label: "منتجات مشابهة | Related Products",

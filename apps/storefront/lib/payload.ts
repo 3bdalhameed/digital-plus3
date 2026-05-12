@@ -71,13 +71,10 @@ export async function getProducts(params?: {
 }): Promise<PayloadDocs<Product>> {
   const where: Record<string, any> = { status: { equals: "published" } };
 
-  // Use numeric IDs when available — dot-notation slug filtering is unreliable
-  // with Payload v2 PostgreSQL REST API
-  if (params?.categoryId) where["category"] = { equals: params.categoryId };
-  else if (params?.category) where["category.slug"] = { equals: params.category };
-
-  if (params?.subcategoryId) where["subcategory"] = { equals: params.subcategoryId };
-  else if (params?.subcategory) where["subcategory.slug"] = { equals: params.subcategory };
+  // Filter by denormalized slug columns (set by CMS beforeChange hook)
+  // This avoids unreliable rels-table JOIN filtering in Payload v2 REST API
+  if (params?.category) where["categorySlug"] = { equals: params.category };
+  if (params?.subcategory) where["subcategorySlug"] = { equals: params.subcategory };
 
   if (params?.type) where.type = { equals: params.type };
 
