@@ -15,9 +15,16 @@ import type {
 const PAYLOAD_API_URL =
   process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
 
+// CMS_DATABASE_URL takes priority (Vercel: set this to the Neon URL).
+// Falls back to DATABASE_URL so local dev keeps working without extra config.
 const globalForPrisma = global as unknown as { __payloadPrisma: PrismaClient };
 const prisma =
-  globalForPrisma.__payloadPrisma || new PrismaClient();
+  globalForPrisma.__payloadPrisma ||
+  new PrismaClient({
+    datasources: {
+      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
+    },
+  });
 if (process.env.NODE_ENV !== "production")
   globalForPrisma.__payloadPrisma = prisma;
 
