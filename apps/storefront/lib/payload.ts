@@ -124,46 +124,65 @@ async function getProductsFiltered(params: {
   let idRows: IdRow[];
   let countRows: CountRow[];
 
+  // Join against the products_rels + categories/subcategories tables so the
+  // filter is always accurate regardless of whether the denormalized
+  // category_slug/subcategory_slug columns are stale or missing.
   if (cat && sub) {
     [idRows, countRows] = await Promise.all([
       prisma.$queryRaw<IdRow[]>`
-        SELECT id FROM products
-        WHERE status = 'published'
-          AND category_slug = ${cat}
-          AND subcategory_slug = ${sub}
-        ORDER BY created_at DESC
+        SELECT p.id FROM products p
+        JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
+        JOIN categories c ON c.id = pr_cat.categories_id
+        JOIN products_rels pr_sub ON pr_sub.parent_id = p.id AND pr_sub.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr_sub.subcategories_id
+        WHERE p.status = 'published'
+          AND c.slug = ${cat}
+          AND sc.slug = ${sub}
+        ORDER BY p.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}`,
       prisma.$queryRaw<CountRow[]>`
-        SELECT COUNT(*) AS count FROM products
-        WHERE status = 'published'
-          AND category_slug = ${cat}
-          AND subcategory_slug = ${sub}`,
+        SELECT COUNT(*) AS count FROM products p
+        JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
+        JOIN categories c ON c.id = pr_cat.categories_id
+        JOIN products_rels pr_sub ON pr_sub.parent_id = p.id AND pr_sub.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr_sub.subcategories_id
+        WHERE p.status = 'published'
+          AND c.slug = ${cat}
+          AND sc.slug = ${sub}`,
     ]);
   } else if (cat) {
     [idRows, countRows] = await Promise.all([
       prisma.$queryRaw<IdRow[]>`
-        SELECT id FROM products
-        WHERE status = 'published'
-          AND category_slug = ${cat}
-        ORDER BY created_at DESC
+        SELECT p.id FROM products p
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
+        JOIN categories c ON c.id = pr.categories_id
+        WHERE p.status = 'published'
+          AND c.slug = ${cat}
+        ORDER BY p.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}`,
       prisma.$queryRaw<CountRow[]>`
-        SELECT COUNT(*) AS count FROM products
-        WHERE status = 'published'
-          AND category_slug = ${cat}`,
+        SELECT COUNT(*) AS count FROM products p
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
+        JOIN categories c ON c.id = pr.categories_id
+        WHERE p.status = 'published'
+          AND c.slug = ${cat}`,
     ]);
   } else {
     [idRows, countRows] = await Promise.all([
       prisma.$queryRaw<IdRow[]>`
-        SELECT id FROM products
-        WHERE status = 'published'
-          AND subcategory_slug = ${sub}
-        ORDER BY created_at DESC
+        SELECT p.id FROM products p
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr.subcategories_id
+        WHERE p.status = 'published'
+          AND sc.slug = ${sub}
+        ORDER BY p.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}`,
       prisma.$queryRaw<CountRow[]>`
-        SELECT COUNT(*) AS count FROM products
-        WHERE status = 'published'
-          AND subcategory_slug = ${sub}`,
+        SELECT COUNT(*) AS count FROM products p
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr.subcategories_id
+        WHERE p.status = 'published'
+          AND sc.slug = ${sub}`,
     ]);
   }
 
