@@ -115,26 +115,41 @@ async function getProductsFiltered(params: {
   const limitNum = params.limit || 12;
   const offset = (page - 1) * limitNum;
 
-  type IdRow = { id: number | bigint };
+  type ProductRow = {
+    id: number;
+    slug: string;
+    name_ar: string;
+    name_en: string | null;
+    price: string;
+    compare_price: string | null;
+    currency: string;
+    status: string;
+    type: string;
+    image_url: string | null;
+  };
   type CountRow = { count: bigint };
 
   const cat = params.category ?? null;
   const sub = params.subcategory ?? null;
 
-  let idRows: IdRow[];
+  let productRows: ProductRow[];
   let countRows: CountRow[];
 
-  // Join against the products_rels + categories/subcategories tables so the
-  // filter is always accurate regardless of whether the denormalized
-  // category_slug/subcategory_slug columns are stale or missing.
+  // Fetch product data + image directly from Neon.
+  // This avoids a second round-trip to the Payload API and eliminates any
+  // two-database mismatch when Railway CMS uses a different DB than Neon.
   if (cat && sub) {
-    [idRows, countRows] = await Promise.all([
-      prisma.$queryRaw<IdRow[]>`
-        SELECT p.id FROM products p
+    [productRows, countRows] = await Promise.all([
+      prisma.$queryRaw<ProductRow[]>`
+        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
+               m.url AS image_url
+        FROM products p
         JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
         JOIN categories c ON c.id = pr_cat.categories_id
         JOIN products_rels pr_sub ON pr_sub.parent_id = p.id AND pr_sub.path = 'subcategory'
         JOIN subcategories sc ON sc.id = pr_sub.subcategories_id
+        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
+        LEFT JOIN media m ON m.id = pr_img.media_id
         WHERE p.status = 'published'
           AND c.slug = ${cat}
           AND sc.slug = ${sub}
@@ -151,11 +166,15 @@ async function getProductsFiltered(params: {
           AND sc.slug = ${sub}`,
     ]);
   } else if (cat) {
-    [idRows, countRows] = await Promise.all([
-      prisma.$queryRaw<IdRow[]>`
-        SELECT p.id FROM products p
+    [productRows, countRows] = await Promise.all([
+      prisma.$queryRaw<ProductRow[]>`
+        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
+               m.url AS image_url
+        FROM products p
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
         JOIN categories c ON c.id = pr.categories_id
+        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
+        LEFT JOIN media m ON m.id = pr_img.media_id
         WHERE p.status = 'published'
           AND c.slug = ${cat}
         ORDER BY p.created_at DESC
@@ -168,11 +187,15 @@ async function getProductsFiltered(params: {
           AND c.slug = ${cat}`,
     ]);
   } else {
-    [idRows, countRows] = await Promise.all([
-      prisma.$queryRaw<IdRow[]>`
-        SELECT p.id FROM products p
+    [productRows, countRows] = await Promise.all([
+      prisma.$queryRaw<ProductRow[]>`
+        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
+               m.url AS image_url
+        FROM products p
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
         JOIN subcategories sc ON sc.id = pr.subcategories_id
+        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
+        LEFT JOIN media m ON m.id = pr_img.media_id
         WHERE p.status = 'published'
           AND sc.slug = ${sub}
         ORDER BY p.created_at DESC
@@ -189,23 +212,22 @@ async function getProductsFiltered(params: {
   const totalDocs = Number(countRows[0]?.count ?? 0);
   const totalPages = Math.ceil(totalDocs / limitNum) || 0;
 
-  if (idRows.length === 0) {
-    return { docs: [], totalDocs, totalPages, page, hasNextPage: false, hasPrevPage: page > 1 };
-  }
-
-  // Fetch full product data from Payload using the filtered IDs
-  const orWhere = idRows.map((r) => ({ id: { equals: String(Number(r.id)) } }));
-  const data = await payloadFetch<PayloadDocs<Product>>("/products", {
-    params: {
-      where: JSON.stringify({ or: orWhere }),
-      depth: "2",
-      limit: String(idRows.length),
-      sort: "-createdAt",
-    },
-  });
+  const docs = productRows.map((row) => ({
+    id: String(row.id),
+    slug: row.slug,
+    nameAr: row.name_ar,
+    nameEn: row.name_en ?? undefined,
+    name: { ar: row.name_ar, en: row.name_en ?? "" },
+    price: parseFloat(row.price),
+    comparePrice: row.compare_price ? parseFloat(row.compare_price) : undefined,
+    currency: row.currency as Product["currency"],
+    status: row.status as Product["status"],
+    type: row.type as Product["type"],
+    images: row.image_url ? [{ image: { url: row.image_url } }] : [],
+  } as unknown as Product));
 
   return {
-    ...data,
+    docs,
     totalDocs,
     totalPages,
     page,
