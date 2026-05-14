@@ -1,6 +1,7 @@
 import { CollectionConfig } from "payload/types";
 import { catalogAccess, hiddenUnless } from "../access";
 import BilingualNameHeader from "../admin/components/BilingualNameHeader";
+import BilingualHtmlHeader from "../admin/components/BilingualHtmlHeader";
 
 export const Products: CollectionConfig = {
   slug: "products",
@@ -87,22 +88,28 @@ export const Products: CollectionConfig = {
       },
     },
     {
-      name: "description",
-      label: "الوصف (عربي) | Description (Arabic)",
-      type: "richText",
-    },
-    {
-      name: "descriptionEn",
-      label: "الوصف (إنجليزي) | Description (English)",
-      type: "richText",
+      type: "ui",
+      name: "bilingualHtmlHeader",
+      admin: {
+        components: { Field: BilingualHtmlHeader as any },
+      },
     },
     {
       name: "descriptionHtml",
-      label: "وصف HTML مخصص | Custom HTML Description",
+      label: "🇸🇦 الوصف بالعربية (HTML)",
       type: "code",
       admin: {
         language: "html",
-        description: "اكتب HTML/CSS مخصص هنا — سيُعرض مباشرة في صفحة المنتج | Write custom HTML/CSS — rendered directly on the product page",
+        description: "اكتب HTML/CSS هنا — سيُعرض مباشرة في صفحة المنتج",
+      },
+    },
+    {
+      name: "descriptionHtmlEn",
+      label: "🇬🇧 Description in English (HTML)",
+      type: "code",
+      admin: {
+        language: "html",
+        description: "Write HTML/CSS here — rendered directly on the product page",
       },
     },
     {
