@@ -1,5 +1,5 @@
 import { draftMode } from "next/headers";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import type {
   Product,
   Category,
@@ -79,14 +79,12 @@ export async function getProducts(params?: {
   categoryId?: number;
   subcategory?: string;
   subcategoryId?: number;
+  q?: string;
   type?: string;
   page?: number;
   limit?: number;
 }): Promise<PayloadDocs<Product>> {
-  // When filtering by category or subcategory, use direct DB query to get IDs
-  // because Payload v2 REST API silently ignores WHERE on relationship/denormalized fields
-  // until the CMS redeploys with the updated schema.
-  if (params?.category || params?.subcategory) {
+  if (params?.category || params?.subcategory || params?.q) {
     return getProductsFiltered(params);
   }
 
@@ -107,6 +105,7 @@ export async function getProducts(params?: {
 async function getProductsFiltered(params: {
   category?: string;
   subcategory?: string;
+  q?: string;
   type?: string;
   page?: number;
   limit?: number;
@@ -132,81 +131,80 @@ async function getProductsFiltered(params: {
 
   const cat = params.category ?? null;
   const sub = params.subcategory ?? null;
+  const q = params.q?.trim() || null;
+
+  // Optional text-search fragment — appended to every WHERE clause when q is set.
+  const qFilter = q
+    ? Prisma.sql`AND (p.name_ar ILIKE ${`%${q}%`} OR p.name_en ILIKE ${`%${q}%`})`
+    : Prisma.empty;
+
+  // Common SELECT + LEFT JOIN for image — reused in all branches.
+  const selectCols = Prisma.sql`
+    SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
+           m.url AS image_url, p.delivery_fields
+    FROM products p
+    LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
+    LEFT JOIN media m ON m.id = pr_img.media_id`;
 
   let productRows: ProductRow[];
   let countRows: CountRow[];
 
-  // Fetch product data + image directly from Neon.
-  // This avoids a second round-trip to the Payload API and eliminates any
-  // two-database mismatch when Railway CMS uses a different DB than Neon.
   if (cat && sub) {
     [productRows, countRows] = await Promise.all([
-      prisma.$queryRaw<ProductRow[]>`
-        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url, p.delivery_fields
-        FROM products p
+      prisma.$queryRaw<ProductRow[]>(Prisma.sql`
+        ${selectCols}
         JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
         JOIN categories c ON c.id = pr_cat.categories_id
         JOIN products_rels pr_sub ON pr_sub.parent_id = p.id AND pr_sub.path = 'subcategory'
         JOIN subcategories sc ON sc.id = pr_sub.subcategories_id
-        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
-        LEFT JOIN media m ON m.id = pr_img.media_id
-        WHERE p.status = 'published'
-          AND c.slug = ${cat}
-          AND sc.slug = ${sub}
-        ORDER BY p.created_at DESC
-        LIMIT ${limitNum} OFFSET ${offset}`,
-      prisma.$queryRaw<CountRow[]>`
+        WHERE p.status = 'published' AND c.slug = ${cat} AND sc.slug = ${sub} ${qFilter}
+        ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*) AS count FROM products p
         JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
         JOIN categories c ON c.id = pr_cat.categories_id
         JOIN products_rels pr_sub ON pr_sub.parent_id = p.id AND pr_sub.path = 'subcategory'
         JOIN subcategories sc ON sc.id = pr_sub.subcategories_id
-        WHERE p.status = 'published'
-          AND c.slug = ${cat}
-          AND sc.slug = ${sub}`,
+        WHERE p.status = 'published' AND c.slug = ${cat} AND sc.slug = ${sub} ${qFilter}`),
     ]);
   } else if (cat) {
     [productRows, countRows] = await Promise.all([
-      prisma.$queryRaw<ProductRow[]>`
-        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url, p.delivery_fields
-        FROM products p
+      prisma.$queryRaw<ProductRow[]>(Prisma.sql`
+        ${selectCols}
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
         JOIN categories c ON c.id = pr.categories_id
-        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
-        LEFT JOIN media m ON m.id = pr_img.media_id
-        WHERE p.status = 'published'
-          AND c.slug = ${cat}
-        ORDER BY p.created_at DESC
-        LIMIT ${limitNum} OFFSET ${offset}`,
-      prisma.$queryRaw<CountRow[]>`
+        WHERE p.status = 'published' AND c.slug = ${cat} ${qFilter}
+        ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*) AS count FROM products p
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
         JOIN categories c ON c.id = pr.categories_id
-        WHERE p.status = 'published'
-          AND c.slug = ${cat}`,
+        WHERE p.status = 'published' AND c.slug = ${cat} ${qFilter}`),
+    ]);
+  } else if (sub) {
+    [productRows, countRows] = await Promise.all([
+      prisma.$queryRaw<ProductRow[]>(Prisma.sql`
+        ${selectCols}
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr.subcategories_id
+        WHERE p.status = 'published' AND sc.slug = ${sub} ${qFilter}
+        ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(*) AS count FROM products p
+        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
+        JOIN subcategories sc ON sc.id = pr.subcategories_id
+        WHERE p.status = 'published' AND sc.slug = ${sub} ${qFilter}`),
     ]);
   } else {
+    // q-only search — no category/subcategory filter
     [productRows, countRows] = await Promise.all([
-      prisma.$queryRaw<ProductRow[]>`
-        SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url, p.delivery_fields
-        FROM products p
-        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
-        JOIN subcategories sc ON sc.id = pr.subcategories_id
-        LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
-        LEFT JOIN media m ON m.id = pr_img.media_id
-        WHERE p.status = 'published'
-          AND sc.slug = ${sub}
-        ORDER BY p.created_at DESC
-        LIMIT ${limitNum} OFFSET ${offset}`,
-      prisma.$queryRaw<CountRow[]>`
+      prisma.$queryRaw<ProductRow[]>(Prisma.sql`
+        ${selectCols}
+        WHERE p.status = 'published' ${qFilter}
+        ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*) AS count FROM products p
-        JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
-        JOIN subcategories sc ON sc.id = pr.subcategories_id
-        WHERE p.status = 'published'
-          AND sc.slug = ${sub}`,
+        WHERE p.status = 'published' ${qFilter}`),
     ]);
   }
 
