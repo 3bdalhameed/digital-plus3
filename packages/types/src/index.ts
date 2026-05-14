@@ -466,6 +466,7 @@ export interface CartState {
   addItem: (product: Product, deliveryInfo?: Record<string, string>) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  updateDeliveryInfo: (productId: string, deliveryInfo: Record<string, string>) => void;
   clearCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;

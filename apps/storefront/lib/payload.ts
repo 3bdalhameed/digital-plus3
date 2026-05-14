@@ -126,6 +126,7 @@ async function getProductsFiltered(params: {
     status: string;
     type: string;
     image_url: string | null;
+    delivery_fields: any;
   };
   type CountRow = { count: bigint };
 
@@ -142,7 +143,7 @@ async function getProductsFiltered(params: {
     [productRows, countRows] = await Promise.all([
       prisma.$queryRaw<ProductRow[]>`
         SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url
+               m.url AS image_url, p.delivery_fields
         FROM products p
         JOIN products_rels pr_cat ON pr_cat.parent_id = p.id AND pr_cat.path = 'category'
         JOIN categories c ON c.id = pr_cat.categories_id
@@ -169,7 +170,7 @@ async function getProductsFiltered(params: {
     [productRows, countRows] = await Promise.all([
       prisma.$queryRaw<ProductRow[]>`
         SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url
+               m.url AS image_url, p.delivery_fields
         FROM products p
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'category'
         JOIN categories c ON c.id = pr.categories_id
@@ -190,7 +191,7 @@ async function getProductsFiltered(params: {
     [productRows, countRows] = await Promise.all([
       prisma.$queryRaw<ProductRow[]>`
         SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-               m.url AS image_url
+               m.url AS image_url, p.delivery_fields
         FROM products p
         JOIN products_rels pr ON pr.parent_id = p.id AND pr.path = 'subcategory'
         JOIN subcategories sc ON sc.id = pr.subcategories_id
@@ -224,6 +225,7 @@ async function getProductsFiltered(params: {
     status: row.status as Product["status"],
     type: row.type as Product["type"],
     images: row.image_url ? [{ image: { url: row.image_url } }] : [],
+    deliveryFields: Array.isArray(row.delivery_fields) ? row.delivery_fields : [],
   } as unknown as Product));
 
   return {

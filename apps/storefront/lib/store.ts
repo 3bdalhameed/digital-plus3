@@ -28,6 +28,14 @@ export const useCartStore = create<CartState>()(
         set({ items: get().items.filter((i) => i.product.id !== productId) });
       },
 
+      updateDeliveryInfo: (productId: string, deliveryInfo: Record<string, string>) => {
+        set({
+          items: get().items.map((i) =>
+            i.product.id === productId ? { ...i, deliveryInfo } : i
+          ),
+        });
+      },
+
       updateQuantity: (productId: string, quantity: number) => {
         if (quantity <= 0) {
           get().removeItem(productId);
