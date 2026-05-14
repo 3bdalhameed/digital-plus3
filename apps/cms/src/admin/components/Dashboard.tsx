@@ -3,25 +3,25 @@ import React, { useEffect, useState } from 'react'
 import { useConfig } from 'payload/components/utilities'
 
 const D = {
-  bg:      '#0d1117',
-  surface: '#161b22',
-  border:  '#30363d',
-  text:    '#e6edf3',
-  sub:     '#8b949e',
-  green:   '#238636',
-  greenHover: '#2ea043',
+  bg:      '#f6f8fa',
+  surface: '#ffffff',
+  border:  '#d0d7de',
+  text:    '#1f2328',
+  sub:     '#656d76',
+  green:   '#1a7f37',
+  greenHover: '#2da44e',
 }
 
 type Stats = { orders: number; customers: number; products: number; revenue: number }
 type RecentOrder = { id: string; orderNumber: string; status: string; totalAmount: number; currency: string; createdAt: string }
 
 const statusColors: Record<string, { bg: string; color: string; label: string }> = {
-  pending:   { bg: '#3d2b00', color: '#f0a83a', label: 'Pending' },
-  paid:      { bg: '#0d2e1a', color: '#3fb950', label: 'Paid' },
-  delivered: { bg: '#0d2e1a', color: '#3fb950', label: 'Delivered' },
-  disputed:  { bg: '#3d0d0d', color: '#f85149', label: 'Disputed' },
-  refunded:  { bg: '#21262d', color: '#8b949e', label: 'Refunded' },
-  cancelled: { bg: '#3d0d0d', color: '#f85149', label: 'Cancelled' },
+  pending:   { bg: '#fff8c5', color: '#9a6700', label: 'Pending' },
+  paid:      { bg: '#dafbe1', color: '#1a7f37', label: 'Paid' },
+  delivered: { bg: '#dafbe1', color: '#1a7f37', label: 'Delivered' },
+  disputed:  { bg: '#ffebe9', color: '#cf222e', label: 'Disputed' },
+  refunded:  { bg: '#f6f8fa', color: '#656d76', label: 'Refunded' },
+  cancelled: { bg: '#ffebe9', color: '#cf222e', label: 'Cancelled' },
 }
 
 const StatCard = ({ label, value, icon, accent }: { label: string; value: string; icon: string; accent: string }) => (

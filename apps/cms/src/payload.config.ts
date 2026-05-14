@@ -5,6 +5,7 @@ import { webpackBundler } from "@payloadcms/bundler-webpack";
 import path from "path";
 import dotenv from "dotenv";
 import Dashboard from "./admin/components/Dashboard";
+import ThemeProvider from "./admin/components/ThemeProvider";
 
 // Collections
 import { Products } from "./collections/Products";
@@ -36,6 +37,7 @@ export default buildConfig({
     bundler: webpackBundler(),
     css: path.resolve(__dirname, "admin/custom.css"),
     components: {
+      providers: [ThemeProvider as any],
       views: {
         Dashboard: Dashboard as any,
       },
