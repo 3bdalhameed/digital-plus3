@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { catalogAccess, hiddenUnless } from "../access";
+import BilingualNameHeader from "../admin/components/BilingualNameHeader";
 
 export const Products: CollectionConfig = {
   slug: "products",
@@ -47,18 +48,31 @@ export const Products: CollectionConfig = {
   access: catalogAccess,
   fields: [
     {
+      type: "ui",
+      name: "bilingualNameHeader",
+      admin: {
+        components: { Field: BilingualNameHeader as any },
+      },
+    },
+    {
       type: "row",
       fields: [
         {
           name: "nameAr",
-          label: "الاسم (عربي) | Name (Arabic)",
+          label: "🇸🇦 الاسم بالعربية *",
           type: "text",
           required: true,
+          admin: {
+            description: "الاسم الذي يظهر في المتجر — مطلوب",
+          },
         },
         {
           name: "nameEn",
-          label: "الاسم (إنجليزي) | Name (English)",
+          label: "🇬🇧 Name in English",
           type: "text",
+          admin: {
+            description: "Shown to English-speaking users — optional",
+          },
         },
       ],
     },
