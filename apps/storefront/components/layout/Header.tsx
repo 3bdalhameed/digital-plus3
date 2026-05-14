@@ -151,7 +151,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
         {/* ── Main header — purple gradient with bow-curved bottom ── */}
         <div className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA]" style={{ borderRadius: "0 0 50% 50% / 0 0 14px 14px" }}>
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 pb-5 sm:gap-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
+          <div className="relative mx-auto flex max-w-7xl items-center px-4 py-3 pb-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
 
             {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
             <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
@@ -164,8 +164,8 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               )}
             </Link>
 
-            {/* Search — center, capped width */}
-            <form action="/products" method="get" className="relative mx-auto hidden w-full max-w-xs sm:block sm:max-w-sm">
+            {/* Search — truly centered via absolute positioning */}
+            <form action="/products" method="get" className="absolute left-1/2 -translate-x-1/2 hidden w-full max-w-xs sm:block sm:max-w-sm">
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
@@ -182,6 +182,9 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
               />
             </form>
+
+            {/* Spacer — pushes actions to the right */}
+            <div className="flex-1" />
 
             {/* Actions — RIGHT in RTL (last in DOM) */}
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
