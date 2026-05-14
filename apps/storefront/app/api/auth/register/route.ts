@@ -5,8 +5,9 @@ import { z } from "zod";
 import { Resend } from "resend";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const registerSchema = z.object({
   name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
@@ -15,6 +16,7 @@ const registerSchema = z.object({
 });
 
 async function sendVerificationEmail(email: string, name: string, token: string) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const verifyUrl = `${baseUrl}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`;
   const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@yourdomain.com";
