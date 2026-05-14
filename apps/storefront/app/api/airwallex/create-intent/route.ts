@@ -6,6 +6,8 @@ import { extractIP, extractUserAgent } from "@/lib/evidence";
 import { createEvidenceLog } from "@/lib/payload";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const intentSchema = z.object({
   customerId: z.string(),
   items: z.array(
