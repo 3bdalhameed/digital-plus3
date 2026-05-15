@@ -22,7 +22,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
     <div className="relative group/carousel">
       {/* Left arrow */}
       <button
-        onClick={() => scroll("left")}
+        onClick={() => scroll("right")}
         className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#e8e4f8] shadow-md text-[#7C3AED] opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-[#EDE9FE]"
         aria-label="السابق"
       >
@@ -40,7 +40,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
 
       {/* Right arrow */}
       <button
-        onClick={() => scroll("right")}
+        onClick={() => scroll("left")}
         className="absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#e8e4f8] shadow-md text-[#7C3AED] opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-[#EDE9FE]"
         aria-label="التالي"
       >
