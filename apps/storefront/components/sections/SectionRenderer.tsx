@@ -102,15 +102,15 @@ export function SectionRenderer({ section }: { section: HomePageSection }) {
 ═══════════════════════════════════════ */
 function HeroBannerSection({ title, subtitle, cta, backgroundImage }: any) {
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-8 py-16 text-white md:py-24">
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-10 py-20 text-white md:py-28">
       {backgroundImage?.url && (
         <Image src={backgroundImage.url} alt="" fill className="object-cover opacity-20" />
       )}
       <div className="relative z-10 text-center">
-        <h1 className="mx-auto max-w-3xl text-3xl font-black leading-tight md:text-5xl">{title}</h1>
-        {subtitle && <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">{subtitle}</p>}
+        <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight md:text-6xl">{title}</h1>
+        {subtitle && <p className="mx-auto mt-5 max-w-xl text-xl text-white/80">{subtitle}</p>}
         {cta?.label && (
-          <Link href={cta.link} className="mt-8 inline-block rounded-xl bg-white px-8 py-3 font-bold text-[#7C3AED] shadow-lg transition-all hover:bg-[#f5f3ff] hover:shadow-xl">
+          <Link href={cta.link} className="mt-10 inline-block rounded-xl bg-white px-10 py-4 text-base font-bold text-[#7C3AED] shadow-lg transition-all hover:bg-[#f5f3ff] hover:shadow-xl">
             {cta.label}
           </Link>
         )}
@@ -190,7 +190,7 @@ function FeaturedProductsSection({ title, subtitle, products }: any) {
       </div>
       <ProductCarousel>
         {products?.map((product: any) => (
-          <div key={product.id} className="w-[220px] shrink-0 sm:w-[240px] lg:w-[260px]">
+          <div key={product.id} className="w-[260px] shrink-0 sm:w-[280px] lg:w-[300px]">
             <ProductCard product={product} />
           </div>
         ))}
@@ -211,13 +211,13 @@ function CategoryGridSection({ title, categories, columns }: any) {
         {categories?.map((cat: any) => (
           <Link key={cat.id} href={`/products?category=${cat.slug}`} className="cat-card group">
             {cat.icon?.url ? (
-              <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
+              <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
                 <Image src={cat.icon.url} alt={cat.nameAr} fill className="object-contain p-2" />
               </div>
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm text-3xl transition-transform duration-300 group-hover:scale-110">📦</div>
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm text-4xl transition-transform duration-300 group-hover:scale-110">📦</div>
             )}
-            <p className="text-sm font-bold text-[#1e1b4b]">{cat.nameAr}</p>
+            <p className="text-base font-bold text-[#1e1b4b]">{cat.nameAr}</p>
           </Link>
         ))}
       </div>
@@ -381,17 +381,17 @@ function FeatureBlocksSection({ title, items }: any) {
       {title && <div className="section-title">{title}</div>}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {items?.map((f: any, i: number) => (
-          <div key={i} className="brand-card flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#EDE9FE]">
+          <div key={i} className="brand-card flex items-start gap-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#EDE9FE]">
               {f.icon?.url ? (
-                <Image src={f.icon.url} alt="" width={24} height={24} className="object-contain" />
+                <Image src={f.icon.url} alt="" width={28} height={28} className="object-contain" />
               ) : (
-                <span className="text-2xl">{f.emoji || "⚡"}</span>
+                <span className="text-3xl">{f.emoji || "⚡"}</span>
               )}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#1e1b4b]">{f.title}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">{f.description}</p>
+              <h3 className="text-base font-bold text-[#1e1b4b]">{f.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-[#6b7280]">{f.description}</p>
             </div>
           </div>
         ))}
@@ -405,14 +405,14 @@ function FeatureBlocksSection({ title, items }: any) {
 ═══════════════════════════════════════ */
 function StatsSectionBlock({ title, stats }: any) {
   return (
-    <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-6 py-10">
-      {title && <div className="mb-8 text-center text-xl font-black text-white">{title}</div>}
-      <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+    <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-8 py-14">
+      {title && <div className="mb-10 text-center text-2xl font-black text-white">{title}</div>}
+      <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
         {stats?.map((s: any, i: number) => (
           <div key={i} className="text-center">
-            {s.emoji && <div className="mb-2 text-3xl">{s.emoji}</div>}
-            <div className="text-3xl font-black text-white md:text-4xl">{s.value}</div>
-            <div className="mt-1 text-sm text-[#ddd6fe]">{s.label}</div>
+            {s.emoji && <div className="mb-2 text-4xl">{s.emoji}</div>}
+            <div className="text-4xl font-black text-white md:text-5xl">{s.value}</div>
+            <div className="mt-2 text-base text-[#ddd6fe]">{s.label}</div>
           </div>
         ))}
       </div>
@@ -432,21 +432,21 @@ function TestimonialsSection({ title, items }: any) {
           <div key={i} className="brand-card">
             <div className="mb-3 flex gap-0.5">
               {Array.from({ length: 5 }).map((_, si) => (
-                <Star key={si} className={`h-4 w-4 ${si < t.rating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
+                <Star key={si} className={`h-5 w-5 ${si < t.rating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
               ))}
             </div>
-            <p className="text-sm leading-relaxed text-[#6b7280]">"{t.text}"</p>
+            <p className="text-base leading-relaxed text-[#6b7280]">"{t.text}"</p>
             <div className="mt-4 flex items-center gap-3">
               {t.avatar?.url ? (
-                <div className="relative h-9 w-9 overflow-hidden rounded-full">
+                <div className="relative h-11 w-11 overflow-hidden rounded-full">
                   <Image src={t.avatar.url} alt={t.name} fill className="object-cover" />
                 </div>
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EDE9FE] text-sm font-black text-[#7C3AED]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EDE9FE] text-base font-black text-[#7C3AED]">
                   {t.name?.[0]}
                 </div>
               )}
-              <p className="text-sm font-bold text-[#1e1b4b]">{t.name}</p>
+              <p className="text-base font-bold text-[#1e1b4b]">{t.name}</p>
             </div>
           </div>
         ))}
@@ -468,17 +468,17 @@ function FAQSectionBlock({ title, items }: any) {
           <div key={i} className="overflow-hidden rounded-2xl border border-[#e8e4f8] bg-white">
             <button
               onClick={() => setOpenIndex(openIndex === i ? null : i)}
-              className="flex w-full items-center justify-between p-5 text-right"
+              className="flex w-full items-center justify-between p-6 text-right"
             >
-              <span className="text-sm font-bold text-[#1e1b4b]">{faq.question}</span>
+              <span className="text-base font-bold text-[#1e1b4b]">{faq.question}</span>
               {openIndex === i
-                ? <ChevronUp className="h-4 w-4 shrink-0 text-[#7C3AED]" />
-                : <ChevronDown className="h-4 w-4 shrink-0 text-[#7C3AED]" />
+                ? <ChevronUp className="h-5 w-5 shrink-0 text-[#7C3AED]" />
+                : <ChevronDown className="h-5 w-5 shrink-0 text-[#7C3AED]" />
               }
             </button>
             {openIndex === i && (
-              <div className="border-t border-[#f3f0ff] bg-[#faf9ff] p-5">
-                <p className="text-sm leading-relaxed text-[#6b7280]">{faq.answer}</p>
+              <div className="border-t border-[#f3f0ff] bg-[#faf9ff] p-6">
+                <p className="text-base leading-relaxed text-[#6b7280]">{faq.answer}</p>
               </div>
             )}
           </div>
@@ -495,9 +495,9 @@ function NewsletterSection({ title, subtitle, placeholder, buttonLabel }: any) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   return (
-    <section className="overflow-hidden rounded-2xl bg-[#EDE9FE] px-8 py-12 text-center">
-      <h2 className="text-2xl font-black text-[#1e1b4b]">{title || "اشترك في نشرتنا"}</h2>
-      {subtitle && <p className="mx-auto mt-2 max-w-md text-sm text-[#6b7280]">{subtitle}</p>}
+    <section className="overflow-hidden rounded-2xl bg-[#EDE9FE] px-10 py-16 text-center">
+      <h2 className="text-3xl font-black text-[#1e1b4b]">{title || "اشترك في نشرتنا"}</h2>
+      {subtitle && <p className="mx-auto mt-3 max-w-lg text-base text-[#6b7280]">{subtitle}</p>}
       {sent ? (
         <p className="mt-6 text-sm font-bold text-[#7C3AED]">✓ تم الاشتراك بنجاح!</p>
       ) : (
@@ -523,10 +523,10 @@ function NewsletterSection({ title, subtitle, placeholder, buttonLabel }: any) {
 ═══════════════════════════════════════ */
 function PromoBarSection({ text, couponCode }: any) {
   return (
-    <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-[#5B21B6] to-[#9333EA] p-6 text-center text-white">
-      <p className="text-lg font-bold">{text}</p>
+    <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-[#5B21B6] to-[#9333EA] p-8 text-center text-white">
+      <p className="text-xl font-bold">{text}</p>
       {couponCode && (
-        <div className="mt-3 inline-block rounded-lg border-2 border-dashed border-white/40 px-4 py-2 font-mono text-lg font-black tracking-widest">
+        <div className="mt-4 inline-block rounded-lg border-2 border-dashed border-white/40 px-5 py-2.5 font-mono text-xl font-black tracking-widest">
           {couponCode}
         </div>
       )}
