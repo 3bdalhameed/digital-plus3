@@ -28,7 +28,7 @@ export function CheckoutForm() {
       // Log terms acceptance as evidence
       await logEvidence({
         type: "terms_acceptance",
-        customerId: session.user.id,
+        customerId: String((session.user as any).payloadCustomerId || session.user.id),
         data: {
           acceptedAt: new Date().toISOString(),
           cartItems: items.map((i) => ({
@@ -56,19 +56,22 @@ export function CheckoutForm() {
     setStep("processing");
     setError(null);
 
+    const payloadCustomerId =
+      (session.user as any).payloadCustomerId || session.user.id;
+
     try {
       const res = await fetch("/api/checkout/test-pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerId: session.user.id,
+          customerId: String(payloadCustomerId),
           items: items.map((i) => ({
-            productId: i.product.id,
+            productId: String(i.product.id),
             name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
-            quantity: i.quantity,
-            unitPrice: i.product.price,
+            quantity: Number(i.quantity),
+            unitPrice: Number(i.product.price),
           })),
-          totalAmount: totalPrice(),
+          totalAmount: Number(totalPrice()),
           currency: items[0]?.product.currency || "USD",
         }),
       });
