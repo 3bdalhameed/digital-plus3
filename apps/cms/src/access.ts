@@ -22,8 +22,8 @@ const fromStorefront = (req: any) =>
 
 /** Orders: admins + orders role can write; support is read-only */
 export const ordersAccess = {
-  read: (({ req: { user } }) =>
-    has(user, "super_admin", "admin", "orders", "support")) as Access,
+  read: (({ req }) =>
+    fromStorefront(req) || has(req.user, "super_admin", "admin", "orders", "support")) as Access,
   create: (({ req }) =>
     fromStorefront(req) || has(req.user, "super_admin", "admin", "orders")) as Access,
   update: (({ req: { user } }) =>

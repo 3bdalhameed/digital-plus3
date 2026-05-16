@@ -56,15 +56,11 @@ export function CheckoutForm() {
     setStep("processing");
     setError(null);
 
-    const payloadCustomerId =
-      (session.user as any).payloadCustomerId || session.user.id;
-
     try {
       const res = await fetch("/api/checkout/test-pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerId: String(payloadCustomerId),
           items: items.map((i) => ({
             productId: String(i.product.id),
             name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
