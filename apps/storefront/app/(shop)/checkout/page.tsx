@@ -1,5 +1,6 @@
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "إتمام الشراء" };
 
 export default function CheckoutPage() {

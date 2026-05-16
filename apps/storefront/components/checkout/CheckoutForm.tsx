@@ -13,7 +13,7 @@ type CheckoutStep = "review" | "terms" | "payment" | "processing";
 
 export function CheckoutForm() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { items, totalPrice, clearCart } = useCartStore();
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -89,7 +89,15 @@ export function CheckoutForm() {
     }
   };
 
-  if (!session) {
+  if (status === "loading") {
+    return (
+      <div className="brand-card py-12 text-center">
+        <Loader2 className="mx-auto h-10 w-10 animate-spin text-brand-500" />
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
     return (
       <div className="brand-card py-12 text-center">
         <h2 className="text-xl font-bold text-brand-800">
