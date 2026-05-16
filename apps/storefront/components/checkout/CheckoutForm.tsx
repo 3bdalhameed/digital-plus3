@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Shield, Loader2, CheckCircle } from "lucide-react";
 import { useCartStore } from "@/lib/store";
-import { logEvidence, generateSessionId } from "@/lib/evidence";
+import { logEvidence } from "@/lib/evidence";
 import { formatPrice } from "@/lib/utils";
 
 type CheckoutStep = "review" | "terms" | "payment" | "processing";
@@ -57,8 +57,7 @@ export function CheckoutForm() {
     setError(null);
 
     try {
-      // Create Airwallex payment intent
-      const res = await fetch("/api/airwallex/create-intent", {
+      const res = await fetch("/api/checkout/test-pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,19 +70,15 @@ export function CheckoutForm() {
           })),
           totalAmount: totalPrice(),
           currency: items[0]?.product.currency || "USD",
-          sessionId: generateSessionId(),
         }),
       });
 
-      if (!res.ok) throw new Error("فشل إنشاء طلب الدفع");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "فشل إنشاء الطلب");
+      }
 
-      const { intentId, clientSecret, orderId } = await res.json();
-
-      // In production: Mount Airwallex Payment Elements here
-      // For now, simulate payment success
-      // window.Airwallex.createElement('dropIn', { intent_id: intentId, client_secret: clientSecret })
-
-      // Simulate successful payment → redirect
+      const { orderId } = await res.json();
       clearCart();
       router.push(`/checkout/success?orderId=${orderId}`);
     } catch (err: any) {
@@ -270,16 +265,13 @@ export function CheckoutForm() {
       {step === "payment" && (
         <div className="brand-card">
           <h2 className="mb-4 text-lg font-bold text-brand-800">الدفع</h2>
-          <div className="rounded-xl border-2 border-dashed border-brand-200 bg-brand-50 p-8 text-center">
-            <p className="text-sm text-gray-500">
-              سيتم تحميل نموذج الدفع من Airwallex هنا
-            </p>
-            <p className="mt-2 text-xs text-gray-400">
-              Airwallex Payment Elements Drop-in
+          <div className="rounded-xl border-2 border-dashed border-amber-200 bg-amber-50 p-5 text-center">
+            <p className="text-sm font-semibold text-amber-700">وضع الاختبار</p>
+            <p className="mt-1 text-xs text-amber-600">
+              سيتم إنشاء الطلب مباشرة دون مرور على بوابة الدفع
             </p>
           </div>
 
-          {/* Simulated pay button for development */}
           <button
             onClick={handleCreatePayment}
             disabled={loading}
@@ -288,7 +280,7 @@ export function CheckoutForm() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              `ادفع ${formatPrice(totalPrice())}`
+              `تأكيد الطلب — ${formatPrice(totalPrice())}`
             )}
           </button>
         </div>
