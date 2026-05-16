@@ -6,16 +6,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const TO_USD: Record<string, number> = { USD: 1, SAR: 1 / 3.75, JOD: 1 / 0.71, AED: 1 / 3.67 };
-const FROM_USD: Record<string, number> = { USD: 1, SAR: 3.75, JOD: 0.71, AED: 3.67 };
-
-/** Format price — converts from product currency to display currency if different */
-export function formatPrice(amount: number, fromCurrency = "USD", toCurrency?: string): string {
+/** Format price — converts from product currency to display currency using live or fallback rates */
+export function formatPrice(
+  amount: number,
+  fromCurrency = "USD",
+  toCurrency?: string,
+  rates?: Record<string, number>
+): string {
   const target = toCurrency ?? fromCurrency;
-  const converted =
-    toCurrency && toCurrency !== fromCurrency
-      ? (amount * (TO_USD[fromCurrency] ?? 1)) * (FROM_USD[toCurrency] ?? 1)
-      : amount;
+  let converted = amount;
+  if (toCurrency && toCurrency !== fromCurrency) {
+    if (rates) {
+      // rates[X] = X per 1 USD
+      const usd = amount / (rates[fromCurrency] ?? 1);
+      converted = usd * (rates[toCurrency] ?? 1);
+    } else {
+      // static fallback
+      const TO_USD: Record<string, number> = { USD: 1, SAR: 1 / 3.75, JOD: 1 / 0.71, AED: 1 / 3.67 };
+      const FROM_USD: Record<string, number> = { USD: 1, SAR: 3.75, JOD: 0.71, AED: 3.67 };
+      converted = (amount * (TO_USD[fromCurrency] ?? 1)) * (FROM_USD[toCurrency] ?? 1);
+    }
+  }
   return new Intl.NumberFormat("ar-JO", {
     style: "currency",
     currency: target,

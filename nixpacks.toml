@@ -1,5 +1,8 @@
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "vips", "pkg-config", "python3"]
+
+[variables]
+SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
 
 [phases.install]
 cmds = ["npm install -g pnpm", "pnpm install --no-frozen-lockfile"]

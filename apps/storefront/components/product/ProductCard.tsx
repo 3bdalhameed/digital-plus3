@@ -21,7 +21,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
-  const { lang, currency } = useLocaleStore();
+  const { lang, currency, rates } = useLocaleStore();
 
   const p = product as any;
   const nameAr = p.nameAr ?? product.name?.ar;
@@ -95,11 +95,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Price */}
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-2xl font-black text-[#7C3AED]">
-              {formatPrice(product.price, product.currency, currency)}
+              {formatPrice(product.price, product.currency, currency, rates)}
             </span>
             {hasDiscount && (
               <span className="text-xs text-[#9ca3af] line-through">
-                {formatPrice(product.comparePrice!, product.currency, currency)}
+                {formatPrice(product.comparePrice!, product.currency, currency, rates)}
               </span>
             )}
           </div>

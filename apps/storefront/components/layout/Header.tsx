@@ -29,12 +29,14 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [searchValue, setSearchValue] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const totalItems = useCartStore((s) => s.totalItems());
-  const { lang, currency, setLang, setCurrency } = useLocaleStore();
+  const { lang, currency, setLang, setCurrency, fetchRates } = useLocaleStore();
 
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
   const logoUrl = settings?.logo?.url;
   const navLinks = navbarConfig?.links?.length ? navbarConfig.links : DEFAULT_NAV;
+
+  useEffect(() => { fetchRates(); }, []);
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
