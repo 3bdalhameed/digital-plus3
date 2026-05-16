@@ -1,7 +1,15 @@
-import { CheckoutForm } from "@/components/checkout/CheckoutForm";
+import dynamicImport from "next/dynamic";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "إتمام الشراء" };
+
+const CheckoutForm = dynamicImport(
+  () =>
+    import("@/components/checkout/CheckoutForm").then((m) => ({
+      default: m.CheckoutForm,
+    })),
+  { ssr: false }
+);
 
 export default function CheckoutPage() {
   return (
