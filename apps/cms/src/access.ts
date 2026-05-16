@@ -15,12 +15,17 @@ export const catalogAccess = {
   delete: (({ req: { user } }) => has(user, "super_admin", "admin", "catalog")) as Access,
 };
 
+const internalSecret = process.env.PAYLOAD_INTERNAL_SECRET;
+const fromStorefront = (req: any) =>
+  internalSecret &&
+  req.headers?.["x-internal-secret"] === internalSecret;
+
 /** Orders: admins + orders role can write; support is read-only */
 export const ordersAccess = {
   read: (({ req: { user } }) =>
     has(user, "super_admin", "admin", "orders", "support")) as Access,
-  create: (({ req: { user } }) =>
-    has(user, "super_admin", "admin", "orders")) as Access,
+  create: (({ req }) =>
+    fromStorefront(req) || has(req.user, "super_admin", "admin", "orders")) as Access,
   update: (({ req: { user } }) =>
     has(user, "super_admin", "admin", "orders")) as Access,
   delete: (({ req: { user } }) => has(user, "super_admin", "admin")) as Access,

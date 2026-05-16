@@ -362,6 +362,9 @@ export async function createOrder(payload: {
   return payloadFetch("/orders", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: {
+      "x-internal-secret": process.env.PAYLOAD_INTERNAL_SECRET || "",
+    },
   });
 }
 
