@@ -6,13 +6,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format price with currency for Arabic locale */
-export function formatPrice(amount: number, currency = "USD"): string {
+const TO_USD: Record<string, number> = { USD: 1, SAR: 1 / 3.75, JOD: 1 / 0.71, AED: 1 / 3.67 };
+const FROM_USD: Record<string, number> = { USD: 1, SAR: 3.75, JOD: 0.71, AED: 3.67 };
+
+/** Format price — converts from product currency to display currency if different */
+export function formatPrice(amount: number, fromCurrency = "USD", toCurrency?: string): string {
+  const target = toCurrency ?? fromCurrency;
+  const converted =
+    toCurrency && toCurrency !== fromCurrency
+      ? (amount * (TO_USD[fromCurrency] ?? 1)) * (FROM_USD[toCurrency] ?? 1)
+      : amount;
   return new Intl.NumberFormat("ar-JO", {
     style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
+    currency: target,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(converted);
 }
 
 /** Get localized name (Arabic preferred) */

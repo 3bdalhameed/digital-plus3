@@ -194,6 +194,23 @@ export const Products: CollectionConfig = {
       ],
     },
     {
+      name: "badge",
+      label: "الشارة | Badge",
+      type: "select",
+      defaultValue: "none",
+      options: [
+        { label: "بدون | None",        value: "none" },
+        { label: "🟢 جديد | New",      value: "new" },
+        { label: "🔴 عرض | Offer",     value: "offer" },
+        { label: "🔥 رائج | Hot",      value: "hot" },
+        { label: "⚠️ محدود | Limited", value: "limited" },
+      ],
+      admin: {
+        position: "sidebar",
+        description: "شارة ملونة على الزاوية العلوية اليسرى من بطاقة المنتج",
+      },
+    },
+    {
       name: "status",
       label: "الحالة | Status",
       type: "select",

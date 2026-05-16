@@ -54,6 +54,7 @@ export interface Product {
   usageProofType: UsageProofType;
   deliveryFields?: DeliveryField[];
   relatedProducts?: Product[];
+  badge?: "none" | "new" | "offer" | "hot" | "limited";
   totalSales?: number;
   seoTitle?: string;
   seoDescription?: string;

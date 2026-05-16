@@ -4,8 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
 import type { Product } from "@my-store/types";
+
+const BADGE_STYLES: Record<string, { label: { ar: string; en: string }; className: string }> = {
+  new:     { label: { ar: "جديد",   en: "New"     }, className: "bg-gradient-to-r from-emerald-500 to-green-400" },
+  offer:   { label: { ar: "عرض",    en: "Offer"   }, className: "bg-gradient-to-r from-rose-500 to-orange-400" },
+  hot:     { label: { ar: "رائج",   en: "Hot"     }, className: "bg-gradient-to-r from-[#7C3AED] to-[#9333EA]" },
+  limited: { label: { ar: "محدود",  en: "Limited" }, className: "bg-gradient-to-r from-amber-500 to-yellow-400" },
+};
 
 interface ProductCardProps {
   product: Product;
@@ -13,22 +21,36 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const { lang, currency } = useLocaleStore();
+
   const p = product as any;
   const nameAr = p.nameAr ?? product.name?.ar;
   const nameEn = p.nameEn ?? product.name?.en;
+  const displayName = lang === "en" && nameEn ? nameEn : nameAr;
+  const secondaryName = lang === "en" ? undefined : (nameEn && nameEn !== nameAr ? nameEn : undefined);
+
   const imageUrl = product.images?.[0]?.image?.url;
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
   const discountPct = hasDiscount
     ? Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)
     : 0;
 
+  const badge = p.badge && p.badge !== "none" ? BADGE_STYLES[p.badge] : null;
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#e8e4f8] bg-white transition-all duration-300 hover:border-[#c4b5fd] hover:shadow-[0_8px_32px_rgba(124,58,237,0.14)] hover:-translate-y-1">
 
-      {/* Discount badge */}
+      {/* Discount % badge — top right */}
       {hasDiscount && (
         <div className="absolute right-3 top-3 z-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-2.5 py-1 text-xs font-black text-white shadow-[0_2px_8px_rgba(124,58,237,0.4)]">
           -{discountPct}%
+        </div>
+      )}
+
+      {/* Type badge (new / offer / hot / limited) — top left */}
+      {badge && (
+        <div className={`absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-xs font-black text-white shadow-md ${badge.className}`}>
+          {badge.label[lang]}
         </div>
       )}
 
@@ -59,14 +81,12 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Info */}
       <div className="flex flex-1 flex-col items-center p-4 text-center">
         <Link href={`/products/${product.slug}`} className="w-full">
-          {nameAr && (
-            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1e1b4b] transition-colors group-hover:text-[#7C3AED]">
-              {nameAr}
-            </h3>
-          )}
-          {nameEn && nameEn !== nameAr && (
+          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1e1b4b] transition-colors group-hover:text-[#7C3AED]">
+            {displayName}
+          </h3>
+          {secondaryName && (
             <p className="mt-1 line-clamp-1 text-xs font-semibold text-[#6b7280]">
-              {nameEn}
+              {secondaryName}
             </p>
           )}
         </Link>
@@ -75,11 +95,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Price */}
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-2xl font-black text-[#7C3AED]">
-              {formatPrice(product.price, product.currency)}
+              {formatPrice(product.price, product.currency, currency)}
             </span>
             {hasDiscount && (
               <span className="text-xs text-[#9ca3af] line-through">
-                {formatPrice(product.comparePrice!, product.currency)}
+                {formatPrice(product.comparePrice!, product.currency, currency)}
               </span>
             )}
           </div>
@@ -90,7 +110,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className="brand-btn mt-3 w-full justify-center gap-2 py-2.5 text-xs"
           >
             <ShoppingCart className="h-4 w-4" />
-            أضف إلى السلة
+            {lang === "en" ? "Add to Cart" : "أضف إلى السلة"}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown, LogOut } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useLocaleStore } from "@/lib/locale-store";
 import { useSession, signOut } from "next-auth/react";
 import type { SiteSettings, NavbarConfig, NavLink } from "@my-store/types";
 
@@ -28,6 +29,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [searchValue, setSearchValue] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const totalItems = useCartStore((s) => s.totalItems());
+  const { lang, currency, setLang, setCurrency } = useLocaleStore();
 
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
@@ -141,6 +143,47 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
       {/* ── Sticky header ── */}
       <header className="sticky top-0 z-30 flex flex-col">
+
+        {/* ── Locale bar — language + currency ── */}
+        <div className="flex items-center justify-between bg-[#1e1b4b] px-4 py-1.5 text-xs sm:px-6 lg:px-8">
+          {/* Left: switchers */}
+          <div className="flex items-center gap-3">
+            {/* Language */}
+            <div className="flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1">
+              <span className="text-[10px] text-white/60">🌐</span>
+              {(["ar", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-bold transition-colors ${
+                    lang === l ? "bg-white text-[#7C3AED]" : "text-white/70 hover:text-white"
+                  }`}
+                >
+                  {l === "ar" ? "ع" : "EN"}
+                </button>
+              ))}
+            </div>
+            {/* Currency */}
+            <div className="flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1">
+              <span className="text-[10px] text-white/60">$</span>
+              {(["USD", "SAR", "JOD", "AED"] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-bold transition-colors ${
+                    currency === c ? "bg-white text-[#7C3AED]" : "text-white/70 hover:text-white"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Right: subtle tagline */}
+          <span className="hidden text-white/40 sm:block">
+            {lang === "en" ? "Fast delivery · Secure payment" : "تسليم سريع · دفع آمن"}
+          </span>
+        </div>
 
         {/* ── Announcement bar — soft lavender ── */}
         <div className="flex items-center justify-center gap-2 bg-[#EDE9FE] py-2 px-4 text-xs font-semibold text-[#5B21B6]">
