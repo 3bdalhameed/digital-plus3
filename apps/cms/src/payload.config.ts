@@ -64,6 +64,27 @@ export default buildConfig({
 
   endpoints: [
     {
+      path: "/migrate",
+      method: "get",
+      handler: async (req, res) => {
+        const db = req.payload.db as any;
+        const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
+        const dbKeys = Object.keys(db);
+        if (!pool?.query) {
+          res.json({ error: "pool not found", dbKeys });
+          return;
+        }
+        try {
+          await pool.query(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'"
+          );
+          res.json({ ok: true, message: "badge column ready" });
+        } catch (e: any) {
+          res.json({ ok: false, error: e.message });
+        }
+      },
+    },
+    {
       path: "/preview-redirect",
       method: "get",
       handler: (req, res) => {
