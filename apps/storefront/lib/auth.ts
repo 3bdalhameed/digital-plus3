@@ -10,20 +10,26 @@ const prisma = new PrismaClient();
 async function syncPayloadCustomer(email: string, name: string): Promise<string | null> {
   try {
     const apiUrl = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
+    const secret = process.env.PAYLOAD_INTERNAL_SECRET || "";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-internal-secret": secret,
+    };
+
     const existing = await fetch(
       `${apiUrl}/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
-      { cache: "no-store" }
+      { headers, cache: "no-store" }
     );
     const existingData = await existing.json();
-    if (existingData?.docs?.[0]?.id) return existingData.docs[0].id;
+    if (existingData?.docs?.[0]?.id) return String(existingData.docs[0].id);
 
     const created = await fetch(`${apiUrl}/customers`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ email, name: name || email }),
     });
     const createdData = await created.json();
-    return createdData?.doc?.id ?? null;
+    return createdData?.doc?.id != null ? String(createdData.doc.id) : null;
   } catch {
     return null;
   }
@@ -76,13 +82,13 @@ export const {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google" && user.email) {
-        const prismaUser = await prisma.user.findUnique({ where: { email: user.email } });
+      if (user.email && user.id) {
+        const prismaUser = await prisma.user.findUnique({ where: { id: user.id } });
         if (prismaUser && !prismaUser.payloadCustomerId) {
           const payloadId = await syncPayloadCustomer(user.email, user.name ?? "");
           if (payloadId) {
             await prisma.user.update({
-              where: { id: prismaUser.id },
+              where: { id: user.id },
               data: { payloadCustomerId: payloadId },
             });
           }
