@@ -22,7 +22,7 @@ const schema = z.object({
 async function getOrCreatePayloadCustomer(
   email: string,
   name: string
-): Promise<string> {
+): Promise<number | string> {
   const apiUrl = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
   const secret = process.env.PAYLOAD_INTERNAL_SECRET || "";
   const headers: Record<string, string> = {
@@ -30,26 +30,40 @@ async function getOrCreatePayloadCustomer(
     "x-internal-secret": secret,
   };
 
+  // Look up existing customer
   const findRes = await fetch(
     `${apiUrl}/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
     { headers, cache: "no-store" }
   );
   if (findRes.ok) {
     const findData = await findRes.json();
-    if (findData?.docs?.[0]?.id) return String(findData.docs[0].id);
+    const id = findData?.docs?.[0]?.id;
+    if (id != null) {
+      console.log("[test-pay] found customer id:", id, typeof id);
+      return id;
+    }
+  } else {
+    console.error("[test-pay] customer lookup failed:", findRes.status, await findRes.text().catch(() => ""));
   }
 
+  // Create customer
   const createRes = await fetch(`${apiUrl}/customers`, {
     method: "POST",
     headers,
     body: JSON.stringify({ email, name: name || email }),
   });
+  const createData = await createRes.json().catch(() => ({}));
   if (!createRes.ok) {
-    const err = await createRes.json().catch(() => ({}));
-    throw new Error(`Failed to create customer: ${err.message || createRes.statusText}`);
+    console.error("[test-pay] customer create failed:", createRes.status, createData);
+    throw new Error(`Failed to create Payload customer: ${createRes.status} ${JSON.stringify(createData)}`);
   }
-  const createData = await createRes.json();
-  return String(createData?.doc?.id);
+  const id = createData?.doc?.id;
+  if (id == null) {
+    console.error("[test-pay] customer created but id missing:", createData);
+    throw new Error("Customer created but ID missing from Payload response");
+  }
+  console.log("[test-pay] created customer id:", id, typeof id);
+  return id;
 }
 
 export async function POST(req: NextRequest) {

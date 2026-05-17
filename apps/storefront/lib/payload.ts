@@ -346,7 +346,7 @@ export async function getCustomerOrders(customerId: string): Promise<Order[]> {
 }
 
 export async function createOrder(payload: {
-  customer: string;
+  customer: string | number;
   items: {
     product: string;
     quantity: number;
