@@ -55,6 +55,8 @@ async function payloadFetch<T>(
   });
 
   if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    console.error(`[payloadFetch] ${url} → ${res.status}`, errBody);
     throw new Error(`Payload API error: ${res.status} ${res.statusText}`);
   }
 
