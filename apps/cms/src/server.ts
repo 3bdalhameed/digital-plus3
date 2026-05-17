@@ -2,6 +2,7 @@ import express from "express";
 import payload from "payload";
 import dotenv from "dotenv";
 import path from "path";
+import { Pool } from "pg";
 
 dotenv.config();
 
@@ -19,6 +20,20 @@ const start = async () => {
     express: app,
     onInit: async () => {
       payload.logger.info(`Payload Admin URL: ${payload.getAdminURL()}`);
+      // Ensure columns added after initial schema push exist
+      const migrationPool = new Pool({
+        connectionString: process.env.DATABASE_URI,
+      });
+      try {
+        await migrationPool.query(
+          "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'"
+        );
+        payload.logger.info("Schema check: products.badge column ready");
+      } catch (e: any) {
+        payload.logger.warn("Schema migration warning: " + e.message);
+      } finally {
+        await migrationPool.end();
+      }
     },
   });
 
