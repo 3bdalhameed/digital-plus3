@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Test pay error:", error);
     return NextResponse.json(
-      { error: error.message || "فشل إنشاء الطلب" },
+      { error: "فشل إنشاء الطلب، يرجى المحاولة مرة أخرى" },
       { status: 500 }
     );
   }
