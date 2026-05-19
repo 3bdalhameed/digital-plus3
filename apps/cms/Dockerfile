@@ -1,31 +1,38 @@
-FROM node:20-alpine
-
-RUN npm install -g pnpm
-
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy monorepo root files
+RUN npm install -g pnpm@9
+
+# Copy workspace manifests (layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
-
-# Copy cms app
 COPY apps/cms/ ./apps/cms/
 
-# Install all dependencies from root
-RUN pnpm install --no-frozen-lockfile
+# Install all deps
+RUN pnpm install --frozen-lockfile
 
-# Set build-time env so Payload bakes the correct URL into the admin webpack bundle
-ENV PAYLOAD_PUBLIC_SERVER_URL=https://cms-production-27da.up.railway.app
+# Build (payload build + tsc)
+RUN pnpm --filter=cms build
 
-# Build cms
-RUN cd apps/cms && pnpm build
+# ── Runtime stage ───────────────────────────────────────
+FROM node:20-alpine
+WORKDIR /app
+
+RUN npm install -g pnpm@9
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/ ./packages/
+COPY apps/cms/package.json ./apps/cms/
+
+# Production deps only
+RUN pnpm install --filter=cms... --frozen-lockfile --prod
+
+# Copy built dist from builder
+COPY --from=builder /app/apps/cms/dist ./apps/cms/dist
+
+ENV NODE_ENV=production
+ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
 
 WORKDIR /app/apps/cms
-
-ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
-ENV NODE_ENV=production
-ENV PORT=8080
-
-EXPOSE 8080
-
+EXPOSE 3001
 CMD ["node", "dist/server.js"]
