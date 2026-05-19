@@ -329,22 +329,99 @@ export async function getSubcategoryBySlug(slug: string): Promise<Subcategory | 
 
 export async function getOrder(id: string): Promise<Order | null> {
   try {
-    return await payloadFetch<Order>(`/orders/${id}`, { params: { depth: "2" } });
-  } catch {
+    const orderId = Number(id);
+    if (!orderId) return null;
+
+    type OrderRow = {
+      id: number; order_number: string; status: string; total_amount: string;
+      currency: string; digital_delivery_log: any; updated_at: Date; created_at: Date;
+      item_pos: number | null; item_id: string | null; quantity: string | null;
+      unit_price: string | null; total_price: string | null; delivery_info: any;
+      product_id: number | null; name_ar: string | null; name_en: string | null;
+      product_slug: string | null;
+    };
+
+    const rows = await prisma.$queryRaw<OrderRow[]>(Prisma.sql`
+      SELECT
+        o.id, o.order_number, o.status, o.total_amount, o.currency,
+        o.digital_delivery_log, o.updated_at, o.created_at,
+        oi._order AS item_pos, oi.id AS item_id, oi.quantity, oi.unit_price, oi.total_price, oi.delivery_info,
+        p.id AS product_id, p.name_ar, p.name_en, p.slug AS product_slug
+      FROM orders o
+      LEFT JOIN orders_items oi ON oi._parent_id = o.id
+      LEFT JOIN orders_rels orprod ON (
+        orprod.parent_id = o.id
+        AND orprod.path = ('items.' || (oi._order - 1)::text || '.product')
+      )
+      LEFT JOIN products p ON p.id = orprod.products_id
+      WHERE o.id = ${orderId}
+      ORDER BY oi._order
+    `);
+
+    if (!rows.length) return null;
+    const first = rows[0];
+
+    const items = rows
+      .filter((r) => r.item_id != null)
+      .map((r) => ({
+        product: {
+          id: String(r.product_id ?? ""),
+          slug: r.product_slug ?? "",
+          nameAr: r.name_ar ?? "",
+          nameEn: r.name_en ?? undefined,
+          name: { ar: r.name_ar ?? "", en: r.name_en ?? "" },
+        },
+        quantity: Number(r.quantity),
+        unitPrice: parseFloat(r.unit_price ?? "0"),
+        totalPrice: parseFloat(r.total_price ?? "0"),
+        deliveryInfo: r.delivery_info,
+      }));
+
+    return {
+      id: String(first.id),
+      orderNumber: first.order_number,
+      status: first.status as Order["status"],
+      totalAmount: parseFloat(first.total_amount),
+      currency: first.currency as Order["currency"],
+      digitalDeliveryLog: first.digital_delivery_log,
+      items,
+      createdAt: first.created_at.toISOString(),
+      updatedAt: first.updated_at.toISOString(),
+    } as unknown as Order;
+  } catch (e) {
+    console.error("[getOrder]", e);
     return null;
   }
 }
 
-export async function getCustomerOrders(customerId: string): Promise<Order[]> {
-  const data = await payloadFetch<PayloadDocs<Order>>("/orders", {
-    params: {
-      where: JSON.stringify({ customer: { equals: customerId } }),
-      sort: "-createdAt",
-      depth: "2",
-      limit: "50",
-    },
-  });
-  return data.docs;
+export async function getCustomerOrders(customerEmail: string): Promise<Order[]> {
+  try {
+    type OrderRow = {
+      id: number; order_number: string; status: string;
+      total_amount: string; currency: string; created_at: Date;
+    };
+    const rows = await prisma.$queryRaw<OrderRow[]>(Prisma.sql`
+      SELECT o.id, o.order_number, o.status, o.total_amount, o.currency, o.created_at
+      FROM orders o
+      JOIN orders_rels r ON r.parent_id = o.id AND r.path = 'customer'
+      JOIN customers c ON c.id = r.customers_id
+      WHERE c.email = ${customerEmail}
+      ORDER BY o.created_at DESC
+      LIMIT 50
+    `);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      orderNumber: r.order_number,
+      status: r.status as Order["status"],
+      totalAmount: parseFloat(r.total_amount),
+      currency: r.currency as Order["currency"],
+      createdAt: r.created_at.toISOString(),
+    } as unknown as Order));
+  } catch (e) {
+    console.error("[getCustomerOrders]", e);
+    return [];
+  }
 }
 
 export async function createOrder(payload: {
@@ -393,15 +470,41 @@ export async function createEvidenceLog(data: {
 }
 
 export async function getOrderEvidence(orderId: string): Promise<any[]> {
-  const data = await payloadFetch<PayloadDocs<any>>("/evidence-logs", {
-    params: {
-      where: JSON.stringify({ order: { equals: orderId } }),
-      sort: "timestamp",
-      depth: "1",
-      limit: "100",
-    },
-  });
-  return data.docs;
+  try {
+    const orderIdNum = Number(orderId);
+    if (!orderIdNum) return [];
+
+    type EvidenceRow = {
+      id: number; type: string; timestamp: Date;
+      ip_address: string; user_agent: string | null;
+      device: string | null; browser: string | null; data: any;
+    };
+
+    const rows = await prisma.$queryRaw<EvidenceRow[]>(Prisma.sql`
+      SELECT el.id, el.type, el.timestamp, el.ip_address, el.user_agent, el.device, el.browser, el.data
+      FROM evidence_logs el
+      WHERE EXISTS (
+        SELECT 1 FROM evidence_logs_rels er
+        WHERE er.parent_id = el.id AND er.path = 'order' AND er.orders_id = ${orderIdNum}
+      )
+      ORDER BY el.timestamp ASC
+      LIMIT 100
+    `);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      type: r.type,
+      timestamp: r.timestamp?.toISOString(),
+      ipAddress: r.ip_address,
+      userAgent: r.user_agent,
+      device: r.device,
+      browser: r.browser,
+      data: r.data,
+    }));
+  } catch (e) {
+    console.error("[getOrderEvidence]", e);
+    return [];
+  }
 }
 
 // ---------------------

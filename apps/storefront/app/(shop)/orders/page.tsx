@@ -10,7 +10,7 @@ export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const orders = await getCustomerOrders(session.user.id!).catch(() => []);
+  const orders = await getCustomerOrders(session.user.email!).catch(() => []);
 
   return (
     <div className="mx-auto max-w-3xl">

@@ -41,7 +41,6 @@ export function getDeviceInfo(): { device: string; browser: string } {
 interface LogEvidenceParams {
   type: EvidenceType;
   orderId?: string;
-  customerId: string;
   data?: Record<string, any>;
 }
 
@@ -55,7 +54,6 @@ export async function logEvidence(params: LogEvidenceParams): Promise<void> {
     body: JSON.stringify({
       type: params.type,
       orderId: params.orderId,
-      customerId: params.customerId,
       sessionId,
       device,
       browser,

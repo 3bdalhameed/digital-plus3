@@ -24,29 +24,22 @@ export function CheckoutForm() {
     if (!termsAccepted || !session?.user?.id) return;
 
     setLoading(true);
-    try {
-      // Log terms acceptance as evidence
-      await logEvidence({
-        type: "terms_acceptance",
-        customerId: String((session.user as any).payloadCustomerId || session.user.id),
-        data: {
-          acceptedAt: new Date().toISOString(),
-          cartItems: items.map((i) => ({
-            productId: i.product.id,
-            name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
-            quantity: i.quantity,
-            price: i.product.price,
-          })),
-          totalAmount: totalPrice(),
-        },
-      });
-
-      setStep("payment");
-    } catch (err) {
-      setError("حدث خطأ أثناء تسجيل موافقتك. يرجى المحاولة مرة أخرى.");
-    } finally {
-      setLoading(false);
-    }
+    // Fire-and-forget: evidence logging should never block checkout
+    logEvidence({
+      type: "terms_acceptance",
+      data: {
+        acceptedAt: new Date().toISOString(),
+        cartItems: items.map((i) => ({
+          productId: i.product.id,
+          name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
+          quantity: i.quantity,
+          price: i.product.price,
+        })),
+        totalAmount: totalPrice(),
+      },
+    }).catch(() => {});
+    setStep("payment");
+    setLoading(false);
   };
 
   const handleCreatePayment = async () => {
