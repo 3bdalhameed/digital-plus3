@@ -1,3 +1,13 @@
 {
-  "buildCommand": "npx prisma generate && next build"
+  "buildCommand": "npx prisma generate && next build",
+  "crons": [
+    {
+      "path": "/api/cron/auto-confirm",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-cart",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

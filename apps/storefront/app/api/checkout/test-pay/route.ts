@@ -163,6 +163,15 @@ export async function POST(req: NextRequest) {
       `
     );
 
+    // Mark abandoned cart as completed
+    await prismaOrders.$executeRaw(
+      Prisma.sql`
+        UPDATE abandoned_carts
+        SET completed_at = ${now.toISOString()}::timestamptz, updated_at = ${now.toISOString()}::timestamptz
+        WHERE user_email = ${session.user.email} AND completed_at IS NULL
+      `
+    );
+
     console.log(`[test-pay] Order ${orderNumber} (id=${orderId}) created for customer ${customerId}`);
 
     return NextResponse.json({ orderId: String(orderId), orderNumber });
