@@ -24,8 +24,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
 COPY apps/cms/package.json ./apps/cms/
 
-# Production deps only
-RUN pnpm install --filter=cms... --frozen-lockfile --prod
+# Copy node_modules from builder (avoids re-downloading native binaries)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/cms/node_modules ./apps/cms/node_modules
 
 # Copy built dist from builder
 COPY --from=builder /app/apps/cms/dist ./apps/cms/dist

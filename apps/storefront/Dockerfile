@@ -28,9 +28,9 @@ COPY packages/ ./packages/
 COPY apps/storefront/package.json ./apps/storefront/
 COPY apps/storefront/prisma/ ./apps/storefront/prisma/
 
-# Production deps only
-RUN pnpm install --filter=storefront... --frozen-lockfile --prod
-RUN pnpm --filter=storefront exec prisma generate
+# Copy node_modules from builder (includes Prisma engines — avoids re-downloading)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/storefront/node_modules ./apps/storefront/node_modules
 
 # Copy built app
 COPY --from=builder /app/apps/storefront/.next ./apps/storefront/.next
