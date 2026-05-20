@@ -10,7 +10,8 @@ COPY packages/ ./packages/
 COPY apps/cms/ ./apps/cms/
 
 # Install all deps
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Build (payload build + tsc)
 RUN pnpm --filter=cms build

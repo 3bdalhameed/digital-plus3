@@ -10,7 +10,8 @@ COPY packages/ ./packages/
 COPY apps/storefront/ ./apps/storefront/
 
 # Install all deps
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Generate Prisma client
 RUN pnpm --filter=storefront exec prisma generate
