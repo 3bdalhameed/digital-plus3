@@ -34,7 +34,6 @@ COPY --from=builder /app/apps/storefront/node_modules ./apps/storefront/node_mod
 
 # Copy built app
 COPY --from=builder /app/apps/storefront/.next ./apps/storefront/.next
-COPY --from=builder /app/apps/storefront/public ./apps/storefront/public
 
 ENV NODE_ENV=production
 
