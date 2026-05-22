@@ -13,9 +13,13 @@ COPY apps/storefront/ ./apps/storefront/
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# Generate Prisma client (cache binary so re-runs don't re-download)
+# Generate Prisma client (cache binary; retry on network flakiness)
 RUN --mount=type=cache,id=prisma-binaries,target=/root/.cache/prisma \
-    pnpm --filter=storefront exec prisma generate
+    for i in 1 2 3 4 5; do \
+      pnpm --filter=storefront exec prisma generate && break; \
+      echo "prisma generate attempt $i failed, retrying in 20s..."; \
+      sleep 20; \
+    done
 
 # Build Next.js
 RUN pnpm --filter=storefront build
