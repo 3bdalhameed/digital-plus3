@@ -33,6 +33,7 @@ RUN apk add --no-cache openssl
 # Standalone output includes a minimal node_modules subset — no pnpm needed
 COPY --from=builder /app/apps/storefront/.next/standalone ./
 COPY --from=builder /app/apps/storefront/.next/static ./apps/storefront/.next/static
+COPY --from=builder /app/apps/storefront/public ./apps/storefront/public
 
 ENV NODE_ENV=production
 ENV PORT=3000
