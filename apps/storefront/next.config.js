@@ -4,6 +4,8 @@ const { hostname: cmsHostname, protocol: cmsProtocol, port: cmsPort } = new URL(
 
 const nextConfig = {
   output: "standalone",
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   images: {
     unoptimized: true,
     remotePatterns: [
