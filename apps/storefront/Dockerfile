@@ -21,8 +21,9 @@ RUN --mount=type=cache,id=prisma-binaries,target=/root/.cache/prisma \
       sleep 20; \
     done
 
-# Build Next.js (output: standalone traces runtime deps automatically)
-RUN pnpm --filter=storefront build
+# Build Next.js — cache webpack/SWC artifacts to speed up subsequent builds
+RUN --mount=type=cache,id=nextjs-cache,target=/app/apps/storefront/.next/cache \
+    pnpm --filter=storefront build
 
 # ── Runtime stage ───────────────────────────────────────
 FROM node:20-alpine
