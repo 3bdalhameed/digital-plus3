@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
+const { hostname: cmsHostname, protocol: cmsProtocol, port: cmsPort } = new URL(cmsUrl);
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -6,6 +9,11 @@ const nextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "3001",
+      },
+      {
+        protocol: cmsProtocol.replace(":", ""),
+        hostname: cmsHostname,
+        ...(cmsPort ? { port: cmsPort } : {}),
       },
       {
         protocol: "https",
