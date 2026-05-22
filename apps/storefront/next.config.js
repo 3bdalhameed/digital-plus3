@@ -4,6 +4,7 @@ const { hostname: cmsHostname, protocol: cmsProtocol, port: cmsPort } = new URL(
 
 const nextConfig = {
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "http",
