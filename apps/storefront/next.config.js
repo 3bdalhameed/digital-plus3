@@ -3,6 +3,7 @@ const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
 const { hostname: cmsHostname, protocol: cmsProtocol, port: cmsPort } = new URL(cmsUrl);
 
 const nextConfig = {
+  output: "standalone",
   images: {
     unoptimized: true,
     remotePatterns: [
