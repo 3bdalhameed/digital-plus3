@@ -31,8 +31,9 @@ COPY apps/cms/package.json ./apps/cms/
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/cms/node_modules ./apps/cms/node_modules
 
-# Copy built dist from builder
+# Copy built dist and admin bundle from builder
 COPY --from=builder /app/apps/cms/dist ./apps/cms/dist
+COPY --from=builder /app/apps/cms/build ./apps/cms/build
 
 ENV NODE_ENV=production
 ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
