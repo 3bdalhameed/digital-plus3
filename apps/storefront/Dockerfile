@@ -34,4 +34,4 @@ EXPOSE 3000
 
 # Use DATABASE_URL if set, otherwise fall back to CMS_DATABASE_URL.
 # prisma db push creates tables idempotently on every start.
-CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-$CMS_DATABASE_URL} && pnpm exec prisma db push --skip-generate && exec pnpm start"]
+CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-$CMS_DATABASE_URL} && pnpm exec prisma migrate deploy && exec pnpm start"]
