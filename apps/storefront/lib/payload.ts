@@ -253,7 +253,7 @@ export async function getProductBySlug(
 
   const data = await payloadFetch<PayloadDocs<Product>>("/products", {
     params,
-    cache: "no-store",
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
   });
   return data.docs[0] || null;
 }
