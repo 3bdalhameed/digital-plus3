@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { __cartSyncPrisma: PrismaClient };
-const prisma =
-  globalForPrisma.__cartSyncPrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production") globalForPrisma.__cartSyncPrisma = prisma;
 
 const schema = z.object({
   items: z.array(z.any()),

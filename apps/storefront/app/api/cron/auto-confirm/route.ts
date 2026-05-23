@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { __cronPrisma: PrismaClient };
-const prisma =
-  globalForPrisma.__cronPrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production") globalForPrisma.__cronPrisma = prisma;
 
 // Vercel Cron calls this with the Authorization header set to CRON_SECRET
 function isAuthorized(req: NextRequest) {

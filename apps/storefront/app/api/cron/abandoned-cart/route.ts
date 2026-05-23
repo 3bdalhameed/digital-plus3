@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { sendAbandonedCartEmail } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { __cronCartPrisma: PrismaClient };
-const prisma =
-  globalForPrisma.__cronCartPrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production") globalForPrisma.__cronCartPrisma = prisma;
 
 function isAuthorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET;

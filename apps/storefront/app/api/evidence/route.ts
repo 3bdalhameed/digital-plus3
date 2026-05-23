@@ -2,21 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { extractIP, extractUserAgent } from "@/lib/evidence";
 import { z } from "zod";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma as prismaEvidence } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-// Direct connection to Neon (same DB the storefront reads from)
-const globalForPrisma = global as unknown as { __evidencePrisma: PrismaClient };
-const prismaEvidence =
-  globalForPrisma.__evidencePrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production")
-  globalForPrisma.__evidencePrisma = prismaEvidence;
 
 const schema = z.object({
   type: z.enum([

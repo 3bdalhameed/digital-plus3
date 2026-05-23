@@ -2,20 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { extractIP, extractUserAgent } from "@/lib/evidence";
 import { z } from "zod";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma as prismaUsage } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { __usageConfirmPrisma: PrismaClient };
-const prismaUsage =
-  globalForPrisma.__usageConfirmPrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production")
-  globalForPrisma.__usageConfirmPrisma = prismaUsage;
 
 const usageSchema = z.object({
   orderId: z.union([z.string(), z.number()]).transform((v) => Number(v)),

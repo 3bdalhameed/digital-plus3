@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { prisma as prismaReviews } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { __reviewsPrisma: PrismaClient };
-const prismaReviews =
-  globalForPrisma.__reviewsPrisma ||
-  new PrismaClient({
-    datasources: {
-      db: { url: process.env.CMS_DATABASE_URL || process.env.DATABASE_URL },
-    },
-  });
-if (process.env.NODE_ENV !== "production")
-  globalForPrisma.__reviewsPrisma = prismaReviews;
 
 const schema = z.object({
   orderId: z.union([z.string(), z.number()]).transform(Number),
