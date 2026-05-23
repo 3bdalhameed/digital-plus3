@@ -29,9 +29,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-COPY apps/storefront/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
-
 WORKDIR /app/apps/storefront
 EXPOSE 3000
-CMD ["/app/apps/storefront/docker-entrypoint.sh"]
+
+# Use DATABASE_URL if set, otherwise fall back to CMS_DATABASE_URL.
+# prisma db push creates tables idempotently on every start.
+CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-$CMS_DATABASE_URL} && pnpm exec prisma db push --skip-generate && exec pnpm start"]
