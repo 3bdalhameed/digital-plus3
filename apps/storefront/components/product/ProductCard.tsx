@@ -38,13 +38,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* ── Image area ── */}
       <Link href={`/products/${product.slug}`} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
+        <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
           {imageUrl ? (
             <Image
               src={imageUrl}
               alt={displayName ?? ""}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-contain transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-5xl">📦</div>

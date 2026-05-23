@@ -29,6 +29,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+COPY apps/storefront/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 WORKDIR /app/apps/storefront
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["/app/apps/storefront/docker-entrypoint.sh"]
