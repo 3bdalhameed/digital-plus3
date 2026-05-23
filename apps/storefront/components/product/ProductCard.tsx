@@ -60,22 +60,26 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* ── Content ── */}
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col p-3 gap-2">
 
-        {/* Product name */}
-        <Link href={`/products/${product.slug}`}>
+        {/* Name + subcategory */}
+        <Link href={`/products/${product.slug}`} className="flex-1">
           <h3
-            className="line-clamp-2 text-sm font-bold leading-snug text-gray-800 transition-colors group-hover:text-[#7C3AED]"
+            className="line-clamp-2 text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-[#7C3AED]"
             dir="rtl"
           >
             {displayName}
           </h3>
+          {subcategoryLabel && (
+            <p className="mt-0.5 text-xs text-[#7C3AED] font-medium" dir="rtl">
+              {subcategoryLabel}
+            </p>
+          )}
         </Link>
 
-        <div className="mt-auto flex flex-col gap-2 pt-1">
-
-          {/* Price row */}
-          <div className="flex items-center justify-between" dir="rtl">
+        <div className="flex flex-col gap-2">
+          {/* Price */}
+          <div className="flex items-center gap-2 justify-end" dir="rtl">
             <span className="text-base font-black text-gray-900">
               {formatPrice(product.price, product.currency, currency, rates)}
             </span>
@@ -89,11 +93,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Add to cart button */}
           <button
             onClick={() => addItem(product)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-bold text-white transition-all hover:bg-[#6D28D9] active:scale-95"
+            className="flex w-full items-center justify-between gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#6D28D9] active:scale-95"
             dir="rtl"
           >
-            {lang === "en" ? "Add to Cart" : "أضف إلى السلة"}
             <ShoppingCart className="h-4 w-4 flex-shrink-0" />
+            <span>{lang === "en" ? "Add to Cart" : "أضف إلى السلة"}</span>
           </button>
         </div>
       </div>
