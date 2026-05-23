@@ -173,12 +173,12 @@ export const HomePage: GlobalConfig = {
               ],
             },
             {
-              name: "cardAspectRatio", label: "نسبة الارتفاع", type: "select", defaultValue: "3/4",
+              name: "cardAspectRatio", label: "نسبة الارتفاع", type: "select", defaultValue: "1",
               options: [
                 { label: "بانوراما — 16:9", value: "16/9" },
                 { label: "أفقي — 4:3",     value: "4/3" },
                 { label: "مربع — 1:1",     value: "1/1" },
-                { label: "عمودي — 3:4",    value: "3/4" },
+                { label: "عمودي — 3:4",    value: "1" },
                 { label: "طويل — 2:3",     value: "2/3" },
               ],
             },
