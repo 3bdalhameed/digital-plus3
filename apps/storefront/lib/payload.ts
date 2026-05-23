@@ -1,4 +1,5 @@
 import { draftMode } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { PrismaClient, Prisma } from "@prisma/client";
 import type {
   Product,
@@ -75,6 +76,12 @@ interface PayloadDocs<T> {
   hasPrevPage: boolean;
 }
 
+const getProductsFilteredCached = unstable_cache(
+  getProductsFiltered,
+  ["products-filtered"],
+  { revalidate: 60, tags: ["products"] }
+);
+
 export async function getProducts(params?: {
   category?: string;
   categoryId?: number;
@@ -86,7 +93,7 @@ export async function getProducts(params?: {
   limit?: number;
 }): Promise<PayloadDocs<Product>> {
   if (params?.category || params?.subcategory || params?.q) {
-    return getProductsFiltered(params);
+    return getProductsFilteredCached(params);
   }
 
   const where: Record<string, any> = { status: { equals: "published" } };
