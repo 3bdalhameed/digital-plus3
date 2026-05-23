@@ -7,6 +7,10 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   experimental: {
+    turbotrace: {
+      logLevel: "error",
+      memoryLimit: 4096,
+    },
     outputFileTracingExcludes: {
       "*": [
         // Build-only compiler/bundler tooling
