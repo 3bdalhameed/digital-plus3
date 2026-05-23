@@ -44,5 +44,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger Coolify redeploy
-        run: |
-          curl -fsSL -X GET "${{ secrets.COOLIFY_STOREFRONT_WEBHOOK }}"
+        if: ${{ secrets.COOLIFY_STOREFRONT_WEBHOOK != '' }}
+        env:
+          WEBHOOK: ${{ secrets.COOLIFY_STOREFRONT_WEBHOOK }}
+        run: curl -fsSL -X GET "$WEBHOOK"
