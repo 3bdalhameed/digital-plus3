@@ -44,35 +44,11 @@ export function ProductCard({ product }: ProductCardProps) {
               src={imageUrl}
               alt={displayName ?? ""}
               fill
-              className="object-contain transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-5xl">📦</div>
           )}
-
-          {/* Bottom gradient so badges over image are readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
-
-          {/* Platform / subcategory badge — top left */}
-          {(categoryIconUrl || subcategoryLabel) && (
-            <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/70 px-2 py-1 backdrop-blur-sm">
-              {categoryIconUrl && (
-                <div className="relative h-5 w-5 flex-shrink-0 overflow-hidden rounded-full bg-white">
-                  <Image src={categoryIconUrl} alt="" fill className="object-contain p-0.5" />
-                </div>
-              )}
-              {subcategoryLabel && (
-                <span className="text-[11px] font-bold leading-none text-white">
-                  {subcategoryLabel}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Store brand badge — top right */}
-          <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 backdrop-blur-sm shadow-sm">
-            <span className="text-[10px] font-black leading-none text-[#7C3AED]">ديجيتال بلس</span>
-          </div>
 
           {/* Discount badge — bottom left */}
           {hasDiscount && (

@@ -34,4 +34,4 @@ ENV HOSTNAME=0.0.0.0
 WORKDIR /app/apps/storefront
 EXPOSE 3000
 
-CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-$CMS_DATABASE_URL} && pnpm exec prisma migrate resolve --applied 20240101000000_init 2>/dev/null; pnpm exec prisma migrate deploy && exec pnpm start"]
+CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-$CMS_DATABASE_URL} && DIRECT_URL=$(echo $DATABASE_URL | sed 's/-pooler\\././ ') && DATABASE_URL=$DIRECT_URL pnpm exec prisma migrate resolve --applied 20240101000000_init 2>/dev/null; DATABASE_URL=$DIRECT_URL pnpm exec prisma migrate deploy && exec pnpm start"]
