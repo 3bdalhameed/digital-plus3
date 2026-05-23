@@ -6,6 +6,21 @@ const nextConfig = {
   output: "standalone",
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    outputFileTracingExcludes: {
+      "*": [
+        "node_modules/@swc/**",
+        "node_modules/esbuild/**",
+        "node_modules/webpack/**",
+        "node_modules/next/dist/compiled/webpack/**",
+        "node_modules/next/dist/compiled/terser/**",
+        "node_modules/rollup/**",
+        "node_modules/prettier/**",
+        "node_modules/typescript/**",
+        "node_modules/prisma/**",
+      ],
+    },
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
