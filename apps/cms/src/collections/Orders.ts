@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { ordersAccess, hiddenUnless } from "../access";
+import { sendOrderStatusChangeEmail } from "../lib/email";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -21,7 +22,7 @@ export const Orders: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc, previousDoc, req }) => {
+      async ({ doc, previousDoc, req, operation }) => {
         const isPaid = doc.status === "paid";
         const wasPaid = previousDoc?.status === "paid";
         if (!isPaid || wasPaid) return;
@@ -43,6 +44,39 @@ export const Orders: CollectionConfig = {
           } catch (e) {
             console.error("Failed to increment totalSales for product", productId, e);
           }
+        }
+      },
+
+      // Status-change email notifications
+      async ({ doc, previousDoc, req, operation }) => {
+        if (operation !== "update") return;
+        if (!previousDoc || doc.status === previousDoc.status) return;
+
+        try {
+          const customerId = typeof doc.customer === "object" ? doc.customer?.id : doc.customer;
+          if (!customerId) return;
+
+          // Fetch customer to get email (relationship depth=0 in hooks)
+          const customer = await req.payload.findByID({
+            collection: "customers",
+            id: customerId,
+          }) as any;
+
+          const customerEmail: string = customer?.email ?? "";
+          const customerName: string  = customer?.name ?? customer?.email ?? "عزيزي العميل";
+
+          if (!customerEmail) return;
+
+          await sendOrderStatusChangeEmail({
+            customerEmail,
+            customerName,
+            orderNumber: doc.orderNumber ?? String(doc.id),
+            oldStatus: previousDoc.status,
+            newStatus: doc.status,
+            orderId: doc.id,
+          });
+        } catch (e) {
+          console.error("[order status email] failed:", e);
         }
       },
     ],
