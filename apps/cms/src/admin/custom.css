@@ -1,3 +1,40 @@
+/* Arabic font */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+
+/* RTL layout for Arabic admin */
+html, body, #app {
+  direction: rtl;
+  font-family: 'Cairo', system-ui, sans-serif;
+}
+
+/* Keep LTR for code editors, slugs, URLs, emails */
+input[type="email"],
+input[type="url"],
+.field-type-code,
+[class*="codeEditor"],
+[class*="CodeEditor"],
+.code-editor,
+pre, code {
+  direction: ltr;
+  text-align: left;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+/* Flip sidebar icons/arrows to match RTL */
+[class*="nav__"] svg,
+[class*="chevron"],
+[class*="Chevron"] {
+  transform: scaleX(-1);
+}
+
+/* Prevent double-flip on already-RTL icons */
+[class*="chevron-up"],
+[class*="chevron-down"],
+[class*="ChevronUp"],
+[class*="ChevronDown"] {
+  transform: none;
+}
+
 /* Force light theme regardless of OS/browser preference */
 :root,
 [data-theme="dark"] {

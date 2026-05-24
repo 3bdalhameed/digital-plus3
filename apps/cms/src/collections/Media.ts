@@ -31,8 +31,9 @@ async function uploadFileToR2(filename: string, mimeType: string) {
 
 export const Media: CollectionConfig = {
   slug: "media",
+  labels: { singular: "ملف وسائط", plural: "الوسائط" },
   admin: {
-    group: "Settings",
+    group: "الإعدادات",
     hidden: ({ user }: { user: any }) =>
       !["super_admin", "admin", "catalog"].includes(user?.role),
   },

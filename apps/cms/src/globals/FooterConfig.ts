@@ -2,8 +2,8 @@ import { GlobalConfig } from "payload/types";
 
 export const FooterConfig: GlobalConfig = {
   slug: "footer-config",
-  label: "Footer",
-  admin: { group: "Settings" },
+  label: "التذييل",
+  admin: { group: "الإعدادات" },
   access: { read: () => true },
   fields: [
     {

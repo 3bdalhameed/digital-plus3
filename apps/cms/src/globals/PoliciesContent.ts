@@ -2,8 +2,8 @@ import { GlobalConfig } from "payload/types";
 
 export const PoliciesContent: GlobalConfig = {
   slug: "policies-content",
-  label: "Policies",
-  admin: { group: "Pages" },
+  label: "السياسات",
+  admin: { group: "الصفحات" },
   access: { read: () => true },
   fields: [
     {

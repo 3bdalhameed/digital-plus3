@@ -3,10 +3,11 @@ import { supportAccess, hiddenUnless } from "../access";
 
 export const SupportTickets: CollectionConfig = {
   slug: "support-tickets",
+  labels: { singular: "تذكرة دعم", plural: "تذاكر الدعم" },
   admin: {
     useAsTitle: "id",
     defaultColumns: ["order", "customer", "status", "channel", "createdAt"],
-    group: "Support",
+    group: "الدعم الفني",
     hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
   },
   access: supportAccess,

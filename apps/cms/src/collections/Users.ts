@@ -3,10 +3,11 @@ import { usersAccess } from "../access";
 
 export const Users: CollectionConfig = {
   slug: "users",
+  labels: { singular: "مستخدم", plural: "المستخدمين" },
   auth: true,
   admin: {
     useAsTitle: "email",
-    group: "Settings",
+    group: "الإعدادات",
     // Only super_admin sees the Users section in the sidebar
     hidden: ({ user }) => (user as any)?.role !== "super_admin",
   },

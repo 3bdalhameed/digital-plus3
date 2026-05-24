@@ -4,10 +4,11 @@ import BilingualNameHeader from "../admin/components/BilingualNameHeader";
 
 export const Subcategories: CollectionConfig = {
   slug: "subcategories",
+  labels: { singular: "تصنيف فرعي", plural: "التصنيفات الفرعية" },
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "category", "position", "isActive"],
-    group: "Catalog",
+    group: "الكتالوج",
     hidden: hiddenUnless("super_admin", "admin", "catalog"),
   },
   access: catalogAccess,

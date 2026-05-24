@@ -5,6 +5,7 @@ import BilingualHtmlHeader from "../admin/components/BilingualHtmlHeader";
 
 export const Products: CollectionConfig = {
   slug: "products",
+  labels: { singular: "منتج", plural: "المنتجات" },
   hooks: {
     beforeChange: [
       async ({ data, req }) => {
@@ -39,7 +40,7 @@ export const Products: CollectionConfig = {
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "nameEn", "type", "price", "status", "totalSales", "updatedAt"],
-    group: "Catalog",
+    group: "الكتالوج",
     hidden: hiddenUnless("super_admin", "admin", "catalog"),
     preview: (doc) => {
       const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";

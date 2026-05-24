@@ -42,9 +42,9 @@ const layoutFields: Field[] = [
 
 export const HomePage: GlobalConfig = {
   slug: "home-page",
-  label: "Home Page",
+  label: "الصفحة الرئيسية",
   admin: {
-    group: "Pages",
+    group: "الصفحات",
     preview: () => {
       const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
       return `${cmsUrl}/api/preview-redirect?collection=home-page`;

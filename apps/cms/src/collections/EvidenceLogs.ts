@@ -3,10 +3,11 @@ import { ordersAccess, hiddenUnless } from "../access";
 
 export const EvidenceLogs: CollectionConfig = {
   slug: "evidence-logs",
+  labels: { singular: "سجل دليل", plural: "سجلات الأدلة" },
   admin: {
     useAsTitle: "type",
     defaultColumns: ["type", "order", "customer", "timestamp"],
-    group: "Orders",
+    group: "الطلبات",
     hidden: hiddenUnless("super_admin", "admin", "orders"),
   },
   access: {

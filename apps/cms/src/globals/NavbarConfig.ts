@@ -2,8 +2,8 @@ import { GlobalConfig } from "payload/types";
 
 export const NavbarConfig: GlobalConfig = {
   slug: "navbar-config",
-  label: "Navigation",
-  admin: { group: "Settings" },
+  label: "شريط التنقل",
+  admin: { group: "الإعدادات" },
   access: { read: () => true },
   fields: [
     {

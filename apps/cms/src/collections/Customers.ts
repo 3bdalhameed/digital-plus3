@@ -3,10 +3,11 @@ import { ordersAccess, hiddenUnless } from "../access";
 
 export const Customers: CollectionConfig = {
   slug: "customers",
+  labels: { singular: "عميل", plural: "العملاء" },
   admin: {
     useAsTitle: "email",
     defaultColumns: ["email", "name", "createdAt"],
-    group: "Orders",
+    group: "الطلبات",
     hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
   },
   auth: false,

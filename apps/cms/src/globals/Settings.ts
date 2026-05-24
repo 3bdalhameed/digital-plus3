@@ -2,9 +2,9 @@ import { GlobalConfig } from "payload/types";
 
 export const Settings: GlobalConfig = {
   slug: "settings",
-  label: "Site Settings",
+  label: "إعدادات الموقع",
   admin: {
-    group: "Settings",
+    group: "الإعدادات",
   },
   access: {
     read: () => true,
