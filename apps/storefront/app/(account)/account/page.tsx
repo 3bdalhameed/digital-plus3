@@ -1,16 +1,50 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { User, ShoppingBag, MessageCircle, Shield } from "lucide-react";
+import Image from "next/image";
+import { User, ShoppingBag, MessageCircle } from "lucide-react";
+import { getSettings } from "@/lib/payload";
 
 export const metadata = { title: "حسابي" };
 
+async function getLogoUrl(): Promise<string | null> {
+  try {
+    const settings = await getSettings();
+    const raw = (settings as any)?.logo?.url as string | undefined;
+    if (!raw) return null;
+    if (raw.startsWith("http")) return raw;
+    const cmsOrigin =
+      process.env.PAYLOAD_API_URL?.replace("/api", "") || "http://localhost:3001";
+    return `${cmsOrigin}${raw}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function AccountPage() {
-  const session = await auth();
+  const [session, logoUrl] = await Promise.all([auth(), getLogoUrl()]);
   if (!session?.user) redirect("/login");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Store logo */}
+      <div className="flex justify-center py-2">
+        {logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt="الشعار"
+            width={140}
+            height={48}
+            className="object-contain"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#9333EA]">
+            <span className="text-xl font-black text-white">+</span>
+          </div>
+        )}
+      </div>
+
       <h1 className="text-2xl font-black text-brand-800">حسابي</h1>
 
       <div className="brand-card flex items-center gap-4">

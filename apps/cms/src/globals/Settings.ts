@@ -14,7 +14,6 @@ export const Settings: GlobalConfig = {
       name: "siteName",
       label: "اسم الموقع",
       type: "text",
-      required: true,
       defaultValue: "ديجيتال بلس",
     },
     {
@@ -33,7 +32,6 @@ export const Settings: GlobalConfig = {
       name: "contactEmail",
       label: "البريد الإلكتروني",
       type: "email",
-      required: true,
     },
     {
       name: "whatsappNumber",
