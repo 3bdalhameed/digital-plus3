@@ -1,6 +1,7 @@
 name: Build & Deploy CMS
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
