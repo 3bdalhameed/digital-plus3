@@ -197,8 +197,10 @@ async function getAdminEmails(payload: any): Promise<string[]> {
       slug: "settings",
       overrideAccess: true,
     }) as any;
-    for (const row of settings?.orderNotificationEmails ?? []) {
-      if (row.email) emails.add(row.email);
+    const extraRaw = (settings?.orderNotificationEmails as string | undefined) ?? "";
+    for (const line of extraRaw.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed) emails.add(trimmed);
     }
   } catch (e) {
     console.error("[email] failed to fetch settings recipients:", e);
