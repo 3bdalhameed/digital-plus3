@@ -116,11 +116,11 @@ aside {
 .nav a,
 .nav__link,
 [class*="nav__link"] {
-  color: #C4B5FD !important;
+  color: #EDE9FE !important;
   border-radius: 8px !important;
   margin: 1px 8px !important;
   padding: 9px 14px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 14px !important;
   transition: background 0.15s, color 0.15s !important;
   display: flex !important;
@@ -136,7 +136,7 @@ aside {
 .nav a[aria-current],
 [class*="nav__link--active"],
 [class*="nav__link"][class*="active"] {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255,255,255,0.14) !important;
   color: #FFFFFF !important;
 }
 
@@ -144,9 +144,9 @@ aside {
 [class*="nav__group-label"],
 .nav__group-label,
 .nav__group > span:first-child {
-  color: #A78BFA !important;
+  color: #C4B5FD !important;
   font-size: 10px !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   letter-spacing: 0.1em !important;
   text-transform: uppercase !important;
   padding: 14px 22px 5px !important;
@@ -317,14 +317,45 @@ button[class*="btn"],
 }
 
 /* ── Cards / field panels ────────────────────────────────── */
-[class*="render-fields"],
-[class*="document-fields"],
-[class*="field-group"] {
+/* Only top-level document-fields gets the card look */
+[class*="document-fields"] {
   background: #FFFFFF !important;
   border: 1px solid #EDE9FE !important;
   border-radius: 14px !important;
   box-shadow: 0 2px 10px rgba(124,58,237,0.06) !important;
   padding: 24px !important;
+}
+
+/* Reset nested render-fields / field-groups — no stacking */
+[class*="document-fields"] [class*="render-fields"],
+[class*="render-fields"] [class*="render-fields"],
+[class*="array"]           [class*="render-fields"],
+[class*="collapsible"]     [class*="render-fields"],
+[class*="row-label"]       [class*="render-fields"],
+[class*="document-fields"] [class*="field-group"],
+[class*="array"]           [class*="field-group"] {
+  background:    transparent !important;
+  border:        none !important;
+  border-radius: 0 !important;
+  box-shadow:    none !important;
+  padding:       0 !important;
+}
+
+/* ── Array rows (page builder sections, repeating fields) ── */
+[class*="array-field__row"],
+[class*="array__row"],
+[class*="row-label"] {
+  background:    #FAFAFA !important;
+  border:        1px solid #EDE9FE !important;
+  border-radius: 10px !important;
+  margin-bottom: 8px !important;
+  box-shadow:    none !important;
+  transition:    background 0.12s, border-color 0.12s !important;
+}
+[class*="array-field__row"]:hover,
+[class*="array__row"]:hover {
+  background:   #F5F3FF !important;
+  border-color: #DDD6FE !important;
 }
 
 /* ── Edit-page sidebar (status / dates) ──────────────────── */
