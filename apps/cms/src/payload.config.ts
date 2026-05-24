@@ -74,14 +74,22 @@ export default buildConfig({
           res.json({ error: "pool not found", dbKeys });
           return;
         }
-        try {
-          await pool.query(
-            "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'"
-          );
-          res.json({ ok: true, message: "badge column ready" });
-        } catch (e: any) {
-          res.json({ ok: false, error: e.message });
+        const results: Record<string, string> = {};
+        const run = async (label: string, sql: string) => {
+          try { await pool.query(sql); results[label] = "ok"; }
+          catch (e: any) { results[label] = e.message; }
+        };
+        // Products
+        await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
+        // Settings — drop orphan tables if they exist from old array fields
+        await run("drop_social_links", "DROP TABLE IF EXISTS settings_social_links CASCADE");
+        await run("drop_notif_emails", "DROP TABLE IF EXISTS settings_order_notification_emails CASCADE");
+        // Settings — add new flat social columns
+        const socialCols = ["instagram_url","twitter_url","facebook_url","tiktok_url","youtube_url","telegram_url","whatsapp_url","order_notification_emails"];
+        for (const col of socialCols) {
+          await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
         }
+        res.json({ ok: true, results });
       },
     },
     {

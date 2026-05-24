@@ -391,13 +391,17 @@ export interface SiteSettings {
   siteName: string;
   logo?: Media;
   favicon?: Media;
-  socialLinks?: {
-    platform: string;
-    url: string;
-  }[];
-  contactEmail: string;
+  contactEmail?: string;
   whatsappNumber?: string;
   supportHours?: string;
+  orderNotificationEmails?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  telegramUrl?: string;
+  whatsappUrl?: string;
 }
 
 export interface NavLink {
