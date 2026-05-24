@@ -13,6 +13,10 @@ COPY apps/cms/ ./apps/cms/
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
+# PAYLOAD_PUBLIC_SERVER_URL must be baked into the admin bundle at build time
+ARG PAYLOAD_PUBLIC_SERVER_URL=http://localhost:3001
+ENV PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL
+
 # Build (payload build + tsc)
 RUN pnpm --filter=cms build
 
