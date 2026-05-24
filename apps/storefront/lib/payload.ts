@@ -518,7 +518,12 @@ export async function getOrderEvidence(orderId: string): Promise<any[]> {
 // ---------------------
 
 export async function getHomePage(): Promise<HomePage> {
-  return payloadFetch("/globals/home-page", { params: { depth: "2" } });
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+  return payloadFetch("/globals/home-page", {
+    params: { depth: "2" },
+    ...(isPreview ? { cache: "no-store" } : {}),
+  });
 }
 
 export async function getSettings(): Promise<SiteSettings> {

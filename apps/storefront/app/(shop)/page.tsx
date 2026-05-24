@@ -2,10 +2,14 @@ import { getHomePage } from "@/lib/payload";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import Link from "next/link";
 import { ArrowLeft, Zap, Shield, Headphones, Star } from "lucide-react";
+import { draftMode } from "next/headers";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
+  // Reading draftMode opts this page out of ISR when preview is active
+  const { isEnabled: isPreview } = draftMode();
+
   let homeData;
   try {
     homeData = await getHomePage();
