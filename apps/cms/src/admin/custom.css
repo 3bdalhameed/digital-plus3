@@ -106,6 +106,38 @@ aside {
   box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
 }
 
+/* Invert the color-base scale inside the sidebar so Payload's
+   elevation-based hover rules resolve to light/transparent instead of black */
+.nav,
+[class*="nav__wrap"],
+aside {
+  --color-base-0:    255,255,255;
+  --color-base-50:   250,248,255;
+  --color-base-100:  237,233,254;
+  --color-base-150:  221,214,254;
+  --color-base-200:  196,181,253;
+  --color-base-250:  167,139,250;
+  --color-base-300:  139,92,246;
+  --color-base-350:  124,58,237;
+  --color-base-400:  109,40,217;
+  --color-base-450:  91,33,182;
+  --color-base-500:  76,29,149;
+  --color-base-550:  59,7,100;
+  --color-base-600:  45,27,105;
+  --color-base-700:  30,27,75;
+  --color-base-750:  19,16,58;
+  --color-base-800:  13,10,46;
+  --color-base-850:  8,6,30;
+  --color-base-900:  4,3,15;
+  --color-base-1000: 0,0,0;
+  --theme-text:      #EDE9FE;
+  --theme-elevation-0:   rgba(255,255,255,0.04);
+  --theme-elevation-50:  rgba(255,255,255,0.07);
+  --theme-elevation-100: rgba(255,255,255,0.11);
+  --theme-elevation-150: rgba(255,255,255,0.15);
+  --theme-elevation-200: rgba(255,255,255,0.20);
+}
+
 .nav__header,
 [class*="nav__header"] {
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
@@ -135,9 +167,20 @@ aside {
 [class*="nav__link"]:hover,
 .nav a[aria-current],
 [class*="nav__link--active"],
-[class*="nav__link"][class*="active"] {
-  background: rgba(255,255,255,0.14) !important;
+[class*="nav__link"][class*="active"],
+aside a:hover,
+aside button:hover,
+aside li:hover,
+[class*="nav__group-toggle"]:hover,
+[class*="nav__toggle"]:hover {
+  background: rgba(255,255,255,0.15) !important;
   color: #FFFFFF !important;
+}
+
+/* Hard block any dark background from leaking into the sidebar */
+.nav *,
+aside * {
+  --theme-elevation-1000: rgba(255,255,255,0.15);
 }
 
 /* Nav group headers */
@@ -317,28 +360,38 @@ button[class*="btn"],
 }
 
 /* ── Cards / field panels ────────────────────────────────── */
-/* Only top-level document-fields gets the card look */
-[class*="document-fields"] {
+/* Card on the outermost render-fields that has content (has-gutter = real field area) */
+[class*="render-fields--has-gutter"] {
   background: #FFFFFF !important;
   border: 1px solid #EDE9FE !important;
   border-radius: 14px !important;
   box-shadow: 0 2px 10px rgba(124,58,237,0.06) !important;
   padding: 24px !important;
+  margin-bottom: 16px !important;
 }
 
-/* Reset nested render-fields / field-groups — no stacking */
-[class*="document-fields"] [class*="render-fields"],
+/* Suppress the document-fields wrapper itself so it doesn't add a second card */
+[class*="document-fields"] {
+  background: transparent !important;
+  border:     none !important;
+  box-shadow: none !important;
+  padding:    0 !important;
+}
+
+/* Reset nested render-fields / field-groups — no stacking cards */
+[class*="render-fields--has-gutter"] [class*="render-fields"],
 [class*="render-fields"] [class*="render-fields"],
-[class*="array"]           [class*="render-fields"],
-[class*="collapsible"]     [class*="render-fields"],
-[class*="row-label"]       [class*="render-fields"],
-[class*="document-fields"] [class*="field-group"],
-[class*="array"]           [class*="field-group"] {
+[class*="array"]          [class*="render-fields"],
+[class*="collapsible"]    [class*="render-fields"],
+[class*="row-label"]      [class*="render-fields"],
+[class*="render-fields"]  [class*="field-group"],
+[class*="array"]          [class*="field-group"] {
   background:    transparent !important;
   border:        none !important;
   border-radius: 0 !important;
   box-shadow:    none !important;
   padding:       0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* ── Array rows (page builder sections, repeating fields) ── */
@@ -506,11 +559,70 @@ button[class*="btn"],
 }
 
 /* ── Toast / notification ────────────────────────────────── */
+/* Container — move from bottom to top-right */
+.Toastify__toast-container,
+[class*="toast-container"],
+[class*="toastContainer"],
+[class*="notifications__container"],
+[class*="payload-toast"] {
+  top: 20px !important;
+  right: 20px !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 99999 !important;
+}
+
+/* Individual toast — base */
+.Toastify__toast,
 [class*="toast"],
-[class*="notification"] {
+[class*="notification--type"] {
   border-radius: 12px !important;
   font-family: 'Cairo', 'Tajawal', sans-serif !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  direction: rtl !important;
+  min-width: 280px !important;
+  box-shadow: 0 4px 24px rgba(124,58,237,0.28) !important;
+}
+
+/* Success state */
+.Toastify__toast--success,
+[class*="toast--success"],
+[class*="notification--type-success"],
+[class*="notification--success"] {
+  background: linear-gradient(135deg, #7C3AED, #9333EA) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+/* Error state */
+.Toastify__toast--error,
+[class*="toast--error"],
+[class*="notification--type-error"],
+[class*="notification--error"] {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border: 1px solid #FECACA !important;
+}
+
+/* Warning state */
+.Toastify__toast--warning,
+[class*="toast--warning"],
+[class*="notification--type-warning"],
+[class*="notification--warning"] {
+  background: #FEF3C7 !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A !important;
+}
+
+/* Toast progress bar */
+.Toastify__progress-bar--success {
+  background: rgba(255,255,255,0.4) !important;
+}
+
+/* Close button inside toast */
+.Toastify__close-button {
+  color: currentColor !important;
+  opacity: 0.7 !important;
 }
 
 /* ── Modal / drawer ──────────────────────────────────────── */
