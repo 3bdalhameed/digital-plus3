@@ -62,6 +62,7 @@ export async function sendOrderStatusChangeEmail({
   oldStatus,
   newStatus,
   orderId,
+  payload,
 }: {
   customerEmail: string;
   customerName: string;
@@ -69,6 +70,7 @@ export async function sendOrderStatusChangeEmail({
   oldStatus: string;
   newStatus: string;
   orderId: string | number;
+  payload: any;
 }): Promise<void> {
   const storeUrl  = process.env.STOREFRONT_URL || "http://localhost:3000";
   const cmsUrl    = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
@@ -134,7 +136,7 @@ export async function sendOrderStatusChangeEmail({
   });
 
   // ── Admin email ───────────────────────────────────────────────────────────
-  const adminEmails = await getAdminEmails();
+  const adminEmails = await getAdminEmails(payload);
   if (adminEmails.length === 0) return;
 
   const adminHtml = `
@@ -171,19 +173,36 @@ export async function sendOrderStatusChangeEmail({
   });
 }
 
-let cachedAdminEmails: string[] | null = null;
-let cacheExpiry = 0;
+async function getAdminEmails(payload: any): Promise<string[]> {
+  const emails = new Set<string>();
 
-async function getAdminEmails(): Promise<string[]> {
-  // Cache for 5 minutes so we don't query on every order update
-  if (cachedAdminEmails && Date.now() < cacheExpiry) return cachedAdminEmails;
-
-  const adminEmailsEnv = process.env.ADMIN_NOTIFICATION_EMAILS;
-  if (adminEmailsEnv) {
-    cachedAdminEmails = adminEmailsEnv.split(",").map((e) => e.trim()).filter(Boolean);
-    cacheExpiry = Date.now() + 5 * 60 * 1000;
-    return cachedAdminEmails;
+  try {
+    // 1. All users with super_admin or admin role
+    const usersResult = await payload.find({
+      collection: "users",
+      where: { role: { in: ["super_admin", "admin"] } },
+      limit: 100,
+      overrideAccess: true,
+    });
+    for (const u of usersResult?.docs ?? []) {
+      if (u.email) emails.add(u.email);
+    }
+  } catch (e) {
+    console.error("[email] failed to fetch admin users:", e);
   }
 
-  return [];
+  try {
+    // 2. Extra recipients configured in Settings global
+    const settings = await payload.findGlobal({
+      slug: "settings",
+      overrideAccess: true,
+    }) as any;
+    for (const row of settings?.orderNotificationEmails ?? []) {
+      if (row.email) emails.add(row.email);
+    }
+  } catch (e) {
+    console.error("[email] failed to fetch settings recipients:", e);
+  }
+
+  return [...emails];
 }

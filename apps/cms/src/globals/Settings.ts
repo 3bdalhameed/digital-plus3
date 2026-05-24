@@ -46,6 +46,27 @@ export const Settings: GlobalConfig = {
       type: "text",
     },
     {
+      name: "orderNotificationEmails",
+      label: "إشعارات الطلبات — مستلمون إضافيون",
+      type: "array",
+      admin: {
+        description: "بريد إلكتروني يُضاف إلى إشعارات تغيير حالة الطلب (بجانب المدراء تلقائياً)",
+      },
+      fields: [
+        {
+          name: "email",
+          label: "البريد الإلكتروني",
+          type: "email",
+          required: true,
+        },
+        {
+          name: "label",
+          label: "الاسم / الوصف",
+          type: "text",
+        },
+      ],
+    },
+    {
       name: "socialLinks",
       label: "روابط التواصل",
       type: "array",

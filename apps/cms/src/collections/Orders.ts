@@ -74,6 +74,7 @@ export const Orders: CollectionConfig = {
             oldStatus: previousDoc.status,
             newStatus: doc.status,
             orderId: doc.id,
+            payload: req.payload,
           });
         } catch (e) {
           console.error("[order status email] failed:", e);
