@@ -28,24 +28,24 @@ export async function GET(req: NextRequest) {
       updated_at: Date;
     };
 
-    // Carts abandoned for 3+ hours, first reminder not yet sent
+    // First reminder: 2 hours after last cart update, not yet sent
     const firstBatch = await prisma.$queryRaw<CartRow[]>(Prisma.sql`
       SELECT id, user_email, user_name, cart_data, first_reminder_sent_at, second_reminder_sent_at, updated_at
       FROM abandoned_carts
       WHERE completed_at IS NULL
         AND first_reminder_sent_at IS NULL
-        AND updated_at < NOW() - INTERVAL '3 hours'
+        AND updated_at < NOW() - INTERVAL '2 hours'
         AND jsonb_array_length(cart_data) > 0
     `);
 
-    // Carts abandoned 6+ hours since first reminder, second not yet sent
+    // Second reminder: 4 hours after first (= ~6 hours from abandonment), not yet sent
     const secondBatch = await prisma.$queryRaw<CartRow[]>(Prisma.sql`
       SELECT id, user_email, user_name, cart_data, first_reminder_sent_at, second_reminder_sent_at, updated_at
       FROM abandoned_carts
       WHERE completed_at IS NULL
         AND first_reminder_sent_at IS NOT NULL
         AND second_reminder_sent_at IS NULL
-        AND first_reminder_sent_at < NOW() - INTERVAL '3 hours'
+        AND first_reminder_sent_at < NOW() - INTERVAL '4 hours'
         AND jsonb_array_length(cart_data) > 0
     `);
 
