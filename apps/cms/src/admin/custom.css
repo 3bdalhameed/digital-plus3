@@ -1,38 +1,25 @@
-/* Arabic font */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
-
 /* RTL layout for Arabic admin */
-html, body, #app {
-  direction: rtl;
-  font-family: 'Cairo', system-ui, sans-serif;
+html, body, #app, [class*="template-"], [class*="nav"], [class*="collection"] {
+  direction: rtl !important;
+  font-family: 'Cairo', 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif !important;
 }
 
-/* Keep LTR for code editors, slugs, URLs, emails */
+/* Keep LTR for code editors, slugs, URLs, emails, numbers */
 input[type="email"],
 input[type="url"],
+input[type="number"],
 .field-type-code,
 [class*="codeEditor"],
 [class*="CodeEditor"],
 .code-editor,
 pre, code {
-  direction: ltr;
-  text-align: left;
-  font-family: 'Fira Code', 'Consolas', monospace;
+  direction: ltr !important;
+  text-align: left !important;
 }
 
-/* Flip sidebar icons/arrows to match RTL */
-[class*="nav__"] svg,
-[class*="chevron"],
-[class*="Chevron"] {
+/* Flip sidebar collapse arrows for RTL */
+[class*="nav__toggle"] svg {
   transform: scaleX(-1);
-}
-
-/* Prevent double-flip on already-RTL icons */
-[class*="chevron-up"],
-[class*="chevron-down"],
-[class*="ChevronUp"],
-[class*="ChevronDown"] {
-  transform: none;
 }
 
 /* Force light theme regardless of OS/browser preference */
