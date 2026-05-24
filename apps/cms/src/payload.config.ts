@@ -64,6 +64,16 @@ export default buildConfig({
 
   endpoints: [
     {
+      path: "/version",
+      method: "get",
+      handler: (_req, res) => {
+        res.json({
+          commit: process.env.COMMIT_SHA ?? "unknown",
+          built:  process.env.COMMIT_SHA ? `https://github.com/3bdalhameed/digital-plus3/commit/${process.env.COMMIT_SHA}` : null,
+        });
+      },
+    },
+    {
       path: "/migrate",
       method: "get",
       handler: async (req, res) => {

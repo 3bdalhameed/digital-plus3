@@ -17,8 +17,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 ARG PAYLOAD_PUBLIC_SERVER_URL=http://localhost:3001
 ENV PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL
 
-# Changing the ARG invalidates this layer's cache so webpack re-compiles with the correct serverURL
-RUN echo "Building with PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL" && pnpm --filter=cms build
+ARG COMMIT_SHA=unknown
+ENV COMMIT_SHA=$COMMIT_SHA
+
+RUN echo "Building with PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL commit=$COMMIT_SHA" && pnpm --filter=cms build
 
 # ── Runtime stage ───────────────────────────────────────
 FROM node:20-alpine

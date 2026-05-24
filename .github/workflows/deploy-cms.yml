@@ -45,6 +45,7 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PAYLOAD_PUBLIC_SERVER_URL=${{ secrets.CMS_URL }}
+            COMMIT_SHA=${{ github.sha }}
 
       - name: Trigger Coolify redeploy
         env:
