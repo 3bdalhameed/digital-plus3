@@ -1,10 +1,20 @@
-/* RTL layout for Arabic admin */
-html, body, #app, [class*="template-"], [class*="nav"], [class*="collection"] {
-  direction: rtl !important;
+/* ═══════════════════════════════════════════════════════════
+   DIGITAL PLUS — CMS Admin Theme
+   Brand: #7C3AED purple on white / light-purple surfaces
+   Font:  Cairo (injected by ThemeProvider)
+═══════════════════════════════════════════════════════════ */
+
+/* ── Arabic font stack everywhere ───────────────────────── */
+html, body, #app,
+[class*="template-"],
+[class*="nav"],
+[class*="collection"],
+button, input, select, textarea, label, th, td, a {
   font-family: 'Cairo', 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif !important;
+  direction: rtl !important;
 }
 
-/* Keep LTR for code editors, slugs, URLs, emails, numbers */
+/* Keep LTR for technical inputs */
 input[type="email"],
 input[type="url"],
 input[type="number"],
@@ -17,56 +27,517 @@ pre, code {
   text-align: left !important;
 }
 
-/* Flip sidebar collapse arrows for RTL */
-[class*="nav__toggle"] svg {
-  transform: scaleX(-1);
+/* ── CSS variable overrides (force light purple theme) ─── */
+:root,
+[data-theme="dark"],
+[data-theme="light"] {
+  /* Background surfaces */
+  --theme-bg:          #F5F3FF;
+  --theme-elevation-0: #FFFFFF;
+  --theme-elevation-50:#F9F7FF;
+  --theme-elevation-100:#F0EDFF;
+  --theme-elevation-150:#E4DFFE;
+  --theme-elevation-200:#DDD6FE;
+  --theme-elevation-250:#C4B5FD;
+  --theme-elevation-300:#A78BFA;
+  --theme-elevation-350:#8B5CF6;
+  --theme-elevation-400:#7C3AED;
+  --theme-elevation-450:#6D28D9;
+  --theme-elevation-500:#5B21B6;
+  --theme-elevation-550:#4C1D95;
+  --theme-elevation-600:#3B0764;
+  --theme-elevation-700:#2D1B69;
+  --theme-elevation-750:#1E1B4B;
+  --theme-elevation-800:#13103A;
+  --theme-elevation-850:#0D0A2E;
+  --theme-elevation-900:#08061E;
+  --theme-elevation-1000:#000000;
+
+  /* Semantic tokens */
+  --theme-text:         #1E1B4B;
+  --theme-input-bg:     #FFFFFF;
+  --theme-border-color: #DDD6FE;
+
+  /* Color base ramp (gray → purple-tinted) */
+  --color-base-0:   255,255,255;
+  --color-base-50:  249,247,255;
+  --color-base-100: 240,237,255;
+  --color-base-150: 228,223,254;
+  --color-base-200: 221,214,254;
+  --color-base-250: 196,181,253;
+  --color-base-300: 167,139,250;
+  --color-base-350: 139,92,246;
+  --color-base-400: 124,58,237;
+  --color-base-450: 109,40,217;
+  --color-base-500: 91,33,182;
+  --color-base-550: 76,29,149;
+  --color-base-600: 59,7,100;
+  --color-base-700: 45,27,105;
+  --color-base-750: 30,27,75;
+  --color-base-800: 19,16,58;
+  --color-base-850: 13,10,46;
+  --color-base-900: 0,0,0;
+  --color-base-1000:0,0,0;
 }
 
-/* Force light theme regardless of OS/browser preference */
-:root,
-[data-theme="dark"] {
-  --color-base-0: 255, 255, 255;
-  --color-base-50: 246, 248, 250;
-  --color-base-100: 234, 238, 242;
-  --color-base-150: 215, 222, 228;
-  --color-base-200: 196, 205, 213;
-  --color-base-250: 175, 187, 198;
-  --color-base-300: 154, 168, 183;
-  --color-base-350: 133, 150, 167;
-  --color-base-400: 112, 132, 152;
-  --color-base-450: 90, 114, 137;
-  --color-base-500: 69, 97, 122;
-  --color-base-550: 55, 79, 101;
-  --color-base-600: 42, 62, 81;
-  --color-base-700: 31, 35, 40;
-  --color-base-750: 22, 27, 34;
-  --color-base-800: 13, 17, 23;
-  --color-base-850: 8, 12, 18;
-  --color-base-900: 0, 0, 0;
-  --color-base-1000: 0, 0, 0;
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar         { width:6px; height:6px; }
+::-webkit-scrollbar-track   { background:#F5F3FF; }
+::-webkit-scrollbar-thumb   { background:#C4B5FD; border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#A78BFA; }
 
-  --theme-elevation-0: rgb(255, 255, 255);
-  --theme-elevation-50: rgb(246, 248, 250);
-  --theme-elevation-100: rgb(234, 238, 242);
-  --theme-elevation-150: rgb(215, 222, 228);
-  --theme-elevation-200: rgb(196, 205, 213);
-  --theme-elevation-250: rgb(175, 187, 198);
-  --theme-elevation-300: rgb(154, 168, 183);
-  --theme-elevation-350: rgb(133, 150, 167);
-  --theme-elevation-400: rgb(112, 132, 152);
-  --theme-elevation-450: rgb(90, 114, 137);
-  --theme-elevation-500: rgb(69, 97, 122);
-  --theme-elevation-550: rgb(55, 79, 101);
-  --theme-elevation-600: rgb(42, 62, 81);
-  --theme-elevation-700: rgb(31, 35, 40);
-  --theme-elevation-750: rgb(22, 27, 34);
-  --theme-elevation-800: rgb(13, 17, 23);
-  --theme-elevation-850: rgb(8, 12, 18);
-  --theme-elevation-900: rgb(0, 0, 0);
-  --theme-elevation-1000: rgb(0, 0, 0);
+/* ── Page background ─────────────────────────────────────── */
+body,
+.template-default,
+[class*="template-default"],
+[class*="template-list"],
+[class*="render-title"] ~ * {
+  background-color: #F5F3FF !important;
+}
 
-  --theme-bg: rgb(246, 248, 250);
-  --theme-input-bg: rgb(255, 255, 255);
-  --theme-text: rgb(31, 35, 40);
-  --theme-border-color: rgb(208, 215, 222);
+/* ── Sidebar navigation ──────────────────────────────────── */
+.nav,
+[class*="nav__wrap"],
+aside {
+  background: linear-gradient(175deg, #1E1B4B 0%, #2D1B69 55%, #3B0764 100%) !important;
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+}
+
+.nav__header,
+[class*="nav__header"] {
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  padding-bottom: 12px !important;
+}
+
+/* Nav links — default */
+.nav a,
+.nav__link,
+[class*="nav__link"] {
+  color: #C4B5FD !important;
+  border-radius: 8px !important;
+  margin: 1px 8px !important;
+  padding: 9px 14px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  transition: background 0.15s, color 0.15s !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
+}
+
+/* Nav links — hover / active */
+.nav a:hover,
+.nav__link:hover,
+[class*="nav__link"]:hover,
+.nav a[aria-current],
+[class*="nav__link--active"],
+[class*="nav__link"][class*="active"] {
+  background: rgba(255,255,255,0.12) !important;
+  color: #FFFFFF !important;
+}
+
+/* Nav group headers */
+[class*="nav__group-label"],
+.nav__group-label,
+.nav__group > span:first-child {
+  color: #A78BFA !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  padding: 14px 22px 5px !important;
+  display: block !important;
+}
+
+/* Sidebar icons */
+.nav svg,
+[class*="nav__link"] svg {
+  color: inherit !important;
+  opacity: 0.85 !important;
+}
+
+/* Collapse arrow flip for RTL */
+[class*="nav__toggle"] svg {
+  transform: scaleX(-1) !important;
+}
+
+/* ── Top / account bar ───────────────────────────────────── */
+[class*="account"],
+[class*="AppHeader"] {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #EDE9FE !important;
+  box-shadow: 0 1px 6px rgba(124,58,237,0.07) !important;
+}
+
+/* ── Primary buttons ─────────────────────────────────────── */
+.btn--style-primary,
+[class*="btn--style-primary"],
+button.btn[class*="primary"],
+[type="submit"].btn {
+  background: linear-gradient(135deg, #7C3AED, #9333EA) !important;
+  border-color: #7C3AED !important;
+  color: #FFFFFF !important;
+  border-radius: 9px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.28) !important;
+  transition: all 0.15s !important;
+}
+
+.btn--style-primary:hover,
+[class*="btn--style-primary"]:hover {
+  background: linear-gradient(135deg, #6D28D9, #7C3AED) !important;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.38) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Secondary / outlined buttons */
+.btn--style-secondary,
+[class*="btn--style-secondary"],
+.btn--style-pill {
+  border-color: #DDD6FE !important;
+  color: #7C3AED !important;
+  border-radius: 9px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s !important;
+}
+
+.btn--style-secondary:hover,
+[class*="btn--style-secondary"]:hover {
+  background: #EDE9FE !important;
+  border-color: #A78BFA !important;
+}
+
+/* Danger buttons */
+.btn--style-error,
+[class*="btn--style-error"],
+[class*="btn--icon-style-error"] {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border-color: #FECACA !important;
+  border-radius: 9px !important;
+}
+
+.btn--style-error:hover { background: #FECACA !important; }
+
+/* Generic button base */
+.btn,
+button[class*="btn"],
+[class*="btn"] {
+  font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  border-radius: 9px !important;
+}
+
+/* ── Form inputs, textareas, selects ─────────────────────── */
+.field-type input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.field-type textarea,
+.field-type select,
+[class*="field-type"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[class*="field-type"] textarea,
+[class*="field-type"] select,
+[class*="text-input"],
+[class*="textarea"],
+[class*="number-input"] {
+  border: 1.5px solid #DDD6FE !important;
+  border-radius: 9px !important;
+  background: #FFFFFF !important;
+  color: #1E1B4B !important;
+  font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+  padding: 10px 14px !important;
+}
+
+.field-type input:focus,
+.field-type textarea:focus,
+[class*="field-type"] input:focus,
+[class*="field-type"] textarea:focus {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15) !important;
+  outline: none !important;
+}
+
+/* Field labels */
+.field-type label,
+[class*="field-type"] label,
+[class*="field-label"] {
+  color: #1E1B4B !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  margin-bottom: 6px !important;
+}
+
+/* Field descriptions */
+[class*="field-description"],
+.field-description {
+  color: #6D28D9 !important;
+  font-size: 12px !important;
+  margin-top: 4px !important;
+}
+
+/* Required asterisk */
+[class*="required"] { color: #DC2626 !important; }
+
+/* ── React-Select / relationship dropdowns ───────────────── */
+.react-select__control,
+[class*="react-select__control"] {
+  border: 1.5px solid #DDD6FE !important;
+  border-radius: 9px !important;
+  background: #FFFFFF !important;
+  box-shadow: none !important;
+  min-height: 42px !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+.react-select__control--is-focused,
+[class*="react-select__control--is-focused"] {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15) !important;
+}
+
+.react-select__option--is-selected {
+  background: #7C3AED !important;
+}
+
+.react-select__option--is-focused:not(.react-select__option--is-selected) {
+  background: #EDE9FE !important;
+  color: #5B21B6 !important;
+}
+
+.react-select__multi-value {
+  background: #EDE9FE !important;
+  border-radius: 6px !important;
+}
+
+.react-select__multi-value__label {
+  color: #5B21B6 !important;
+  font-weight: 600 !important;
+}
+
+/* ── Cards / field panels ────────────────────────────────── */
+[class*="render-fields"],
+[class*="document-fields"],
+[class*="field-group"] {
+  background: #FFFFFF !important;
+  border: 1px solid #EDE9FE !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.06) !important;
+  padding: 24px !important;
+}
+
+/* ── Edit-page sidebar (status / dates) ──────────────────── */
+[class*="document-sidebar"],
+[class*="sidebar__wrap"],
+.sidebar__wrap {
+  background: #FFFFFF !important;
+  border: 1px solid #EDE9FE !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.06) !important;
+}
+
+/* ── Collapsible sections ────────────────────────────────── */
+[class*="collapsible__header"],
+.collapsible__header,
+[class*="collapsible__toggle"] {
+  background: #F5F3FF !important;
+  border-radius: 9px !important;
+  color: #5B21B6 !important;
+  font-weight: 700 !important;
+  padding: 10px 14px !important;
+  transition: background 0.15s !important;
+}
+
+[class*="collapsible__header"]:hover { background: #EDE9FE !important; }
+
+/* ── Data tables (collection list view) ──────────────────── */
+.table,
+[class*="table"] table {
+  background: #FFFFFF !important;
+  border-radius: 14px !important;
+  border: 1px solid #EDE9FE !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.07) !important;
+}
+
+[class*="table"] thead,
+.table thead {
+  background: linear-gradient(90deg, #F5F3FF, #F9F7FF) !important;
+}
+
+[class*="table"] th,
+.table th,
+[class*="table__header-wrap"] {
+  color: #5B21B6 !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  border-bottom: 2px solid #EDE9FE !important;
+  padding: 12px 20px !important;
+  background: transparent !important;
+}
+
+[class*="table"] tr:hover,
+.table tr:hover {
+  background: #F9F7FF !important;
+}
+
+[class*="table"] td,
+.table td {
+  border-bottom: 1px solid #F3F0FF !important;
+  color: #1E1B4B !important;
+  padding: 13px 20px !important;
+  font-size: 14px !important;
+}
+
+/* Table links */
+[class*="table"] td a,
+.table td a {
+  color: #7C3AED !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+[class*="table"] td a:hover,
+.table td a:hover {
+  color: #5B21B6 !important;
+  text-decoration: underline !important;
+}
+
+/* ── Breadcrumb / step-nav ───────────────────────────────── */
+[class*="step-nav"],
+.step-nav {
+  color: #6D28D9 !important;
+  font-size: 13px !important;
+}
+
+[class*="step-nav"] a,
+.step-nav a {
+  color: #7C3AED !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+[class*="step-nav"] a:hover { text-decoration: underline !important; }
+
+/* ── Pagination ──────────────────────────────────────────── */
+[class*="pagination"] {
+  gap: 4px !important;
+}
+
+[class*="pagination"] button {
+  border-radius: 7px !important;
+  font-weight: 600 !important;
+  color: #5B21B6 !important;
+  border-color: #DDD6FE !important;
+  transition: all 0.15s !important;
+}
+
+[class*="pagination"] button:hover {
+  background: #EDE9FE !important;
+}
+
+[class*="pagination"] button[aria-current="true"],
+[class*="pagination"] button.active,
+[class*="pagination--page--active"] {
+  background: linear-gradient(135deg, #7C3AED, #9333EA) !important;
+  color: #FFFFFF !important;
+  border-color: #7C3AED !important;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.3) !important;
+}
+
+/* ── Search / filter bar ─────────────────────────────────── */
+[class*="search"] input,
+[class*="list-controls"] input,
+[class*="filter"] input {
+  border: 1.5px solid #DDD6FE !important;
+  border-radius: 9px !important;
+  background: #FFFFFF !important;
+  padding: 9px 14px !important;
+}
+
+[class*="search"] input:focus,
+[class*="list-controls"] input:focus {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15) !important;
+  outline: none !important;
+}
+
+/* ── Status / pill badges ────────────────────────────────── */
+[class*="pill"],
+[class*="badge"] {
+  border-radius: 20px !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  padding: 3px 11px !important;
+}
+
+/* ── Toast / notification ────────────────────────────────── */
+[class*="toast"],
+[class*="notification"] {
+  border-radius: 12px !important;
+  font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* ── Modal / drawer ──────────────────────────────────────── */
+[class*="modal__content"],
+[class*="drawer__content"] {
+  border-radius: 16px !important;
+  border: 1px solid #EDE9FE !important;
+  box-shadow: 0 20px 60px rgba(124,58,237,0.2) !important;
+}
+
+/* ── Checkbox / toggle ───────────────────────────────────── */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #7C3AED !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+[class*="toggle"] [class*="input"]:checked {
+  background: #7C3AED !important;
+  border-color: #7C3AED !important;
+}
+
+/* ── Upload field ────────────────────────────────────────── */
+[class*="file-details"],
+[class*="upload__"] {
+  border: 2px dashed #DDD6FE !important;
+  border-radius: 12px !important;
+  background: #F9F7FF !important;
+}
+
+/* ── Page titles ─────────────────────────────────────────── */
+[class*="render-title"] h1,
+[class*="collection-edit__header"] h1,
+h1[class*="title"] {
+  color: #1E1B4B !important;
+  font-weight: 800 !important;
+  font-size: 22px !important;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+[class*="no-results"],
+[class*="empty"] {
+  color: #6B7280 !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+/* ── Rich text (Lexical) editor ──────────────────────────── */
+[class*="rich-text"],
+[class*="lexical"],
+.rich-text {
+  border: 1.5px solid #DDD6FE !important;
+  border-radius: 9px !important;
+  background: #FFFFFF !important;
+}
+
+/* ── Row layout fields ───────────────────────────────────── */
+[class*="field-type-row"] {
+  gap: 16px !important;
 }
