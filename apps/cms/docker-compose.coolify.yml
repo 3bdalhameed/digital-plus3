@@ -3,7 +3,22 @@ services:
     image: ghcr.io/3bdalhameed/digital-plus3/cms:latest
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "${PORT:-3001}:3001"
     environment:
       NODE_ENV: production
       PAYLOAD_CONFIG_PATH: dist/payload.config.js
+      DATABASE_URI: ${DATABASE_URI}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL}
+      STOREFRONT_URL: ${STOREFRONT_URL:-}
+      PAYLOAD_INTERNAL_SECRET: ${PAYLOAD_INTERNAL_SECRET:-}
+      PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      COMMIT_SHA: ${COMMIT_SHA:-unknown}
