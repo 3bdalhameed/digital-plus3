@@ -404,6 +404,20 @@ button[class*="btn"],
 [class*="required"] { color: #DC2626 !important; }
 
 /* ── React-Select / relationship dropdowns ───────────────── */
+
+/* Fix: internal hidden input inside react-select gets white-box from field-type rules */
+.react-select__input input,
+[class*="react-select"] input,
+[class*="react-select__input"] input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  min-height: auto !important;
+  width: auto !important;
+}
+
 .react-select__control,
 [class*="react-select__control"] {
   border: 1.5px solid #DDD6FE !important;

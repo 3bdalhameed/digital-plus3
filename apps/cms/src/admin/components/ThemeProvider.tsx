@@ -49,8 +49,8 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
       document.head.appendChild(style);
     }
 
-    /* ── Back button ─────────────────────────────────────────────────────── */
-    const BTN_ID = 'dp-back-btn';
+    /* ── Dashboard home button ───────────────────────────────────────────── */
+    const BTN_ID = 'dp-home-btn';
 
     const isDashboard = () => {
       const p = window.location.pathname;
@@ -68,11 +68,18 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
       const btn = document.createElement('button');
       btn.id = BTN_ID;
       btn.setAttribute('dir', 'rtl');
-      btn.innerHTML = '&#8594; رجوع'; // right-arrow (looks like back in RTL)
+      btn.title = 'لوحة التحكم';
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>الرئيسية</span>
+      `;
 
       Object.assign(btn.style, {
         position:     'fixed',
-        top:          '13px',
+        top:          '12px',
         right:        '260px',
         bottom:       'auto',
         left:         'auto',
@@ -81,12 +88,12 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
         color:        '#ffffff',
         border:       'none',
         borderRadius: '10px',
-        padding:      '8px 18px',
+        padding:      '7px 16px',
         fontSize:     '13px',
         fontFamily:   "'Cairo','Tajawal',sans-serif",
         fontWeight:   '700',
         cursor:       'pointer',
-        boxShadow:    '0 2px 12px rgba(124,58,237,0.35)',
+        boxShadow:    '0 2px 10px rgba(124,58,237,0.30)',
         transition:   'all 0.15s',
         direction:    'rtl',
         display:      'flex',
@@ -95,27 +102,25 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
       });
 
       btn.onmouseenter = () => {
-        btn.style.transform = 'translateY(-2px)';
-        btn.style.boxShadow = '0 7px 24px rgba(124,58,237,0.48)';
+        btn.style.transform = 'translateY(-1px)';
+        btn.style.boxShadow = '0 5px 18px rgba(124,58,237,0.45)';
       };
       btn.onmouseleave = () => {
         btn.style.transform = 'none';
-        btn.style.boxShadow = '0 4px 18px rgba(124,58,237,0.38)';
+        btn.style.boxShadow = '0 2px 10px rgba(124,58,237,0.30)';
       };
-      btn.onclick = () => window.history.back();
+      btn.onclick = () => { window.location.href = '/admin'; };
 
       document.body.appendChild(btn);
     };
 
-    // Run on mount
     showBtn();
 
-    // Intercept SPA navigation (history.pushState / replaceState)
     const wrap = (method: string) => {
       const orig = (history as any)[method].bind(history);
       (history as any)[method] = (...args: any[]) => {
         orig(...args);
-        setTimeout(showBtn, 80); // small delay lets the URL update settle
+        setTimeout(showBtn, 80);
       };
       return orig;
     };
@@ -124,7 +129,6 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
     window.addEventListener('popstate', showBtn);
 
     return () => {
-      // Restore originals on unmount
       (history as any).pushState    = origPush;
       (history as any).replaceState = origReplace;
       window.removeEventListener('popstate', showBtn);
