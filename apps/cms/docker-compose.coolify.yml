@@ -1,6 +1,7 @@
 services:
   cms:
     image: ghcr.io/3bdalhameed/digital-plus3/cms:latest
+    pull_policy: always
     restart: unless-stopped
     ports:
       - "${PORT:-3001}:3001"
