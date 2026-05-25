@@ -1,0 +1,7 @@
+services:
+  cms:
+    image: ghcr.io/3bdalhameed/digital-plus3/cms:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PAYLOAD_CONFIG_PATH: dist/payload.config.js
