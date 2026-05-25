@@ -52,4 +52,5 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.COOLIFY_CMS_WEBHOOK }}
         if: env.WEBHOOK != ''
+        continue-on-error: true
         run: curl -fsSL -X GET "$WEBHOOK"
