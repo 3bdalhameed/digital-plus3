@@ -20,7 +20,10 @@ ENV PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL
 ARG COMMIT_SHA=unknown
 ENV COMMIT_SHA=$COMMIT_SHA
 
-RUN echo "Building with PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL commit=$COMMIT_SHA" && pnpm --filter=cms build
+# CACHE_BUST invalidates this layer on every deploy — pass a unique value
+# (Coolify: add build arg CACHE_BUST with value e.g. current timestamp)
+ARG CACHE_BUST=0
+RUN echo "Building commit=$COMMIT_SHA bust=$CACHE_BUST url=$PAYLOAD_PUBLIC_SERVER_URL" && pnpm --filter=cms build
 
 # ── Runtime stage ───────────────────────────────────────
 FROM node:20-alpine
