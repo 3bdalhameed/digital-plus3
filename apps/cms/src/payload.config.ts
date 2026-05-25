@@ -52,7 +52,7 @@ export default buildConfig({
   editor: lexicalEditor({}),
 
   db: postgresAdapter({
-    push: true,
+    push: false,
     pool: {
       connectionString:
         process.env.DATABASE_URI ||
