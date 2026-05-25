@@ -95,22 +95,20 @@ body,
   background-color: #F5F3FF !important;
 }
 
-/* ── Sidebar navigation ──────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR — reference-style design with our purple theme
+   ══════════════════════════════════════════════════════════ */
+
+/* Container */
 .nav,
 [class*="nav__wrap"],
 aside {
   background: linear-gradient(175deg, #1E1B4B 0%, #2D1B69 55%, #3B0764 100%) !important;
   border: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
-}
+  box-shadow: 4px 0 32px rgba(0,0,0,0.22) !important;
+  position: relative !important;
 
-/* Invert the color-base scale inside the sidebar so Payload's
-   elevation-based hover rules resolve to light/transparent instead of black */
-.nav,
-[class*="nav__wrap"],
-aside {
+  /* Invert color scale so Payload hover vars resolve to light */
   --color-base-0:    255,255,255;
   --color-base-50:   250,248,255;
   --color-base-100:  237,233,254;
@@ -136,76 +134,211 @@ aside {
   --theme-elevation-100: rgba(255,255,255,0.11);
   --theme-elevation-150: rgba(255,255,255,0.15);
   --theme-elevation-200: rgba(255,255,255,0.20);
+  --theme-elevation-1000: rgba(255,255,255,0.15);
 }
 
-.nav__header,
-[class*="nav__header"] {
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-  padding-bottom: 12px !important;
-}
-
-/* Nav links — default */
-.nav a,
-.nav__link,
-[class*="nav__link"] {
-  color: #EDE9FE !important;
-  border-radius: 8px !important;
-  margin: 1px 8px !important;
-  padding: 9px 14px !important;
-  font-weight: 600 !important;
-  font-size: 14px !important;
-  transition: background 0.15s, color 0.15s !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  text-decoration: none !important;
-}
-
-/* Nav links — hover / active */
-.nav a:hover,
-.nav__link:hover,
-[class*="nav__link"]:hover,
-.nav a[aria-current],
-[class*="nav__link--active"],
-[class*="nav__link"][class*="active"],
-aside a:hover,
-aside button:hover,
-aside li:hover,
-[class*="nav__group-toggle"]:hover,
-[class*="nav__toggle"]:hover {
-  background: rgba(255,255,255,0.15) !important;
-  color: #FFFFFF !important;
-}
-
-/* Hard block any dark background from leaking into the sidebar */
+/* Prevent any dark bleed */
 .nav *,
 aside * {
   --theme-elevation-1000: rgba(255,255,255,0.15);
 }
 
-/* Nav group headers */
+/* ── Logo / brand header ──────────────────────────────────── */
+.nav__header,
+[class*="nav__header"] {
+  padding: 18px 16px 14px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 64px !important;
+}
+
+/* Logo/brand link */
+.nav__brand,
+[class*="nav__brand"],
+.nav__header a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  flex: 1 !important;
+}
+
+/* Brand logo circle */
+.nav__brand img,
+.nav__header a img,
+[class*="nav__brand"] img {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  object-fit: cover !important;
+}
+
+/* Brand name text */
+.nav__brand span,
+[class*="nav__brand"] span,
+.nav__header a span {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+}
+
+/* ── Group labels (MAIN / SETTINGS etc.) ─────────────────── */
 [class*="nav__group-label"],
 .nav__group-label,
-.nav__group > span:first-child {
-  color: #C4B5FD !important;
+.nav__group > span:first-child,
+[class*="nav"] [class*="group-label"] {
+  color: rgba(196,181,253,0.55) !important;
   font-size: 10px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.1em !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.13em !important;
   text-transform: uppercase !important;
-  padding: 14px 22px 5px !important;
+  padding: 16px 20px 5px !important;
   display: block !important;
+  margin: 0 !important;
 }
 
-/* Sidebar icons */
+/* ── Nav items — base ────────────────────────────────────── */
+.nav a,
+.nav__link,
+[class*="nav__link"] {
+  color: rgba(237,233,254,0.80) !important;
+  border-radius: 10px !important;
+  margin: 2px 10px !important;
+  padding: 10px 14px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  transition: background 0.15s, color 0.15s !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-decoration: none !important;
+  min-height: 44px !important;
+  position: relative !important;
+}
+
+/* ── Nav items — hover ───────────────────────────────────── */
+.nav a:hover,
+.nav__link:hover,
+[class*="nav__link"]:hover,
+aside a:hover,
+aside button:hover,
+aside li:hover,
+[class*="nav__group-toggle"]:hover,
+[class*="nav__toggle"]:hover {
+  background: rgba(255,255,255,0.09) !important;
+  color: #FFFFFF !important;
+}
+
+/* ── Nav items — active / current ────────────────────────── */
+.nav a[aria-current],
+[class*="nav__link--active"],
+[class*="nav__link"][class*="active"],
+[class*="nav__link"][aria-current] {
+  background: rgba(167,139,250,0.22) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border-right: none !important;
+}
+
+/* Left accent bar on active item */
+.nav a[aria-current]::before,
+[class*="nav__link--active"]::before,
+[class*="nav__link"][aria-current]::before {
+  content: '' !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 20% !important;
+  height: 60% !important;
+  width: 3px !important;
+  background: #A78BFA !important;
+  border-radius: 3px 0 0 3px !important;
+}
+
+/* ── Sub-menu items ──────────────────────────────────────── */
+[class*="nav__sub-link"],
+.nav__sub-link {
+  padding: 8px 14px 8px 42px !important;
+  min-height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: rgba(237,233,254,0.65) !important;
+  border-radius: 8px !important;
+  margin: 1px 10px !important;
+}
+
+[class*="nav__sub-link"]:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #FFFFFF !important;
+}
+
+[class*="nav__sub-link--active"],
+[class*="nav__sub-link"][aria-current] {
+  background: rgba(167,139,250,0.18) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* ── Chevron / expand arrow ──────────────────────────────── */
 .nav svg,
-[class*="nav__link"] svg {
+[class*="nav__link"] svg,
+[class*="nav__group-toggle"] svg {
   color: inherit !important;
-  opacity: 0.85 !important;
+  opacity: 0.75 !important;
+  flex-shrink: 0 !important;
 }
 
-/* Collapse arrow flip for RTL */
-[class*="nav__toggle"] svg {
-  transform: scaleX(-1) !important;
+[class*="nav__group-toggle"],
+[class*="nav__toggle"] {
+  margin-right: auto !important;
+  opacity: 0.7 !important;
+}
+
+/* ── Sidebar edge collapse button ────────────────────────── */
+[class*="nav-toggler"],
+[class*="nav__toggler"],
+button[class*="hamburger"] {
+  position: absolute !important;
+  left: -14px !important;
+  top: 72px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: #2D1B69 !important;
+  border: 2px solid rgba(167,139,250,0.4) !important;
+  color: #C4B5FD !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 200 !important;
+  font-size: 10px !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+  transition: all 0.15s !important;
+  padding: 0 !important;
+}
+
+[class*="nav-toggler"]:hover,
+[class*="nav__toggler"]:hover {
+  background: #7C3AED !important;
+  border-color: #A78BFA !important;
+  color: #FFFFFF !important;
+  transform: scale(1.1) !important;
+}
+
+/* ── Scrollable nav area ─────────────────────────────────── */
+[class*="nav__scroll"],
+.nav__scroll {
+  padding: 8px 0 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+[class*="nav__scroll"]::-webkit-scrollbar { width: 3px !important; }
+[class*="nav__scroll"]::-webkit-scrollbar-thumb {
+  background: rgba(167,139,250,0.3) !important;
+  border-radius: 3px !important;
 }
 
 /* ── Top / account bar ───────────────────────────────────── */
