@@ -529,59 +529,166 @@ button[class*="btn"],
 
 [class*="collapsible__header"]:hover { background: #EDE9FE !important; }
 
+/* ── List controls bar (filters + search row) ────────────── */
+[class*="list-controls"],
+.list-controls {
+  background: #FFFFFF !important;
+  border: 1px solid #EDE9FE !important;
+  border-radius: 14px !important;
+  padding: 14px 20px !important;
+  margin-bottom: 20px !important;
+  box-shadow: 0 1px 6px rgba(124,58,237,0.05) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+[class*="list-controls__wrap"],
+.list-controls__wrap {
+  gap: 10px !important;
+}
+
+/* Search input inside list controls */
+[class*="list-controls"] input[type="search"],
+[class*="list-controls"] input[type="text"],
+[class*="search-filter"] input {
+  border: 1.5px solid #DDD6FE !important;
+  border-radius: 10px !important;
+  background: #F9F7FF !important;
+  padding: 9px 16px !important;
+  font-size: 13px !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+[class*="list-controls"] input:focus,
+[class*="search-filter"] input:focus {
+  border-color: #7C3AED !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12) !important;
+  outline: none !important;
+}
+
+/* Filters / columns buttons */
+[class*="list-controls"] button,
+[class*="list-controls"] .btn {
+  border: 1.5px solid #DDD6FE !important;
+  background: #FFFFFF !important;
+  color: #5B21B6 !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 8px 16px !important;
+  gap: 6px !important;
+  transition: all 0.15s !important;
+}
+
+[class*="list-controls"] button:hover {
+  background: #EDE9FE !important;
+  border-color: #A78BFA !important;
+}
+
 /* ── Data tables (collection list view) ──────────────────── */
+[class*="table-wrap"],
+[class*="collection-list__wrap"] {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid #EDE9FE !important;
+  box-shadow: 0 2px 16px rgba(124,58,237,0.07) !important;
+}
+
 .table,
 [class*="table"] table {
   background: #FFFFFF !important;
-  border-radius: 14px !important;
-  border: 1px solid #EDE9FE !important;
+  border-radius: 0 !important;
+  border: none !important;
   overflow: hidden !important;
-  box-shadow: 0 2px 10px rgba(124,58,237,0.07) !important;
+  box-shadow: none !important;
+  width: 100% !important;
 }
 
 [class*="table"] thead,
 .table thead {
-  background: linear-gradient(90deg, #F5F3FF, #F9F7FF) !important;
+  background: linear-gradient(135deg, #F0EDFF 0%, #F5F3FF 100%) !important;
 }
 
 [class*="table"] th,
 .table th,
 [class*="table__header-wrap"] {
   color: #5B21B6 !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   font-size: 11px !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.07em !important;
-  border-bottom: 2px solid #EDE9FE !important;
-  padding: 12px 20px !important;
+  letter-spacing: 0.08em !important;
+  border-bottom: 2px solid #DDD6FE !important;
+  padding: 14px 18px !important;
   background: transparent !important;
+  white-space: nowrap !important;
+}
+
+[class*="table"] tbody tr,
+.table tbody tr {
+  transition: background 0.12s !important;
+}
+
+[class*="table"] tbody tr:nth-child(even),
+.table tbody tr:nth-child(even) {
+  background: #FAFAFE !important;
 }
 
 [class*="table"] tr:hover,
 .table tr:hover {
-  background: #F9F7FF !important;
+  background: #F0EDFF !important;
 }
 
 [class*="table"] td,
 .table td {
-  border-bottom: 1px solid #F3F0FF !important;
+  border-bottom: 1px solid #F0EDFF !important;
   color: #1E1B4B !important;
-  padding: 13px 20px !important;
-  font-size: 14px !important;
+  padding: 16px 18px !important;
+  font-size: 13.5px !important;
+  vertical-align: middle !important;
+  line-height: 1.5 !important;
 }
 
-/* Table links */
+/* Table links — product name etc. */
 [class*="table"] td a,
 .table td a {
-  color: #7C3AED !important;
-  font-weight: 600 !important;
+  color: #6D28D9 !important;
+  font-weight: 700 !important;
   text-decoration: none !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  max-width: 240px !important;
+  line-height: 1.4 !important;
 }
 
 [class*="table"] td a:hover,
 .table td a:hover {
   color: #5B21B6 !important;
   text-decoration: underline !important;
+}
+
+/* Last row no border */
+[class*="table"] tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* Checkbox column */
+[class*="table"] th:last-child,
+[class*="table"] td:last-child {
+  width: 48px !important;
+  padding: 0 12px !important;
+  text-align: center !important;
+}
+
+/* Sort arrows in headers */
+[class*="sort-icon"],
+[class*="table"] th svg {
+  opacity: 0.5 !important;
+  width: 12px !important;
+  height: 12px !important;
 }
 
 /* ── Breadcrumb / step-nav ───────────────────────────────── */

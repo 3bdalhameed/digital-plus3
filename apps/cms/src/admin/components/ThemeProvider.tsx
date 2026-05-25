@@ -80,7 +80,7 @@ export default function ThemeProvider({ children }: { children?: React.ReactNode
       Object.assign(btn.style, {
         position:     'fixed',
         top:          '12px',
-        right:        '260px',
+        right:        '220px',
         bottom:       'auto',
         left:         'auto',
         zIndex:       '9999',
