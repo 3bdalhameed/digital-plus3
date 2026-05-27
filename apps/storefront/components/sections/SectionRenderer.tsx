@@ -209,7 +209,7 @@ function CategoryGridSection({ title, categories, columns }: any) {
       <div className="section-title">{title}</div>
       <div className={`grid gap-4 ${cols}`}>
         {categories?.map((cat: any) => (
-          <Link key={cat.id} href={`/products?category=${cat.slug}`} className="cat-card group">
+          <Link key={cat.id} href={`/collections/${cat.slug}`} className="cat-card group">
             {cat.icon?.url ? (
               <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
                 <Image src={cat.icon.url} alt={cat.nameAr} fill className="object-contain p-2" />
@@ -291,7 +291,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
 
   const cards = banners.map((b: any, i: number) => {
     const cat = b.category;
-    const href = cat?.slug ? `/category/${cat.slug}` : "#";
+    const href = cat?.slug ? `/collections/${cat.slug}` : "#";
     return (
       <Link key={i} href={href} className="group block rounded-2xl overflow-hidden" style={{ width: "100%" }}>
         <div className="relative w-full" style={{ aspectRatio: ratio }}>
@@ -326,7 +326,7 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
 
   const cards = items.map((item: any, i: number) => {
     const sub = item.subcategory;
-    const href = sub?.slug ? `/products?subcategory=${sub.slug}` : "#";
+    const href = sub?.slug ? `/collections/${sub.slug}` : "#";
     return (
       <Link key={i} href={href} className="group relative block" style={{ width: "100%", height: szNum }}>
         {item.image?.url ? (

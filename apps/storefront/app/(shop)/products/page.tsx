@@ -7,9 +7,10 @@ export const revalidate = 60;
 
 interface Props {
   searchParams: {
+    /** Kept for legacy URLs (?category=...) — new flow uses /collections/<slug> */
     category?: string;
+    /** Kept for legacy URLs — new flow uses /collections/<slug> */
     subcategory?: string;
-    subcategoryId?: string;
     type?: string;
     page?: string;
     q?: string;
@@ -64,12 +65,8 @@ export default async function ProductsPage({ searchParams }: Props) {
           {categories.map((cat: any) => (
             <Link
               key={cat.id}
-              href={`/products?category=${cat.slug}`}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                searchParams.category === cat.slug
-                  ? "bg-brand-500 text-white"
-                  : "bg-white text-brand-600 hover:bg-brand-50"
-              }`}
+              href={`/collections/${cat.slug}`}
+              className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
             >
               {cat.nameAr}
             </Link>

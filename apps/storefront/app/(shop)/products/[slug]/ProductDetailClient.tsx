@@ -54,7 +54,7 @@ export function ProductDetailClient({ product, productName }: Props) {
         <span>/</span>
         {product.category && (
           <>
-            <Link href={`/category/${product.category.slug}`} className="hover:text-[#7C3AED]">
+            <Link href={`/collections/${product.category.slug}`} className="hover:text-[#7C3AED]">
               {product.category.nameAr ?? product.category.name?.ar ?? "الأقسام"}
             </Link>
             <span>/</span>
