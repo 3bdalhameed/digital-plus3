@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { supportAccess, hiddenUnless } from "../access";
+import SupportTicketsList from "../admin/views/SupportTicketsList";
 
 export const SupportTickets: CollectionConfig = {
   slug: "support-tickets",
@@ -9,6 +10,11 @@ export const SupportTickets: CollectionConfig = {
     defaultColumns: ["order", "customer", "status", "channel", "createdAt"],
     group: "الدعم الفني",
     hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
+    components: {
+      views: {
+        List: SupportTicketsList as any,
+      },
+    },
   },
   access: supportAccess,
   fields: [

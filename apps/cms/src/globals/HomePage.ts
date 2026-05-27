@@ -1,5 +1,6 @@
 import { GlobalConfig } from "payload/types";
 import { Field } from "payload/types";
+import ArrayRowLabel from "../admin/components/ArrayRowLabel";
 
 // Shared layout controls added to every block
 const layoutFields: Field[] = [
@@ -84,6 +85,8 @@ export const HomePage: GlobalConfig = {
           fields: [
             {
               name: "slides", label: "الشرائح", type: "array",
+              labels: { singular: "شريحة", plural: "الشرائح" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "image",    label: "الصورة",    type: "upload", relationTo: "media", required: true },
                 { name: "title",    label: "العنوان",   type: "text" },
@@ -98,10 +101,10 @@ export const HomePage: GlobalConfig = {
               type: "select",
               defaultValue: "16/6",
               options: [
-                { label: "بانر ضيق  (16:4)",  value: "16/4" },
-                { label: "بانر متوسط (16:6)", value: "16/6" },
-                { label: "بانر كبير  (16:8)", value: "16/8" },
-                { label: "مربع (1:1)",         value: "1/1"  },
+                { label: "بانر ضيق — 16:4",   value: "16/4" },
+                { label: "بانر متوسط — 16:6", value: "16/6" },
+                { label: "بانر كبير — 16:8",  value: "16/8" },
+                { label: "مربع — 1:1",         value: "1/1"  },
               ],
             },
             { name: "autoplay", label: "تشغيل تلقائي", type: "checkbox", defaultValue: true },
@@ -193,6 +196,8 @@ export const HomePage: GlobalConfig = {
             { name: "pauseOnHover", label: "توقف عند التمرير فوقه", type: "checkbox", defaultValue: true },
             {
               name: "banners", label: "البنرات", type: "array",
+              labels: { singular: "بنر", plural: "البنرات" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "image", label: "الصورة", type: "upload", relationTo: "media", required: true },
                 {
@@ -233,6 +238,8 @@ export const HomePage: GlobalConfig = {
             { name: "pauseOnHover", label: "توقف عند التمرير فوقه", type: "checkbox", defaultValue: true },
             {
               name: "items", label: "العناصر", type: "array",
+              labels: { singular: "عنصر", plural: "العناصر" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "image", label: "الصورة", type: "upload", relationTo: "media", required: true },
                 {
@@ -293,6 +300,8 @@ export const HomePage: GlobalConfig = {
             },
             {
               name: "items", label: "العناصر", type: "array",
+              labels: { singular: "ميزة", plural: "المميزات" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "title",       label: "العنوان",       type: "text",     required: true },
                 { name: "description", label: "الوصف",         type: "textarea", required: true },
@@ -312,6 +321,8 @@ export const HomePage: GlobalConfig = {
             { name: "title", label: "العنوان", type: "text" },
             {
               name: "stats", label: "الإحصائيات", type: "array",
+              labels: { singular: "إحصائية", plural: "الإحصائيات" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "value", label: "القيمة (مثال: +10,000)", type: "text", required: true },
                 { name: "label", label: "التسمية",                type: "text", required: true },
@@ -338,6 +349,8 @@ export const HomePage: GlobalConfig = {
             },
             {
               name: "items", label: "الآراء", type: "array",
+              labels: { singular: "رأي", plural: "الآراء" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "name",   label: "الاسم",   type: "text",     required: true },
                 { name: "text",   label: "الرأي",   type: "textarea", required: true },
@@ -357,6 +370,8 @@ export const HomePage: GlobalConfig = {
             { name: "title", label: "العنوان", type: "text" },
             {
               name: "items", label: "الأسئلة", type: "array",
+              labels: { singular: "سؤال", plural: "الأسئلة" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "question", label: "السؤال", type: "text",     required: true },
                 { name: "answer",   label: "الجواب", type: "textarea", required: true },
@@ -397,6 +412,8 @@ export const HomePage: GlobalConfig = {
           fields: [
             {
               name: "tabs", label: "التبويبات", type: "array",
+              labels: { singular: "تبويب", plural: "التبويبات" },
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
               fields: [
                 { name: "label",   label: "اسم التبويب", type: "text",     required: true },
                 { name: "content", label: "المحتوى",     type: "richText", required: true },

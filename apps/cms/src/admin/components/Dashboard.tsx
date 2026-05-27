@@ -202,7 +202,7 @@ const Dashboard: React.FC = () => {
               تنبيه: لديك{stats.pendingCount > 0 ? ` ${stats.pendingCount} طلب قيد الانتظار` : ''}{stats.pendingCount > 0 && stats.disputedCount > 0 ? ' و' : ''}{stats.disputedCount > 0 ? ` ${stats.disputedCount} طلب متنازع عليه` : ''}
             </span>
           </div>
-          <a href="/admin/collections/orders" style={{ marginRight:'auto', background:'#FDE68A', color:'#92400E', padding:'5px 14px', borderRadius:7, fontSize:12, fontWeight:700, textDecoration:'none' }}>
+          <a href="/admin/collections/orders" style={{ marginInlineStart:'auto', background:'#FDE68A', color:'#92400E', padding:'5px 14px', borderRadius:7, fontSize:12, fontWeight:700, textDecoration:'none' }}>
             عرض الطلبات
           </a>
         </div>

@@ -9,6 +9,7 @@ export const NavbarConfig: GlobalConfig = {
     {
       name: "links",
       label: "الروابط",
+      labels: { singular: "رابط", plural: "الروابط" },
       type: "array",
       fields: [
         { name: "labelAr", label: "النص (عربي)", type: "text", required: true },
@@ -17,6 +18,7 @@ export const NavbarConfig: GlobalConfig = {
         {
           name: "children",
           label: "روابط فرعية (Mega Menu)",
+          labels: { singular: "رابط فرعي", plural: "روابط فرعية" },
           type: "array",
           fields: [
             { name: "labelAr", label: "النص (عربي)", type: "text", required: true },

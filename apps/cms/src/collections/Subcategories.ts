@@ -1,6 +1,7 @@
 import { CollectionConfig } from "payload/types";
 import { catalogAccess, hiddenUnless } from "../access";
 import BilingualNameHeader from "../admin/components/BilingualNameHeader";
+import SubcategoriesList from "../admin/views/SubcategoriesList";
 
 export const Subcategories: CollectionConfig = {
   slug: "subcategories",
@@ -8,8 +9,14 @@ export const Subcategories: CollectionConfig = {
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "category", "position", "isActive"],
+    listSearchableFields: ["nameAr", "nameEn", "slug"],
     group: "الكتالوج",
     hidden: hiddenUnless("super_admin", "admin", "catalog"),
+    components: {
+      views: {
+        List: SubcategoriesList as any,
+      },
+    },
   },
   access: catalogAccess,
   fields: [

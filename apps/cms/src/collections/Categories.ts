@@ -1,6 +1,7 @@
 import { CollectionConfig } from "payload/types";
 import { catalogAccess, hiddenUnless } from "../access";
 import BilingualNameHeader from "../admin/components/BilingualNameHeader";
+import CategoriesList from "../admin/views/CategoriesList";
 
 export const Categories: CollectionConfig = {
   slug: "categories",
@@ -8,8 +9,14 @@ export const Categories: CollectionConfig = {
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "nameEn", "position", "isActive"],
+    listSearchableFields: ["nameAr", "nameEn", "slug"],
     group: "الكتالوج",
     hidden: hiddenUnless("super_admin", "admin", "catalog"),
+    components: {
+      views: {
+        List: CategoriesList as any,
+      },
+    },
   },
   access: catalogAccess,
   fields: [
@@ -68,6 +75,7 @@ export const Categories: CollectionConfig = {
     {
       name: "brandLogos",
       label: "شعارات العلامات التجارية",
+      labels: { singular: "شعار", plural: "الشعارات" },
       type: "array",
       fields: [
         {

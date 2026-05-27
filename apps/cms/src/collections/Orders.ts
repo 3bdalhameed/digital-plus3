@@ -1,6 +1,7 @@
 import { CollectionConfig } from "payload/types";
 import { ordersAccess, hiddenUnless } from "../access";
 import { sendOrderStatusChangeEmail } from "../lib/email";
+import OrdersList from "../admin/views/OrdersList";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -8,8 +9,14 @@ export const Orders: CollectionConfig = {
   admin: {
     useAsTitle: "orderNumber",
     defaultColumns: ["orderNumber", "customer", "status", "totalAmount", "createdAt"],
+    listSearchableFields: ["orderNumber"],
     group: "الطلبات",
     hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
+    components: {
+      views: {
+        List: OrdersList as any,
+      },
+    },
   },
   access: ordersAccess,
   hooks: {
@@ -100,17 +107,20 @@ export const Orders: CollectionConfig = {
     {
       name: "items",
       label: "المنتجات",
+      labels: { singular: "منتج", plural: "المنتجات" },
       type: "array",
       required: true,
       fields: [
         {
           name: "product",
+          label: "المنتج",
           type: "relationship",
           relationTo: "products",
           required: true,
         },
         {
           name: "quantity",
+          label: "الكمية",
           type: "number",
           required: true,
           min: 1,
@@ -118,11 +128,13 @@ export const Orders: CollectionConfig = {
         },
         {
           name: "unitPrice",
+          label: "سعر الوحدة",
           type: "number",
           required: true,
         },
         {
           name: "totalPrice",
+          label: "السعر الإجمالي",
           type: "number",
           required: true,
         },

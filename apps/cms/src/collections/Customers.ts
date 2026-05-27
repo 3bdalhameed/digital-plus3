@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { ordersAccess, hiddenUnless } from "../access";
+import CustomersList from "../admin/views/CustomersList";
 
 export const Customers: CollectionConfig = {
   slug: "customers",
@@ -7,8 +8,14 @@ export const Customers: CollectionConfig = {
   admin: {
     useAsTitle: "email",
     defaultColumns: ["email", "name", "createdAt"],
+    listSearchableFields: ["email", "name", "phone"],
     group: "الطلبات",
     hidden: hiddenUnless("super_admin", "admin", "orders", "support"),
+    components: {
+      views: {
+        List: CustomersList as any,
+      },
+    },
   },
   auth: false,
   access: ordersAccess,

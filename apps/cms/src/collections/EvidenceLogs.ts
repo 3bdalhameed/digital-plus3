@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { ordersAccess, hiddenUnless } from "../access";
+import EvidenceLogsList from "../admin/views/EvidenceLogsList";
 
 export const EvidenceLogs: CollectionConfig = {
   slug: "evidence-logs",
@@ -7,8 +8,14 @@ export const EvidenceLogs: CollectionConfig = {
   admin: {
     useAsTitle: "type",
     defaultColumns: ["type", "order", "customer", "timestamp"],
+    listSearchableFields: ["ipAddress", "sessionId"],
     group: "الطلبات",
     hidden: hiddenUnless("super_admin", "admin", "orders"),
+    components: {
+      views: {
+        List: EvidenceLogsList as any,
+      },
+    },
   },
   access: {
     ...ordersAccess,

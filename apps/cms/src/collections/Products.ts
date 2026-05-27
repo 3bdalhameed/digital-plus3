@@ -2,6 +2,7 @@ import { CollectionConfig } from "payload/types";
 import { catalogAccess, hiddenUnless } from "../access";
 import BilingualNameHeader from "../admin/components/BilingualNameHeader";
 import BilingualHtmlHeader from "../admin/components/BilingualHtmlHeader";
+import ProductsList from "../admin/views/ProductsList";
 
 export const Products: CollectionConfig = {
   slug: "products",
@@ -40,8 +41,14 @@ export const Products: CollectionConfig = {
   admin: {
     useAsTitle: "nameAr",
     defaultColumns: ["nameAr", "nameEn", "type", "price", "status", "totalSales", "updatedAt"],
+    listSearchableFields: ["nameAr", "nameEn", "slug"],
     group: "الكتالوج",
     hidden: hiddenUnless("super_admin", "admin", "catalog"),
+    components: {
+      views: {
+        List: ProductsList as any,
+      },
+    },
     preview: (doc) => {
       const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
       return `${cmsUrl}/api/preview-redirect?slug=${doc.slug}&collection=products`;
@@ -116,6 +123,7 @@ export const Products: CollectionConfig = {
     {
       name: "images",
       label: "الصور | Images",
+      labels: { singular: "صورة", plural: "الصور" },
       type: "array",
       fields: [
         {

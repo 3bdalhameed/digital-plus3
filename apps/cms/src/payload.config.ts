@@ -6,6 +6,7 @@ import path from "path";
 import dotenv from "dotenv";
 import Dashboard from "./admin/components/Dashboard";
 import ThemeProvider from "./admin/components/ThemeProvider";
+import OttertagNav from "./admin/components/OttertagNav";
 
 // Collections
 import { Products } from "./collections/Products";
@@ -38,6 +39,7 @@ export default buildConfig({
     css: path.resolve(__dirname, "admin/custom.css"),
     components: {
       providers: [ThemeProvider as any],
+      Nav: OttertagNav as any,
       views: {
         Dashboard: Dashboard as any,
       },
@@ -50,6 +52,16 @@ export default buildConfig({
   },
 
   editor: lexicalEditor({}),
+
+  // i18n — make Arabic the admin-UI default language. Payload v2
+  // bundles ar.json translations out of the box (Save, Create New,
+  // Filters, date-picker months, validation errors, toasts, etc.).
+  // supportedLngs/resources default to all bundled translations,
+  // so authenticated users with a stored preference can still
+  // switch via their profile.
+  i18n: {
+    fallbackLng: "ar",
+  },
 
   db: postgresAdapter({
     push: false,

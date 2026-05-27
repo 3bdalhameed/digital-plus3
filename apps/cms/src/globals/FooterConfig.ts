@@ -9,6 +9,7 @@ export const FooterConfig: GlobalConfig = {
     {
       name: "columns",
       label: "الأعمدة",
+      labels: { singular: "عمود", plural: "الأعمدة" },
       type: "array",
       fields: [
         { name: "titleAr", label: "العنوان (عربي)", type: "text", required: true },
@@ -16,6 +17,7 @@ export const FooterConfig: GlobalConfig = {
         {
           name: "links",
           label: "الروابط",
+          labels: { singular: "رابط", plural: "الروابط" },
           type: "array",
           fields: [
             { name: "labelAr", type: "text", required: true },

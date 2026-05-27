@@ -1,5 +1,6 @@
 import { CollectionConfig } from "payload/types";
 import { usersAccess } from "../access";
+import UsersList from "../admin/views/UsersList";
 
 export const Users: CollectionConfig = {
   slug: "users",
@@ -7,9 +8,16 @@ export const Users: CollectionConfig = {
   auth: true,
   admin: {
     useAsTitle: "email",
+    defaultColumns: ["email", "name", "role"],
+    listSearchableFields: ["email", "name"],
     group: "الإعدادات",
     // Only super_admin sees the Users section in the sidebar
     hidden: ({ user }) => (user as any)?.role !== "super_admin",
+    components: {
+      views: {
+        List: UsersList as any,
+      },
+    },
   },
   access: usersAccess,
   fields: [

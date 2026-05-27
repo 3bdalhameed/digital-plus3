@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload/types";
+import MediaList from "../admin/views/MediaList";
 
 async function uploadFileToR2(filename: string, mimeType: string) {
   const r: NodeRequire = eval("require");
@@ -34,8 +35,14 @@ export const Media: CollectionConfig = {
   labels: { singular: "ملف وسائط", plural: "الوسائط" },
   admin: {
     group: "الإعدادات",
+    listSearchableFields: ["filename", "alt"],
     hidden: ({ user }: { user: any }) =>
       !["super_admin", "admin", "catalog"].includes(user?.role),
+    components: {
+      views: {
+        List: MediaList as any,
+      },
+    },
   },
   access: {
     read: () => true,
