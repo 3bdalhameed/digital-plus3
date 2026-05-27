@@ -10,6 +10,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-cms.yml"
 
 env:
   IMAGE: ghcr.io/3bdalhameed/digital-plus3/cms
@@ -43,8 +44,11 @@ jobs:
           tags: ${{ env.IMAGE }}:latest,${{ env.IMAGE }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # PAYLOAD_PUBLIC_SERVER_URL is the public admin URL — hardcoded here
+          # (not actually secret) so the build never depends on a misconfigured
+          # GitHub secret. If the CMS ever moves to a new domain, change it here.
           build-args: |
-            PAYLOAD_PUBLIC_SERVER_URL=${{ secrets.CMS_URL }}
+            PAYLOAD_PUBLIC_SERVER_URL=https://cms.digital-plus3.com
             COMMIT_SHA=${{ github.sha }}
             CACHE_BUST=${{ github.run_id }}
 

@@ -30,10 +30,11 @@ dotenv.config();
 
 const plugins: any[] = [];
 
-// Rebuild marker — bumped 2026-05-27 to force a fresh admin bundle
-// after updating the CMS_URL GitHub secret from the sslip.io fallback
-// to https://cms.digital-plus3.com so PAYLOAD_PUBLIC_SERVER_URL bakes
-// the correct HTTPS origin into main.<hash>.js.
+// Rebuild marker — bumped 2026-05-27 (run 2) after hardcoding
+// PAYLOAD_PUBLIC_SERVER_URL in the workflow yaml. The first rebuild
+// changed the bundle hash but still baked in the sslip.io URL because
+// the CMS_URL GitHub secret hadn't been updated. Workflow now sets
+// the URL inline so it can't drift.
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001",
 
