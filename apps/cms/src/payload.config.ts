@@ -30,6 +30,10 @@ dotenv.config();
 
 const plugins: any[] = [];
 
+// Rebuild marker — bumped 2026-05-27 to force a fresh admin bundle
+// after updating the CMS_URL GitHub secret from the sslip.io fallback
+// to https://cms.digital-plus3.com so PAYLOAD_PUBLIC_SERVER_URL bakes
+// the correct HTTPS origin into main.<hash>.js.
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001",
 
