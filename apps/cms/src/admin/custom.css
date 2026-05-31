@@ -3,7 +3,7 @@
    ─────────────────────────────────────────────────────────────
    Direction:  Modern Dashboard · Compact / dense
    Brand:      #7C3AED purple, paired with #6366F1 indigo accents
-   Font:       Cairo (loaded by ThemeProvider.tsx)
+   Font:       IBM Plex Sans Arabic (loaded by ThemeProvider.tsx)
    Principle:  Exact class selectors only — no [class*="…"] traps.
                All design values via CSS variables.
    ═══════════════════════════════════════════════════════════ */
@@ -119,7 +119,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    2. GLOBAL RTL + FONT STACK
-   Cairo first, then system Arabic fonts (so first paint looks
+   IBM Plex Sans Arabic first, then system Arabic fonts (so first paint looks
    right even before the webfont arrives), then Latin fallbacks.
    ═══════════════════════════════════════════════════════════ */
 html,
@@ -133,8 +133,8 @@ label,
 th,
 td,
 a {
-  font-family: 'Cairo', 'Tajawal', 'Segoe UI Arabic', 'Geeza Pro',
-               'Noto Sans Arabic', 'IBM Plex Sans Arabic',
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', 'Tajawal',
+               'Segoe UI Arabic', 'Geeza Pro', 'Noto Sans Arabic',
                'Segoe UI', Tahoma, Arial, sans-serif !important;
   direction: rtl !important;
 }
@@ -320,7 +320,7 @@ body,
   color: var(--ot-text) !important;
   border-right: 1px solid var(--ot-border) !important;
   box-shadow: var(--ot-shadow) !important;
-  font-family: 'Cairo','Tajawal','Inter','Segoe UI',sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic','Tajawal','Inter','Segoe UI',sans-serif !important;
   font-size: 13.5px !important;
   width: 264px !important;
   min-width: 264px !important;
@@ -689,7 +689,7 @@ html[dir="rtl"] .ot-tooltip {
 
 /* Generic .btn — font + radius only */
 .btn {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif;
   border-radius: var(--dp-radius-md) !important;
 }
 
@@ -767,7 +767,7 @@ html[dir="rtl"] .ot-tooltip {
   border-radius: var(--dp-radius-md) !important;
   background: var(--dp-surface-card) !important;
   color: var(--dp-text-primary) !important;
-  font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif !important;
   transition: border-color 0.15s, box-shadow 0.15s !important;
   padding: 10px 14px !important;
   font-size: 13.5px !important;
@@ -1584,7 +1584,7 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
   unicode-bidi: isolate !important;
   text-align: right !important;
   white-space: nowrap !important;
-  font-family: 'JetBrains Mono', 'Cairo', monospace !important;
+  font-family: 'JetBrains Mono', 'IBM Plex Sans Arabic', monospace !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
 }
@@ -1793,7 +1793,7 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
 
 .Toastify__toast {
   border-radius: var(--dp-radius-md) !important;
-  font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif !important;
   font-weight: 600 !important;
   direction: rtl !important;
   min-width: 280px !important;
@@ -1898,7 +1898,7 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
   flex-direction: column;
   gap: var(--dp-space-4);
   padding: var(--dp-space-6);
-  font-family: 'Cairo', 'Tajawal', 'Segoe UI Arabic', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', 'Segoe UI Arabic', sans-serif;
   color: var(--dp-text-primary);
 }
 
@@ -2455,7 +2455,7 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   color: #FFFFFF;
   font-weight: 800;
   font-size: 17px;
-  font-family: 'Cairo', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
   letter-spacing: 0.02em;
   box-shadow: 0 2px 8px rgba(15,23,42,0.08);
 }
@@ -2470,7 +2470,7 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
 
 /* Monospace order-number heading ──────────────────────── */
 .pl-card__order-number {
-  font-family: 'JetBrains Mono', 'Cairo', monospace !important;
+  font-family: 'JetBrains Mono', 'IBM Plex Sans Arabic', monospace !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   letter-spacing: 0 !important;

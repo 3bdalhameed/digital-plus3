@@ -74,7 +74,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        cairo: ["Cairo", "sans-serif"],
+        ibm: ['"IBM Plex Sans Arabic"', "Cairo", "Segoe UI Arabic", "sans-serif"],
         tajawal: ["Tajawal", "sans-serif"],
       },
       borderRadius: {

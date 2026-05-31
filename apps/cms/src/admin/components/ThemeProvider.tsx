@@ -15,9 +15,9 @@ if (typeof document !== 'undefined') {
   root.setAttribute('data-theme', 'light');
   try { localStorage.setItem('payload-theme', 'light'); } catch {}
 
-  // Cairo font — inject the <link> as early as possible so the
-  // first paint uses Cairo rather than the Tahoma/Arial fallback.
-  if (!document.getElementById('cairo-font')) {
+  // IBM Plex Sans Arabic — inject the <link> as early as possible
+  // so the first paint uses the brand font rather than the system fallback.
+  if (!document.getElementById('admin-font')) {
     const preconnect1 = document.createElement('link');
     preconnect1.rel = 'preconnect';
     preconnect1.href = 'https://fonts.googleapis.com';
@@ -30,9 +30,9 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(preconnect2);
 
     const link = document.createElement('link');
-    link.id   = 'cairo-font';
+    link.id   = 'admin-font';
     link.rel  = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap';
     document.head.appendChild(link);
   }
 }
