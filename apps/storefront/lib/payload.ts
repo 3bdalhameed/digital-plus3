@@ -281,12 +281,16 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
   const data = await payloadFetch<PayloadDocs<Category>>("/categories", {
     params: {
       where: JSON.stringify({ slug: { equals: slug } }),
       depth: "1",
       limit: "1",
     },
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
   });
   return data.docs[0] || null;
 }
@@ -298,13 +302,19 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 export async function getSubcategories(
   categorySlug?: string
 ): Promise<Subcategory[]> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
     params: {
-      where: JSON.stringify({ isActive: { equals: true } }),
+      // In preview show all subcategories regardless of isActive, so editors
+      // can see drafts; in production stick to the active filter.
+      where: JSON.stringify(isPreview ? {} : { isActive: { equals: true } }),
       sort: "position",
       depth: "1",
       limit: "500",
     },
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
   });
 
   if (!categorySlug) return data.docs;
@@ -319,12 +329,16 @@ export async function getSubcategories(
 }
 
 export async function getSubcategoryBySlug(slug: string): Promise<Subcategory | null> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
     params: {
       where: JSON.stringify({ slug: { equals: slug } }),
-      depth: "0",
+      depth: "1",
       limit: "1",
     },
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
   });
   return data.docs[0] || null;
 }
