@@ -125,9 +125,30 @@ export default buildConfig({
       handler: (req, res) => {
         const slug = req.query?.slug as string | undefined;
         const collection = (req.query?.collection as string | undefined) ?? "products";
-        const storefrontUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
+        // Production fallback baked in so the preview keeps working
+        // even if STOREFRONT_URL isn't set on the CMS container env.
+        // (Common failure mode after Coolify redeploys.)
+        const storefrontUrl =
+          process.env.STOREFRONT_URL ||
+          (process.env.NODE_ENV === "production"
+            ? "https://digital-plus3.com"
+            : "http://localhost:3000");
         const secret = process.env.PREVIEW_SECRET || "";
-        const target = `${storefrontUrl}/api/preview?secret=${encodeURIComponent(secret)}&collection=${encodeURIComponent(collection)}${slug ? `&slug=${encodeURIComponent(slug)}` : ""}`;
+
+        if (!secret) {
+          res
+            .status(500)
+            .send(
+              "PREVIEW_SECRET is not set on the CMS container. Set it in Coolify env vars and make sure the storefront uses the same value."
+            );
+          return;
+        }
+
+        const target = `${storefrontUrl}/api/preview?secret=${encodeURIComponent(
+          secret
+        )}&collection=${encodeURIComponent(collection)}${
+          slug ? `&slug=${encodeURIComponent(slug)}` : ""
+        }`;
         res.redirect(target);
       },
     },

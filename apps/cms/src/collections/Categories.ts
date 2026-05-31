@@ -17,6 +17,10 @@ export const Categories: CollectionConfig = {
         List: CategoriesList as any,
       },
     },
+    preview: (doc) => {
+      const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
+      return `${cmsUrl}/api/preview-redirect?slug=${doc.slug}&collection=collections`;
+    },
   },
   access: catalogAccess,
   fields: [

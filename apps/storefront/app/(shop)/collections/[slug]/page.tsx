@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -28,6 +29,12 @@ export default async function CollectionPage({
   searchParams: { page?: string };
 }) {
   const page = searchParams?.page ? parseInt(searchParams.page, 10) : 1;
+
+  // Reading draftMode opts this page out of ISR caching when an
+  // editor is previewing the collection from the Payload admin —
+  // so they always see the latest unpublished edits.
+  const { isEnabled: isPreview } = draftMode();
+  void isPreview;
 
   /* Try category first */
   const category = await getCategoryBySlug(params.slug).catch(() => null);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus } from "lucide-react";
+import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
 import { lexicalToHtml } from "@/lib/lexical";
@@ -18,6 +18,34 @@ export function ProductDetailClient({ product, productName }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const [tab, setTab] = useState<"desc" | "reviews">("desc");
   const [qty, setQty] = useState(1);
+
+  // Review form modal state
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  const handleSubmitReview = async () => {
+    if (!reviewRating || !reviewText.trim()) return;
+    setReviewSubmitting(true);
+    try {
+      // Backend submit endpoint not built yet — this is the placeholder.
+      // When you build /api/reviews, swap the next line for the fetch call.
+      await new Promise((r) => setTimeout(r, 600));
+      setReviewSubmitted(true);
+      setTimeout(() => {
+        setReviewOpen(false);
+        setReviewRating(0);
+        setReviewName("");
+        setReviewText("");
+        setReviewSubmitted(false);
+      }, 1800);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
   const [deliveryInfo, setDeliveryInfo] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
 
@@ -284,11 +312,132 @@ export function ProductDetailClient({ product, productName }: Props) {
             })()}
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#e8e4f8] bg-white p-6 text-center">
-            <p className="text-sm text-[#6b7280]">لا توجد تقييمات بعد.</p>
+          <div className="rounded-2xl border border-[#e8e4f8] bg-[#FAFAFC] p-6">
+            <h2 className="mb-6 text-lg font-black text-[#1e1b4b]" dir="rtl">
+              تقييمات العملاء
+            </h2>
+
+            {/* Empty state card */}
+            <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#e8e4f8] bg-white px-6 py-12 text-center">
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className="h-7 w-7 text-[#D1D5DB]" strokeWidth={1.5} />
+                ))}
+              </div>
+
+              <p className="mt-2 text-sm font-semibold text-[#1e1b4b]" dir="rtl">
+                لا يوجد أي تقييمات.
+              </p>
+              <p className="text-sm text-[#6b7280]" dir="rtl">
+                كن أول من يكتب تقييماً لهذا المنتج
+              </p>
+
+              <button
+                onClick={() => setReviewOpen(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
+              >
+                <PenLine className="h-4 w-4" strokeWidth={2.5} />
+                <span>يكتب تقييم</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── Review submission modal ──────────────────────── */}
+      {reviewOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          onClick={(e) => e.target === e.currentTarget && setReviewOpen(false)}
+          dir="rtl"
+        >
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            {/* Close button */}
+            <button
+              onClick={() => setReviewOpen(false)}
+              className="absolute top-3 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F3FF] text-[#6b7280] transition-colors hover:bg-[#EDE9FE] hover:text-[#7C3AED]"
+              aria-label="إغلاق"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+
+            {reviewSubmitted ? (
+              /* Success state */
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DCFCE7]">
+                  <BadgeCheck className="h-8 w-8 text-[#16A34A]" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-lg font-black text-[#1e1b4b]">شكراً لك!</h3>
+                <p className="text-sm text-[#6b7280]">
+                  تم استلام تقييمك وسيظهر بعد المراجعة.
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3 className="mb-1 text-lg font-black text-[#1e1b4b]">اكتب تقييماً</h3>
+                <p className="mb-5 text-xs text-[#6b7280]">شاركنا تجربتك مع هذا المنتج</p>
+
+                {/* Star rating selector */}
+                <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
+                  تقييمك *
+                </label>
+                <div className="mb-4 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setReviewRating(i)}
+                      className="p-1 transition-transform hover:scale-110 active:scale-95"
+                      aria-label={`${i} نجوم`}
+                    >
+                      <Star
+                        className={`h-8 w-8 ${
+                          i <= reviewRating
+                            ? "fill-[#F59E0B] text-[#F59E0B]"
+                            : "text-[#D1D5DB]"
+                        }`}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Name (optional) */}
+                <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
+                  اسمك (اختياري)
+                </label>
+                <input
+                  type="text"
+                  value={reviewName}
+                  onChange={(e) => setReviewName(e.target.value)}
+                  placeholder="أحمد"
+                  className="mb-4 w-full rounded-xl border border-[#ddd6fe] bg-white px-4 py-2.5 text-sm text-[#1e1b4b] outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
+                />
+
+                {/* Review text */}
+                <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
+                  تقييمك *
+                </label>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="اخبرنا عن تجربتك..."
+                  rows={4}
+                  className="mb-5 w-full resize-none rounded-xl border border-[#ddd6fe] bg-white px-4 py-2.5 text-sm text-[#1e1b4b] outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
+                />
+
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={!reviewRating || !reviewText.trim() || reviewSubmitting}
+                  className="w-full rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#9333EA] py-3 text-sm font-black text-white shadow-md transition-all hover:scale-[1.01] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {reviewSubmitting ? "جاري الإرسال..." : "إرسال التقييم"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
@@ -326,41 +475,50 @@ export function ProductDetailClient({ product, productName }: Props) {
       )}
 
       {/* Sticky bottom action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e8e4f8] bg-gradient-to-r from-[#7C3AED]/95 to-[#9333EA]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-gradient-to-r from-[#7C3AED]/95 to-[#9333EA]/95 backdrop-blur">
+        <div
+          className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+          dir="rtl"
+        >
+          {/* Quantity (start side = right in RTL) */}
           <div className="flex items-center gap-3 text-white">
-            <span className="text-sm">الكمية</span>
-            <div className="flex items-center gap-2 rounded-full bg-white/20 p-1">
+            <span className="text-xs font-bold opacity-90 md:text-sm">الكمية</span>
+            <div className="flex items-center gap-1 rounded-full bg-white px-1 py-1">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-[#7C3AED] hover:bg-white"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                aria-label="ناقص"
               >
-                <Minus className="h-3 w-3" />
+                <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
-              <span className="min-w-[1.5rem] text-center text-sm font-bold">{qty}</span>
+              <span className="min-w-[1.5rem] text-center text-sm font-black text-[#5B21B6]">
+                {qty}
+              </span>
               <button
                 onClick={() => setQty((q) => q + 1)}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-[#7C3AED] hover:bg-white"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                aria-label="زائد"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          {/* Outlined action card (end side = left in RTL) */}
+          <div className="flex items-center gap-2 rounded-2xl border-2 border-white/30 bg-white/5 p-1.5 backdrop-blur-sm">
             <button
               onClick={handleAdd}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#7C3AED] shadow-sm hover:bg-[#f5f3ff]"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
             >
-              <ShoppingCart className="h-4 w-4" />
-              أضف إلى السلة
+              <Zap className="h-4 w-4 text-orange-500" strokeWidth={2.5} fill="currentColor" />
+              <span>اشتري الآن</span>
             </button>
             <button
               onClick={handleAdd}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:from-yellow-500 hover:to-orange-500"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
             >
-              <Zap className="h-4 w-4" />
-              اشتري الآن
+              <ShoppingCart className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.5} />
+              <span>أضف إلى السلة</span>
             </button>
           </div>
         </div>

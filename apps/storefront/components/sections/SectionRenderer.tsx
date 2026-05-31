@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef } from "react";
 import type { HomePageSection } from "@my-store/types";
@@ -93,8 +93,154 @@ export function SectionRenderer({ section }: { section: HomePageSection }) {
     case "tabSection":       return <SectionWrapper section={section}><TabSectionBlock {...section} /></SectionWrapper>;
     case "spacer":           return <SpacerBlock {...section} />;
     case "customHtml":       return <SectionWrapper section={section}><CustomHtmlBlock {...section} /></SectionWrapper>;
+    case "bannerTitle":      return <SectionWrapper section={section}><BannerTitleSection {...section} /></SectionWrapper>;
+    case "trustSection":     return <SectionWrapper section={section}><TrustSection {...section} /></SectionWrapper>;
     default:                 return null;
   }
+}
+
+/* ═══════════════════════════════════════
+   18. TRUST SECTION — payment methods + trust badges
+   Purple gradient card with two stacked rows. Mirrors the
+   trust/badge sections common at the bottom of ecommerce pages.
+═══════════════════════════════════════ */
+function TrustSection({
+  paymentTitle = "طرق الدفع المتاحة",
+  paymentMethods = [],
+  trustBadges = [],
+  style = "gradient",
+}: {
+  paymentTitle?: string;
+  paymentMethods?: Array<{ label: string; emoji?: string; image?: { url?: string } }>;
+  trustBadges?: Array<{ title: string; description: string; emoji?: string; image?: { url?: string } }>;
+  style?: "gradient" | "solid" | "blue" | "pink" | "gold";
+}) {
+  const bgMap: Record<string, string> = {
+    gradient: "bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#6366F1]",
+    solid:    "bg-[#7C3AED]",
+    blue:     "bg-gradient-to-br from-[#3B82F6] via-[#6366F1] to-[#8B5CF6]",
+    pink:     "bg-gradient-to-br from-[#EC4899] via-[#F472B6] to-[#A855F7]",
+    gold:     "bg-gradient-to-br from-[#F59E0B] via-[#FB923C] to-[#EF4444]",
+  };
+  const bg = bgMap[style] ?? bgMap.gradient;
+
+  const hasPayment = paymentTitle || paymentMethods.length > 0;
+  const hasBadges  = trustBadges.length > 0;
+  if (!hasPayment && !hasBadges) return null;
+
+  return (
+    <div className={`overflow-hidden rounded-2xl ${bg} p-5 text-white shadow-md md:p-6`} dir="rtl">
+
+      {/* ── Row 1 — Payment methods ─────────────────────────── */}
+      {hasPayment && (
+        <div className="flex flex-wrap items-center gap-3">
+          {paymentTitle && (
+            <h3 className="text-sm font-black md:text-base">{paymentTitle}</h3>
+          )}
+          {paymentMethods.length > 0 && (
+            <div className="flex flex-1 flex-wrap items-center gap-2 justify-end">
+              {paymentMethods.map((m, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-[#5B21B6] shadow-sm"
+                >
+                  {m.image?.url ? (
+                    <Image src={m.image.url} alt="" width={18} height={18} className="h-4 w-auto object-contain" />
+                  ) : m.emoji ? (
+                    <span className="text-base leading-none">{m.emoji}</span>
+                  ) : null}
+                  <span>{m.label}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* divider */}
+      {hasPayment && hasBadges && <div className="my-4 h-px bg-white/15" />}
+
+      {/* ── Row 2 — Trust badges ────────────────────────────── */}
+      {hasBadges && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {trustBadges.map((b, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur">
+                {b.image?.url ? (
+                  <Image src={b.image.url} alt="" width={20} height={20} className="h-5 w-5 object-contain" />
+                ) : (
+                  <span className="text-base leading-none">{b.emoji || "⭐"}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black leading-tight md:text-base">{b.title}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-white/80 md:text-sm">
+                  {b.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   17. BANNER TITLE — gradient pill separator
+   Drop this between content blocks as a styled visual heading.
+   Distinct from each block's own `title` field (which still works
+   for in-block headings using the existing .section-title CSS).
+═══════════════════════════════════════ */
+function BannerTitleSection({
+  title,
+  emoji,
+  showSideIcons = true,
+  style = "gradient",
+}: {
+  title?: string;
+  emoji?: string;
+  showSideIcons?: boolean;
+  style?: "gradient" | "solid" | "blue" | "pink" | "gold";
+}) {
+  if (!title) return null;
+
+  const bgMap: Record<string, string> = {
+    gradient: "bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1]",
+    solid:    "bg-[#7C3AED]",
+    blue:     "bg-gradient-to-r from-[#3B82F6] via-[#6366F1] to-[#8B5CF6]",
+    pink:     "bg-gradient-to-r from-[#EC4899] via-[#F472B6] to-[#A855F7]",
+    gold:     "bg-gradient-to-r from-[#F59E0B] via-[#FB923C] to-[#EF4444]",
+  };
+  const bg = bgMap[style] ?? bgMap.gradient;
+
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 rounded-2xl px-4 py-3 text-white shadow-md ${bg}`}
+      dir="rtl"
+    >
+      {showSideIcons ? (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+          <RefreshCw className="h-4 w-4 text-white" strokeWidth={2.5} />
+        </div>
+      ) : (
+        <span className="h-9 w-9 shrink-0" aria-hidden />
+      )}
+
+      <h2 className="flex flex-1 items-center justify-center gap-2 text-base font-black md:text-xl">
+        <span>{title}</span>
+        {emoji && <span className="text-lg">{emoji}</span>}
+      </h2>
+
+      {showSideIcons ? (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+          <RefreshCw className="h-4 w-4 text-white" strokeWidth={2.5} />
+        </div>
+      ) : (
+        <span className="h-9 w-9 shrink-0" aria-hidden />
+      )}
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════

@@ -22,7 +22,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-3">
       {homeData.sections.map((section: any, index: number) => (
         <SectionRenderer key={index} section={section} />
       ))}

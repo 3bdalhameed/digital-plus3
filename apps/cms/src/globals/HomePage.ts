@@ -451,6 +451,123 @@ export const HomePage: GlobalConfig = {
           ],
         },
 
+        // ── 18. Trust Section — payment methods + trust badges ──
+        // Purple-gradient card showing accepted payments + trust signals.
+        // Drop near the bottom of the homepage to reassure shoppers
+        // before they checkout.
+        {
+          slug: "trustSection",
+          labels: { singular: "قسم الثقة", plural: "أقسام الثقة" },
+          fields: [
+            {
+              name: "paymentTitle",
+              label: "عنوان طرق الدفع",
+              type: "text",
+              defaultValue: "طرق الدفع المتاحة",
+            },
+            {
+              name: "paymentMethods",
+              label: "طرق الدفع",
+              labels: { singular: "طريقة دفع", plural: "طرق الدفع" },
+              type: "array",
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
+              fields: [
+                { name: "label", label: "النص", type: "text", required: true },
+                {
+                  name: "emoji",
+                  label: "إيموجي (اختياري)",
+                  type: "text",
+                  admin: { description: "مثال: 💳 🛡️ ✅" },
+                },
+                {
+                  name: "image",
+                  label: "أيقونة الشعار (اختياري)",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: { description: "يستبدل الإيموجي إذا تم رفعه" },
+                },
+              ],
+            },
+            {
+              name: "trustBadges",
+              label: "شارات الثقة",
+              labels: { singular: "شارة", plural: "الشارات" },
+              type: "array",
+              admin: { components: { RowLabel: ArrayRowLabel as any } },
+              fields: [
+                { name: "title",       label: "العنوان",   type: "text",     required: true },
+                { name: "description", label: "الوصف",     type: "textarea", required: true },
+                {
+                  name: "emoji",
+                  label: "إيموجي",
+                  type: "text",
+                  defaultValue: "⭐",
+                  admin: { description: "مثال: ⭐ 🛡️ ⚡ 🏆" },
+                },
+                {
+                  name: "image",
+                  label: "صورة الأيقونة (اختياري)",
+                  type: "upload",
+                  relationTo: "media",
+                },
+              ],
+            },
+            {
+              name: "style",
+              label: "الستايل",
+              type: "select",
+              defaultValue: "gradient",
+              options: [
+                { label: "متدرّج بنفسجي (افتراضي)", value: "gradient" },
+                { label: "بنفسجي صلب",              value: "solid" },
+                { label: "أزرق متدرّج",             value: "blue" },
+                { label: "وردي متدرّج",            value: "pink" },
+                { label: "ذهبي متدرّج",            value: "gold" },
+              ],
+            },
+            ...layoutFields,
+          ],
+        },
+
+        // ── 17. Banner Title — purple gradient pill separator ──
+        // Standalone visual heading you drop BETWEEN content blocks
+        // (e.g. above a "new products" carousel). Independent of the
+        // per-section `title` fields each content block already has —
+        // those still work for in-block headings.
+        {
+          slug: "bannerTitle",
+          labels: { singular: "عنوان شريط مميز", plural: "عناوين أشرطة مميزة" },
+          fields: [
+            { name: "title", label: "العنوان", type: "text", required: true },
+            {
+              name: "emoji",
+              label: "إيموجي اختياري بجانب العنوان",
+              type: "text",
+              admin: { description: "مثال: ⚡ 🔥 ⭐ ✨" },
+            },
+            {
+              name: "showSideIcons",
+              label: "إظهار الأيقونات الجانبية (الدائرتان)",
+              type: "checkbox",
+              defaultValue: true,
+            },
+            {
+              name: "style",
+              label: "الستايل",
+              type: "select",
+              defaultValue: "gradient",
+              options: [
+                { label: "متدرّج بنفسجي (افتراضي)", value: "gradient" },
+                { label: "بنفسجي صلب",              value: "solid" },
+                { label: "أزرق متدرّج",             value: "blue" },
+                { label: "وردي متدرّج",            value: "pink" },
+                { label: "ذهبي متدرّج",            value: "gold" },
+              ],
+            },
+            ...layoutFields,
+          ],
+        },
+
       ],
     },
   ],
