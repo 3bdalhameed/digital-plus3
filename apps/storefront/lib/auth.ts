@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { verifyOtp } from "@/lib/otp";
 
 async function syncPayloadCustomer(email: string, name: string): Promise<string | null> {
   try {
@@ -73,6 +74,44 @@ export const {
         if (!isValid) return null;
 
         if (!user.emailVerified) return null;
+
+        return { id: user.id, email: user.email, name: user.name };
+      },
+    }),
+    /* ───── Passwordless OTP login ─────────────────────────────────
+       Verifies the 6-digit code from /api/auth/otp/request, then
+       either signs in the existing user OR creates a verified account
+       on the fly (since possessing the OTP proves email ownership). */
+    CredentialsProvider({
+      id: "otp",
+      name: "otp",
+      credentials: {
+        email: { label: "البريد الإلكتروني", type: "email" },
+        code: { label: "رمز التحقق", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.code) return null;
+        const email = String(credentials.email).trim().toLowerCase();
+        const ok = await verifyOtp(email, String(credentials.code));
+        if (!ok) return null;
+
+        // Find existing account, otherwise auto-create one (verified —
+        // they proved email ownership via the OTP).
+        let user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: email.split("@")[0],
+              emailVerified: new Date(),
+            },
+          });
+        } else if (!user.emailVerified) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: new Date() },
+          });
+        }
 
         return { id: user.id, email: user.email, name: user.name };
       },
