@@ -29,14 +29,20 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [searchValue, setSearchValue] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const totalItems = useCartStore((s) => s.totalItems());
-  const { lang, currency, setLang, setCurrency, fetchRates } = useLocaleStore();
+  const { lang, currency, setLang, setCurrency, fetchRates, detectCurrency } = useLocaleStore();
 
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
   const logoUrl = settings?.logo?.url;
   const navLinks = navbarConfig?.links?.length ? navbarConfig.links : DEFAULT_NAV;
 
-  useEffect(() => { fetchRates(); }, []);
+  // Fetch live exchange rates + auto-detect currency from IP geo on mount.
+  // detectCurrency() is a no-op if the user has manually picked a currency.
+  useEffect(() => {
+    fetchRates();
+    detectCurrency();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
