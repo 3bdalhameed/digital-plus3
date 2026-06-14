@@ -17,6 +17,7 @@ import { Customers } from "./collections/Customers";
 import { EvidenceLogs } from "./collections/EvidenceLogs";
 import { SupportTickets } from "./collections/SupportTickets";
 import { Media } from "./collections/Media";
+import { Posts } from "./collections/Posts";
 import { Users } from "./collections/Users";
 
 // Globals
@@ -108,6 +109,35 @@ export default buildConfig({
         };
         // Products
         await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
+        // Posts (blog) — created when the Shopify blog import lands.
+        // Drizzle push:false won't auto-build these, so spell them out.
+        await run("posts_table", `
+          CREATE TABLE IF NOT EXISTS posts (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR NOT NULL,
+            slug VARCHAR NOT NULL UNIQUE,
+            excerpt VARCHAR,
+            featured_image_url VARCHAR,
+            body_html VARCHAR NOT NULL,
+            published_at TIMESTAMP(3) WITH TIME ZONE,
+            author VARCHAR,
+            status VARCHAR DEFAULT 'published',
+            source_url VARCHAR,
+            updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL,
+            created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL
+          )
+        `);
+        await run("posts_tags_table", `
+          CREATE TABLE IF NOT EXISTS posts_tags (
+            _order INTEGER NOT NULL,
+            _parent_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+            id VARCHAR PRIMARY KEY,
+            tag VARCHAR
+          )
+        `);
+        await run("posts_slug_idx", "CREATE INDEX IF NOT EXISTS posts_slug_idx ON posts (slug)");
+        await run("posts_published_idx", "CREATE INDEX IF NOT EXISTS posts_published_idx ON posts (published_at DESC NULLS LAST)");
+        await run("posts_tags_parent_idx", "CREATE INDEX IF NOT EXISTS posts_tags_parent_idx ON posts_tags (_parent_id)");
         // Settings — drop orphan tables if they exist from old array fields
         await run("drop_social_links", "DROP TABLE IF EXISTS settings_social_links CASCADE");
         await run("drop_notif_emails", "DROP TABLE IF EXISTS settings_order_notification_emails CASCADE");
@@ -158,6 +188,7 @@ export default buildConfig({
     Products,
     Categories,
     Subcategories,
+    Posts,
     Orders,
     Customers,
     EvidenceLogs,

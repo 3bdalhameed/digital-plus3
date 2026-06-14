@@ -1,0 +1,5 @@
+# Exported blog data (18MB+) — regenerate via export-shopify-blogs.js
+blogs_export/
+
+# Local secrets — Shopify tokens, R2 credentials, etc.
+.env
