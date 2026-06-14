@@ -67,13 +67,13 @@ export default async function CollectionPage({
                   <Link
                     key={sub.id}
                     href={`/collections/${sub.slug}`}
-                    className="group flex w-20 flex-col items-center gap-2"
+                    className="group flex w-24 flex-col items-center gap-2"
                   >
-                    <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md transition-transform group-hover:scale-105">
+                    <div className="relative h-20 w-20 transition-transform group-hover:scale-105">
                       {iconUrl ? (
-                        <Image src={iconUrl} alt={sub.nameAr} fill className="object-cover" />
+                        <Image src={iconUrl} alt={sub.nameAr} fill className="object-contain" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
+                        <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-2xl font-black text-white shadow-md">
                           {sub.nameAr?.[0] ?? "•"}
                         </div>
                       )}
