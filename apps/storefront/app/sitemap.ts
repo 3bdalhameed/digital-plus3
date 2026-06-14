@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getCategories, getProducts, getSubcategories } from "@/lib/payload";
+import { getCategories, getPosts, getProducts, getSubcategories } from "@/lib/payload";
 
 /**
  * Dynamic sitemap served at /sitemap.xml.
@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`,                  lastModified: now, changeFrequency: "daily",   priority: 1.0 },
     { url: `${SITE_URL}/products`,          lastModified: now, changeFrequency: "daily",   priority: 0.9 },
+    { url: `${SITE_URL}/blogs/news`,        lastModified: now, changeFrequency: "daily",   priority: 0.6 },
     { url: `${SITE_URL}/about`,             lastModified: now, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE_URL}/policies/privacy`,  lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
     { url: `${SITE_URL}/policies/terms`,    lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
@@ -40,10 +41,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Live content from Payload ─────────────────────────────
   // Failures here must NOT take down the whole sitemap — return what we have.
-  const [categories, subcategories, productsPage1] = await Promise.all([
+  const [categories, subcategories, productsPage1, postsPage1] = await Promise.all([
     getCategories().catch(() => []),
     getSubcategories().catch(() => []),
     getProducts({ limit: 1000 }).catch(() => ({ docs: [], totalPages: 0 } as any)),
+    getPosts({ limit: 1000 }).catch(() => ({ docs: [], totalPages: 0 } as any)),
   ]);
 
   const categoryUrls: MetadataRoute.Sitemap = (categories || []).map((cat: any) => ({
@@ -86,5 +88,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...staticPages, ...categoryUrls, ...subcategoryUrls, ...productUrls];
+  // ── Blog posts ─────────────────────────────
+  // Match the existing Shopify URL pattern exactly so the imported posts
+  // keep the same indexed URLs after cutover — zero SEO bleed.
+  let allPosts = postsPage1.docs || [];
+  if (postsPage1.totalPages > 1) {
+    const morePages = await Promise.all(
+      Array.from({ length: postsPage1.totalPages - 1 }, (_, i) =>
+        getPosts({ limit: 1000, page: i + 2 }).catch(() => ({ docs: [] } as any))
+      )
+    );
+    for (const p of morePages) allPosts = allPosts.concat(p.docs || []);
+  }
+  const postUrls: MetadataRoute.Sitemap = allPosts
+    .filter((p: any) => p.slug)
+    .map((p: any) => ({
+      url: `${SITE_URL}/blogs/news/${p.slug}`,
+      lastModified: p.updatedAt ? new Date(p.updatedAt) : now,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
+  return [...staticPages, ...categoryUrls, ...subcategoryUrls, ...productUrls, ...postUrls];
 }

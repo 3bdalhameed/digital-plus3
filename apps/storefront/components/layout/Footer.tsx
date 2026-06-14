@@ -23,6 +23,7 @@ const footerLinks = [
     links: [
       { label: "تواصل معنا", href: "/support" },
       { label: "من نحن", href: "/about" },
+      { label: "المدونة", href: "/blogs/news" },
     ],
   },
   {

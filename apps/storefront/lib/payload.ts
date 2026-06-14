@@ -344,6 +344,70 @@ export async function getSubcategoryBySlug(slug: string): Promise<Subcategory | 
 }
 
 // ---------------------
+// Blog posts
+// ---------------------
+
+export interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  featuredImageUrl?: string | null;
+  bodyHtml: string;
+  publishedAt?: string | null;
+  author?: string | null;
+  tags?: Array<{ tag: string }>;
+  status?: "published" | "draft";
+  updatedAt: string;
+  createdAt: string;
+}
+
+export async function getPosts(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  tag?: string;
+}): Promise<PayloadDocs<BlogPost>> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
+  const where: Record<string, any> = isPreview ? {} : { status: { equals: "published" } };
+  if (params?.q) {
+    where.title = { like: params.q };
+  }
+  if (params?.tag) {
+    // Tags is an array of { tag: string }; Payload supports filtering nested fields.
+    where["tags.tag"] = { equals: params.tag };
+  }
+
+  return payloadFetch<PayloadDocs<BlogPost>>("/posts", {
+    params: {
+      where: JSON.stringify(where),
+      sort: "-publishedAt",
+      depth: "0",
+      limit: String(params?.limit ?? 12),
+      page: String(params?.page ?? 1),
+    },
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
+  });
+}
+
+export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  let isPreview = false;
+  try { isPreview = draftMode().isEnabled; } catch {}
+
+  const data = await payloadFetch<PayloadDocs<BlogPost>>("/posts", {
+    params: {
+      where: JSON.stringify({ slug: { equals: slug } }),
+      depth: "0",
+      limit: "1",
+    },
+    ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
+  });
+  return data.docs[0] || null;
+}
+
+// ---------------------
 // Orders
 // ---------------------
 
