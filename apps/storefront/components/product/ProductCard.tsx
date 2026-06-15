@@ -52,21 +52,21 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Top-right corner — Arabic subcategory / account-type badge */}
           {subcategoryLabel && (
-            <div className="absolute top-2 right-2 rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#1e1b4b] shadow-sm backdrop-blur" dir="rtl">
+            <div className="absolute top-1.5 right-1.5 rounded-md bg-white/95 px-1.5 py-0.5 text-[9px] font-bold text-[#1e1b4b] shadow-sm backdrop-blur sm:top-2 sm:right-2 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[11px]" dir="rtl">
               {subcategoryLabel}
             </div>
           )}
 
           {/* Top-left corner — Latin platform tag (subcategory English name or product type) */}
           {(subcategoryNameEn || typeLabel(product.type)) && (
-            <div className="absolute top-2 left-2 rounded-lg bg-[#1e1b4b]/90 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm backdrop-blur">
+            <div className="absolute top-1.5 left-1.5 rounded-md bg-[#1e1b4b]/90 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm backdrop-blur sm:top-2 sm:left-2 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[10px]">
               {subcategoryNameEn || typeLabel(product.type)}
             </div>
           )}
 
           {/* Discount badge — bottom-left (corner) */}
           {hasDiscount && (
-            <div className="absolute bottom-2 left-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-2.5 py-0.5 text-xs font-black text-white shadow">
+            <div className="absolute bottom-1.5 left-1.5 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-1.5 py-0.5 text-[10px] font-black text-white shadow sm:bottom-2 sm:left-2 sm:px-2.5 sm:text-xs">
               -{discountPct}%
             </div>
           )}
@@ -74,11 +74,11 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* ── Content — centered ── */}
-      <div className="flex flex-1 flex-col items-center gap-2.5 p-3">
+      <div className="flex flex-1 flex-col items-center gap-1.5 p-2 sm:gap-2.5 sm:p-3">
         {/* Title — centered */}
         <Link href={`/products/${product.slug}`} className="w-full">
           <h3
-            className="line-clamp-2 min-h-[2.6em] text-center text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-[#7C3AED]"
+            className="line-clamp-2 min-h-[2.4em] text-center text-xs font-bold leading-snug text-gray-900 transition-colors group-hover:text-[#7C3AED] sm:min-h-[2.6em] sm:text-sm"
             dir="rtl"
           >
             {displayName}
@@ -87,11 +87,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Price — centered stack: current price big purple, compare price below struck-through */}
         <div className="flex flex-col items-center gap-0.5" dir="ltr">
-          <span className="text-lg font-black text-[#7C3AED]" style={{ fontFeatureSettings: '"tnum"' }}>
+          <span className="text-base font-black text-[#7C3AED] sm:text-lg" style={{ fontFeatureSettings: '"tnum"' }}>
             {formatPrice(product.price, product.currency, currency, rates)}
           </span>
           {hasDiscount && (
-            <span className="text-xs text-gray-400 line-through" style={{ fontFeatureSettings: '"tnum"' }}>
+            <span className="text-[10px] text-gray-400 line-through sm:text-xs" style={{ fontFeatureSettings: '"tnum"' }}>
               {formatPrice(product.comparePrice!, product.currency, currency, rates)}
             </span>
           )}
@@ -100,10 +100,10 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Add-to-cart button — full-width purple */}
         <button
           onClick={() => addItem(product)}
-          className="mt-auto flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#7C3AED] px-4 py-3 text-sm font-bold text-white transition-all hover:bg-[#6D28D9] hover:shadow-md active:scale-95"
+          className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#7C3AED] px-2 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-[#6D28D9] hover:shadow-md active:scale-95 sm:gap-2.5 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
           dir="rtl"
         >
-          <ShoppingCart className="h-5 w-5 flex-shrink-0" />
+          <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0 sm:h-5 sm:w-5" />
           <span>{lang === "en" ? "Add to Cart" : "أضف إلى السلة"}</span>
         </button>
       </div>
