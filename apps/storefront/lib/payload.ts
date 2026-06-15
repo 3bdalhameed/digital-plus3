@@ -32,6 +32,27 @@ if (process.env.NODE_ENV !== "production")
 // Generic fetch helper
 // ---------------------
 
+/**
+ * Flatten a nested `where` filter object into bracket-notation params.
+ * Payload v2's REST API uses the `qs` parser, which understands
+ * `where[slug][equals]=foo` but NOT a JSON-encoded `where=<json>`. Before
+ * this helper, every slug lookup silently returned ALL docs and grabbed
+ * docs[0] (so every product/category/post page showed the same record).
+ */
+function flattenWhere(obj: Record<string, any>, prefix = "where"): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue;
+    const key = `${prefix}[${k}]`;
+    if (typeof v === "object" && !Array.isArray(v)) {
+      out.push(...flattenWhere(v, key));
+    } else {
+      out.push([key, String(v)]);
+    }
+  }
+  return out;
+}
+
 async function payloadFetch<T>(
   endpoint: string,
   options?: RequestInit & { params?: Record<string, string> }
@@ -40,9 +61,25 @@ async function payloadFetch<T>(
   const url = new URL(`${PAYLOAD_API_URL}${endpoint}`);
 
   if (params) {
-    Object.entries(params).forEach(([key, value]) =>
-      url.searchParams.set(key, value)
-    );
+    Object.entries(params).forEach(([key, value]) => {
+      if (key === "where" && value) {
+        let obj: Record<string, any> | null = null;
+        if (typeof value === "string") {
+          try { obj = JSON.parse(value); } catch { obj = null; }
+        } else if (typeof value === "object") {
+          obj = value as any;
+        }
+        if (obj && Object.keys(obj).length > 0) {
+          for (const [bk, bv] of flattenWhere(obj)) {
+            url.searchParams.append(bk, bv);
+          }
+          return;
+        }
+        // Empty {} -> no where filter, just skip.
+        if (obj && Object.keys(obj).length === 0) return;
+      }
+      url.searchParams.set(key, value);
+    });
   }
 
   const res = await fetch(url.toString(), {

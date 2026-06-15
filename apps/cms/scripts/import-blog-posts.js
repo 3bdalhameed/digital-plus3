@@ -33,7 +33,7 @@ const args = require("node:util").parseArgs({
     in:            { type: "string",  default: path.resolve(__dirname, "blogs_export/posts") },
     limit:         { type: "string" },
     "skip-existing":{ type: "boolean", default: false },
-    concurrency:   { type: "string",  default: "4" },
+    concurrency:   { type: "string",  default: "2" },
   },
   strict: false,
 }).values;
@@ -43,6 +43,23 @@ const IN_DIR = String(args.in);
 const LIMIT = args.limit ? parseInt(String(args.limit), 10) : null;
 const SKIP_EXISTING = Boolean(args["skip-existing"]);
 const CONCURRENCY = parseInt(String(args.concurrency), 10) || 4;
+
+/**
+ * Cloudflare's edge in front of cms.digital-plus3.com rate-limits writes
+ * when we burst through. Wrap every API call so a 429/503/504 backs off
+ * and retries (honoring Retry-After when present) instead of bailing.
+ */
+async function fetchWithRetry(url, init, maxAttempts = 6) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(url, init);
+    if (![429, 503, 504].includes(res.status) || attempt === maxAttempts) return res;
+    const retryAfter = parseInt(res.headers.get("retry-after") || "", 10);
+    const backoffMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(60_000, 1500 * 2 ** (attempt - 1));
+    await new Promise((r) => setTimeout(r, backoffMs));
+  }
+}
 
 async function login() {
   const res = await fetch(`${CMS}/api/users/login`, {
@@ -57,7 +74,7 @@ async function login() {
 
 async function findExistingBySlug(token, slug) {
   const url = `${CMS}/api/posts?where[slug][equals]=${encodeURIComponent(slug)}&limit=1&depth=0`;
-  const res = await fetch(url, { headers: { Authorization: `JWT ${token}` } });
+  const res = await fetchWithRetry(url, { headers: { Authorization: `JWT ${token}` } });
   if (!res.ok) return null;
   const json = await res.json();
   return json.docs?.[0] || null;
@@ -92,7 +109,7 @@ async function upsertPost(token, post) {
   }
 
   if (existing) {
-    const res = await fetch(`${CMS}/api/posts/${existing.id}`, {
+    const res = await fetchWithRetry(`${CMS}/api/posts/${existing.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `JWT ${token}` },
       body: JSON.stringify(doc),
@@ -101,7 +118,7 @@ async function upsertPost(token, post) {
     return { slug: post.slug, status: "updated" };
   }
 
-  const res = await fetch(`${CMS}/api/posts`, {
+  const res = await fetchWithRetry(`${CMS}/api/posts`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `JWT ${token}` },
     body: JSON.stringify(doc),
