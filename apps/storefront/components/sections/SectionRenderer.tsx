@@ -680,7 +680,7 @@ function FAQSectionBlock({ title, items }: any) {
         </span>
       </div>
 
-      <div className="mx-auto max-w-3xl space-y-3">
+      <div className="mx-auto max-w-5xl space-y-3">
         {items?.map((faq: any, i: number) => {
           const isOpen = openIndex === i;
           return (
