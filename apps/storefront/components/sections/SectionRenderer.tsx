@@ -336,7 +336,7 @@ function FeaturedProductsSection({ title, subtitle, products }: any) {
       </div>
       <ProductCarousel>
         {products?.map((product: any) => (
-          <div key={product.id} className="w-[260px] shrink-0 sm:w-[280px] lg:w-[300px]">
+          <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
             <ProductCard product={product} />
           </div>
         ))}
