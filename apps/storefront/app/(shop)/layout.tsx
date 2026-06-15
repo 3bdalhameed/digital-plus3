@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PreviewBanner } from "@/components/layout/PreviewBanner";
+import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { getSettings, getNavbarConfig } from "@/lib/payload";
 import type { SiteSettings, NavbarConfig } from "@my-store/types";
 
@@ -27,6 +28,7 @@ export default async function ShopLayout({
         {children}
       </main>
       <Footer />
+      <ExitIntentPopup />
     </>
   );
 }
