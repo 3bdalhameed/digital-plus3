@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";
@@ -330,10 +330,23 @@ const colsClass: Record<string, string> = {
 function FeaturedProductsSection({ title, subtitle, products }: any) {
   return (
     <section>
-      <div className="mb-6 text-center">
-        <div className="section-title">{title}</div>
-        {subtitle && <p className="mt-1 text-sm text-[#6b7280]">{subtitle}</p>}
-      </div>
+      {title && (
+        <div
+          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-3 py-2.5 text-white shadow-md sm:px-4 sm:py-3"
+          dir="rtl"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
+            <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </span>
+          <h2 className="flex flex-1 items-center justify-center gap-2 text-sm font-black sm:text-base md:text-xl">
+            <span>{title}</span>
+          </h2>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
+            <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </span>
+        </div>
+      )}
+      {subtitle && <p className="mb-4 text-center text-sm text-[#6b7280]">{subtitle}</p>}
       <ProductCarousel>
         {products?.map((product: any) => (
           <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
