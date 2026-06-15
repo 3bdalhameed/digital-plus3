@@ -556,24 +556,42 @@ function ImageWithTextSection({ image, title, text, ctaLabel, ctaLink, imagePosi
 ═══════════════════════════════════════ */
 function FeatureBlocksSection({ title, items }: any) {
   return (
-    <section>
-      {title && <div className="section-title">{title}</div>}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {items?.map((f: any, i: number) => (
-          <div key={i} className="brand-card flex items-start gap-5">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#EDE9FE]">
-              {f.icon?.url ? (
-                <Image src={f.icon.url} alt="" width={28} height={28} className="object-contain" />
-              ) : (
-                <span className="text-3xl">{f.emoji || "⚡"}</span>
-              )}
+    <section dir="rtl">
+      {title && (
+        <div className="mb-4 flex justify-center">
+          <span className="inline-flex items-center gap-2 rounded-lg bg-[#EDE9FE] px-4 py-1.5 text-base font-black text-[#7C3AED] sm:text-lg">
+            {title}
+          </span>
+        </div>
+      )}
+
+      {/* One big purple gradient card holding all features in a 4-col grid */}
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-4 py-8 text-white shadow-md sm:px-8 sm:py-10">
+        <div className="grid grid-cols-2 gap-y-8 sm:gap-y-6 lg:grid-cols-4">
+          {items?.map((f: any, i: number) => (
+            <div key={i} className="flex flex-col items-center gap-3 text-center">
+              {/* Title row with emoji at the top */}
+              <h3 className="flex items-center gap-1.5 text-sm font-black text-white sm:text-base">
+                <span>{f.title}</span>
+                {f.emoji && <span className="text-base leading-none">{f.emoji}</span>}
+              </h3>
+
+              {/* Round icon chip */}
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm sm:h-14 sm:w-14">
+                {f.icon?.url ? (
+                  <Image src={f.icon.url} alt="" width={28} height={28} className="object-contain" />
+                ) : (
+                  <span className="text-2xl">⚡</span>
+                )}
+              </div>
+
+              {/* Description */}
+              <p className="max-w-[18ch] text-xs leading-relaxed text-white/90 sm:text-sm">
+                {f.description}
+              </p>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-[#1e1b4b]">{f.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-[#6b7280]">{f.description}</p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -653,28 +671,60 @@ function TestimonialsSection({ title, items }: any) {
 function FAQSectionBlock({ title, items }: any) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   return (
-    <section>
-      <div className="section-title">{title || "الأسئلة الشائعة"}</div>
-      <div className="mx-auto max-w-2xl space-y-3">
-        {items?.map((faq: any, i: number) => (
-          <div key={i} className="overflow-hidden rounded-2xl border border-[#e8e4f8] bg-white">
-            <button
-              onClick={() => setOpenIndex(openIndex === i ? null : i)}
-              className="flex w-full items-center justify-between p-6 text-right"
-            >
-              <span className="text-base font-bold text-[#1e1b4b]">{faq.question}</span>
-              {openIndex === i
-                ? <ChevronUp className="h-5 w-5 shrink-0 text-[#7C3AED]" />
-                : <ChevronDown className="h-5 w-5 shrink-0 text-[#7C3AED]" />
-              }
-            </button>
-            {openIndex === i && (
-              <div className="border-t border-[#f3f0ff] bg-[#faf9ff] p-6">
-                <p className="text-base leading-relaxed text-[#6b7280]">{faq.answer}</p>
-              </div>
-            )}
-          </div>
-        ))}
+    <section dir="rtl">
+      {/* Title — small purple text on a lavender pill, centered */}
+      <div className="mb-6 flex justify-center">
+        <span className="inline-flex items-center gap-2 rounded-lg bg-[#EDE9FE] px-4 py-1.5 text-base font-black text-[#7C3AED] sm:text-lg">
+          <span>{title || "الأسئلة الشائعة"}</span>
+          <span aria-hidden>💬</span>
+        </span>
+      </div>
+
+      <div className="mx-auto max-w-3xl space-y-3">
+        {items?.map((faq: any, i: number) => {
+          const isOpen = openIndex === i;
+          return (
+            <div key={i} className="overflow-hidden rounded-2xl bg-[#F3F4F6]">
+              <button
+                onClick={() => setOpenIndex(isOpen ? null : i)}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-right"
+                aria-expanded={isOpen}
+              >
+                {/* Numbered badge — right side (first in RTL flex) */}
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#60A5FA] text-xs font-black text-white"
+                  dir="ltr"
+                >
+                  {i + 1}
+                </span>
+
+                {/* Question text */}
+                <span className="flex-1 text-sm font-bold text-[#1f2937] sm:text-base">
+                  {faq.question}
+                </span>
+
+                {/* Triangle toggle — last in RTL flex => visually on the left */}
+                <span
+                  aria-hidden
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center text-[#7C3AED] transition-transform duration-200 ${isOpen ? "" : "rotate-180"}`}
+                >
+                  {/* Solid triangle: pointing up by default, rotated to point down when closed */}
+                  <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current">
+                    <path d="M8 4l6 8H2z" />
+                  </svg>
+                </span>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-[#E5E7EB] px-4 py-3.5">
+                  <p className="text-sm leading-relaxed text-[#6b7280] sm:text-base">
+                    {faq.answer}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );
