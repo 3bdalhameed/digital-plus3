@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";
 
 // ── Horizontal product carousel ─────────────────────────────────
@@ -379,36 +379,49 @@ function CategoryGridSection({ title, categories, columns }: any) {
 function SeamlessMarquee({
   children,
   itemWidth,
+  mobileItemWidth,
   speed = 25,
   pauseOnHover = true,
   gap = 16,
 }: {
   children: React.ReactNode[];
   itemWidth: number;
+  /** Override item width below 640px. Defaults to itemWidth (no change). */
+  mobileItemWidth?: number;
   speed?: number;
   pauseOnHover?: boolean;
   gap?: number;
 }) {
   const duration = typeof speed === "number" && speed > 0 ? speed : 25;
   const n = children.length;
+  // useId must run on every render — keep above the early return.
+  const rawId = useId();
+  const id = rawId.replace(/:/g, "");
   if (n === 0) return null;
 
-  // Each wrapper carries the gap as trailing margin, so its "unit width" is fixed
-  // and -50% still lands on an exact copy boundary.
-  const unit = itemWidth + gap;
-  const repeats = Math.max(Math.ceil(5760 / (n * unit)), 2);
+  // Use the smaller of the two widths for the repeat math so the mobile
+  // breakpoint still has enough copies to loop seamlessly.
+  const minUnit = Math.min(itemWidth, mobileItemWidth ?? itemWidth) + gap;
+  const repeats = Math.max(Math.ceil(5760 / (n * minUnit)), 2);
   const copies = repeats % 2 === 0 ? repeats : repeats + 1;
 
+  const itemClass = `marquee-item-${id}`;
   const track = Array.from({ length: copies }).flatMap((_, ci) =>
     children.map((child, i) => (
-      <div key={`${ci}-${i}`} style={{ width: itemWidth, flexShrink: 0, marginInlineEnd: gap }}>
+      <div key={`${ci}-${i}`} className={itemClass} style={{ flexShrink: 0, marginInlineEnd: gap }}>
         {child}
       </div>
     ))
   );
 
+  // CSS variable + media query so the width swap doesn't need JS or
+  // cause hydration mismatch.
+  const css = `.${itemClass}{width:${itemWidth}px}` +
+    (mobileItemWidth ? `@media(max-width:640px){.${itemClass}{width:${mobileItemWidth}px}}` : "");
+
   return (
     <div className="overflow-x-clip" style={{ direction: "ltr" }}>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
       <div
         style={{
           display: "flex",
@@ -430,7 +443,9 @@ function SeamlessMarquee({
 ═══════════════════════════════════════ */
 function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, speed = 25, pauseOnHover }: any) {
   const wMap: Record<string, number> = { xs: 120, sm: 160, md: 220, lg: 280, xl: 360 };
+  const mobileMap: Record<string, number> = { xs: 90, sm: 110, md: 140, lg: 170, xl: 200 };
   const wNum = wMap[cardWidth ?? "md"] ?? 220;
+  const mNum = mobileMap[cardWidth ?? "md"] ?? 140;
   const ratio = cardAspectRatio ?? "3/4";
 
   if (!banners?.length) return null;
@@ -454,7 +469,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   return (
     <section className="py-8">
       {title && <div className="section-title">{title}</div>}
-      <SeamlessMarquee itemWidth={wNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
+      <SeamlessMarquee itemWidth={wNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
         {cards}
       </SeamlessMarquee>
     </section>
@@ -466,15 +481,20 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
 ═══════════════════════════════════════ */
 function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }: any) {
   const szMap: Record<string, number> = { sm: 80, md: 112, lg: 144 };
+  const mobileMap: Record<string, number> = { sm: 60, md: 80, lg: 96 };
   const szNum = szMap[iconSize ?? "md"] ?? 112;
+  const mNum = mobileMap[iconSize ?? "md"] ?? 80;
 
   if (!items?.length) return null;
 
+  // Height needs to follow the responsive width so icons stay square.
+  // We can't put height on the Link inline (different value per breakpoint),
+  // so use aspect-square + the marquee's responsive width drives the height.
   const cards = items.map((item: any, i: number) => {
     const sub = item.subcategory;
     const href = sub?.slug ? `/collections/${sub.slug}` : "#";
     return (
-      <Link key={i} href={href} className="group relative block" style={{ width: "100%", height: szNum }}>
+      <Link key={i} href={href} className="group relative block aspect-square w-full">
         {item.image?.url ? (
           <Image src={item.image.url} alt={sub?.nameAr ?? ""} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
         ) : (
@@ -487,7 +507,7 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
   return (
     <section className="py-8">
       {title && <div className="section-title">{title}</div>}
-      <SeamlessMarquee itemWidth={szNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
+      <SeamlessMarquee itemWidth={szNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
         {cards}
       </SeamlessMarquee>
     </section>
