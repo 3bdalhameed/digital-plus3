@@ -604,28 +604,41 @@ function StatsSectionBlock({ title, stats }: any) {
 ═══════════════════════════════════════ */
 function TestimonialsSection({ title, items }: any) {
   return (
-    <section>
-      <div className="section-title">{title || "آراء عملائنا"}</div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <section dir="rtl">
+      {/* Title — small purple, right-aligned, no horizontal rule. */}
+      <h2 className="mb-4 text-right text-lg font-black text-[#7C3AED] sm:text-xl">
+        {title || "آراء العملاء"}
+      </h2>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {items?.map((t: any, i: number) => (
-          <div key={i} className="brand-card">
-            <div className="mb-3 flex gap-0.5">
+          <div
+            key={i}
+            className="relative flex flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] p-4 text-center text-white shadow-md"
+          >
+            {/* Stars row — centered */}
+            <div className="flex gap-0.5" aria-label={`${t.rating} stars`}>
               {Array.from({ length: 5 }).map((_, si) => (
-                <Star key={si} className={`h-5 w-5 ${si < t.rating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
+                <Star
+                  key={si}
+                  className={`h-4 w-4 ${si < t.rating ? "fill-amber-300 text-amber-300" : "text-white/30"}`}
+                />
               ))}
             </div>
-            <p className="text-base leading-relaxed text-[#6b7280]">"{t.text}"</p>
-            <div className="mt-4 flex items-center gap-3">
-              {t.avatar?.url ? (
-                <div className="relative h-11 w-11 overflow-hidden rounded-full">
-                  <Image src={t.avatar.url} alt={t.name} fill className="object-cover" />
-                </div>
-              ) : (
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EDE9FE] text-base font-black text-[#7C3AED]">
-                  {t.name?.[0]}
-                </div>
-              )}
-              <p className="text-base font-bold text-[#1e1b4b]">{t.name}</p>
+
+            {/* Quote */}
+            <p className="text-sm leading-relaxed text-white" dir="rtl">
+              &ldquo;{t.text}&rdquo;
+            </p>
+
+            {/* Optional little emoji accent under the quote — keeps the
+                visual rhythm of the source design (💜 / 🔥 / ❤️ / 👋). */}
+            {t.emoji && <span className="text-base leading-none">{t.emoji}</span>}
+
+            {/* Name + date row */}
+            <div className="mt-auto flex w-full items-center justify-between gap-2 pt-1 text-xs text-white/85">
+              <span className="font-bold text-white">{t.name}</span>
+              {t.date && <time className="font-mono">{t.date}</time>}
             </div>
           </div>
         ))}
