@@ -287,8 +287,9 @@ export async function getProductBySlug(
   let isPreview = false;
   try { isPreview = draftMode().isEnabled; } catch {}
 
+  const decoded = slug.includes("%") ? safeDecode(slug) : slug;
   const params: Record<string, string> = {
-    "where[slug][equals]": slug,
+    "where[slug][equals]": decoded,
     depth: "2",
     limit: "1",
   };
@@ -321,9 +322,11 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   let isPreview = false;
   try { isPreview = draftMode().isEnabled; } catch {}
 
+  const decoded = slug.includes("%") ? safeDecode(slug) : slug;
+
   const data = await payloadFetch<PayloadDocs<Category>>("/categories", {
     params: {
-      where: JSON.stringify({ slug: { equals: slug } }),
+      where: JSON.stringify({ slug: { equals: decoded } }),
       depth: "1",
       limit: "1",
     },
@@ -369,9 +372,11 @@ export async function getSubcategoryBySlug(slug: string): Promise<Subcategory | 
   let isPreview = false;
   try { isPreview = draftMode().isEnabled; } catch {}
 
+  const decoded = slug.includes("%") ? safeDecode(slug) : slug;
+
   const data = await payloadFetch<PayloadDocs<Subcategory>>("/subcategories", {
     params: {
-      where: JSON.stringify({ slug: { equals: slug } }),
+      where: JSON.stringify({ slug: { equals: decoded } }),
       depth: "1",
       limit: "1",
     },
@@ -433,15 +438,25 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   let isPreview = false;
   try { isPreview = draftMode().isEnabled; } catch {}
 
+  // Arabic / non-ASCII slugs arrive URL-encoded (`%D8%B7...`) from the
+  // Next.js route param in some hosting setups (Coolify/Traefik don't
+  // always decode the path before handing it off). Decode if needed so
+  // the API query matches the raw value stored in Postgres.
+  const decoded = slug.includes("%") ? safeDecode(slug) : slug;
+
   const data = await payloadFetch<PayloadDocs<BlogPost>>("/posts", {
     params: {
-      where: JSON.stringify({ slug: { equals: slug } }),
+      where: JSON.stringify({ slug: { equals: decoded } }),
       depth: "0",
       limit: "1",
     },
     ...(isPreview ? { cache: "no-store" } : { next: { revalidate: 60 } }),
   });
   return data.docs[0] || null;
+}
+
+function safeDecode(s: string): string {
+  try { return decodeURIComponent(s); } catch { return s; }
 }
 
 // ---------------------
