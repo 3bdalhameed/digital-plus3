@@ -626,20 +626,103 @@ function FeatureBlocksSection({ title, items }: any) {
    9. STATS SECTION
 ═══════════════════════════════════════ */
 function StatsSectionBlock({ title, stats }: any) {
+  const items = stats || [];
+  // Parse each stat value once so we know what to animate and what to
+  // preserve as static prefix/suffix text. "150+" → {target:150, suffix:"+"}.
+  const parsed = items.map((s: any) => parseStatValue(String(s.value ?? "")));
+
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [counts, setCounts] = useState<number[]>(() => items.map(() => 0));
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sectionRef.current || startedRef.current) return;
+    const el = sectionRef.current;
+    const start = () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      const duration = 1600; // ms — all columns finish together
+      const t0 = performance.now();
+      let raf = 0;
+      const step = (now: number) => {
+        const p = Math.min(1, (now - t0) / duration);
+        // Ease-out cubic so the numbers feel responsive at start, gentle at end.
+        const eased = 1 - Math.pow(1 - p, 3);
+        setCounts(parsed.map((d) => Math.round(d.target * eased)));
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(raf);
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) start();
+      },
+      { threshold: 0.4 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!items.length) return null;
+
   return (
-    <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-8 py-14">
-      {title && <div className="mb-10 text-center text-2xl font-black text-white">{title}</div>}
-      <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-        {stats?.map((s: any, i: number) => (
-          <div key={i} className="text-center">
-            {s.emoji && <div className="mb-2 text-4xl">{s.emoji}</div>}
-            <div className="text-4xl font-black text-white md:text-5xl">{s.value}</div>
-            <div className="mt-2 text-base text-[#ddd6fe]">{s.label}</div>
-          </div>
-        ))}
+    <section
+      ref={sectionRef}
+      className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] shadow-md"
+      dir="rtl"
+    >
+      {/* Title strip — darker purple band across the top */}
+      {title && (
+        <div className="bg-gradient-to-r from-[#6D28D9] via-[#7C3AED] to-[#6D28D9] px-4 py-3 text-center sm:px-6 sm:py-4">
+          <h2 className="text-base font-black text-white sm:text-xl md:text-2xl">{title}</h2>
+        </div>
+      )}
+
+      {/* Stats row — 4 columns separated by vertical dividers */}
+      <div className="grid grid-cols-2 px-2 py-6 sm:grid-cols-4 sm:px-4 sm:py-8">
+        {items.map((s: any, i: number) => {
+          const { prefix, suffix } = parsed[i];
+          return (
+            <div
+              key={i}
+              className={`flex flex-col items-center gap-1 px-2 text-center text-white sm:px-4 ${
+                i < items.length - 1 ? "sm:border-l sm:border-white/20" : ""
+              }`}
+            >
+              {s.emoji && <span className="mb-1 text-2xl">{s.emoji}</span>}
+              <div
+                className="text-2xl font-black leading-none sm:text-4xl md:text-5xl"
+                style={{ fontFeatureSettings: '"tnum"' }}
+                dir="ltr"
+              >
+                {prefix}
+                <span>{counts[i].toLocaleString("en-US")}</span>
+                {suffix}
+              </div>
+              <div className="mt-1 text-xs text-white/85 sm:text-sm md:text-base">{s.label}</div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
+}
+
+/**
+ * Pull the integer target out of a stat value like "5+ سنوات" / "+150" /
+ * "20,000+" so we can animate it. Everything around the digits is kept
+ * verbatim and re-rendered as prefix / suffix so the look stays exact.
+ */
+function parseStatValue(raw: string): { target: number; prefix: string; suffix: string } {
+  const m = raw.match(/[\d،,]+/);
+  if (!m) return { target: 0, prefix: "", suffix: raw };
+  const digits = m[0].replace(/[,،]/g, "");
+  const target = parseInt(digits, 10) || 0;
+  const prefix = raw.slice(0, m.index!);
+  const suffix = raw.slice(m.index! + m[0].length);
+  return { target, prefix, suffix };
 }
 
 /* ═══════════════════════════════════════
