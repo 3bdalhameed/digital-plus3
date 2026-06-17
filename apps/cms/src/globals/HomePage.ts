@@ -120,6 +120,16 @@ export const HomePage: GlobalConfig = {
             { name: "title",    label: "العنوان", type: "text", required: true },
             { name: "subtitle", label: "وصف",     type: "text" },
             {
+              name: "titleIcon",
+              label: "أيقونة العنوان (تظهر يمين ويسار العنوان)",
+              type: "upload",
+              relationTo: "media",
+              admin: {
+                description:
+                  "صورة صغيرة (PNG شفاف يعطي أفضل نتيجة) تظهر داخل المربعين على جانبي العنوان. إذا تركتها فارغة سيظهر رمز ✨ الافتراضي.",
+              },
+            },
+            {
               name: "columns", label: "عدد الأعمدة", type: "select", defaultValue: "4",
               options: [
                 { label: "2 أعمدة", value: "2" },

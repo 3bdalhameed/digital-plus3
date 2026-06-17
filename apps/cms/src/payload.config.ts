@@ -109,6 +109,12 @@ export default buildConfig({
         };
         // Products
         await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
+        // Featured Products block — title icon upload
+        // Drizzle push:false so a manual column add is needed for the new field.
+        await run(
+          "fp_title_icon",
+          "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
+        );
         // Posts (blog) — created when the Shopify blog import lands.
         // Drizzle push:false won't auto-build these, so spell them out.
         await run("posts_table", `

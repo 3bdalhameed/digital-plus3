@@ -1,4 +1,4 @@
-import { getHomePage, getSettings } from "@/lib/payload";
+import { getHomePage } from "@/lib/payload";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import Link from "next/link";
 import { ArrowLeft, Zap, Shield, Headphones, Star } from "lucide-react";
@@ -11,19 +11,8 @@ export default async function HomePage() {
   const { isEnabled: isPreview } = draftMode();
 
   let homeData;
-  let logoUrl: string | null = null;
   try {
-    const [home, settings] = await Promise.all([
-      getHomePage(),
-      getSettings().catch(() => null),
-    ]);
-    homeData = home;
-    const raw = (settings as any)?.logo?.url as string | undefined;
-    if (raw) {
-      logoUrl = raw.startsWith("http")
-        ? raw
-        : `${(process.env.PAYLOAD_API_URL || "").replace("/api", "") || "http://localhost:3001"}${raw}`;
-    }
+    homeData = await getHomePage();
   } catch {
     homeData = null;
   }
@@ -35,7 +24,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-3">
       {homeData.sections.map((section: any, index: number) => (
-        <SectionRenderer key={index} section={section} logoUrl={logoUrl} />
+        <SectionRenderer key={index} section={section} />
       ))}
     </div>
   );
