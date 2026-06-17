@@ -353,6 +353,20 @@ function FeaturedProductsSection({ title, subtitle, products }: any) {
             <ProductCard product={product} />
           </div>
         ))}
+        {/* Trailing "show more" card — same width as a product so the carousel rhythm stays. */}
+        <div className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
+          <Link
+            href="/products"
+            className="group flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#DDD6FE] bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] p-6 text-center text-[#7C3AED] transition-all hover:border-[#7C3AED] hover:from-[#EDE9FE] hover:to-[#DDD6FE] hover:shadow-md"
+            dir="rtl"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/80 text-2xl text-[#7C3AED] transition-transform group-hover:scale-110">
+              <ArrowLeft className="h-6 w-6" strokeWidth={2.5} />
+            </span>
+            <span className="text-base font-black sm:text-lg">عرض المزيد</span>
+            <span className="text-xs text-[#6b7280] sm:text-sm">تصفح كل المنتجات</span>
+          </Link>
+        </div>
       </ProductCarousel>
     </section>
   );
