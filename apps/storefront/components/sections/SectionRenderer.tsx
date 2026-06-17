@@ -637,40 +637,50 @@ function StatsSectionBlock({ title, stats }: any) {
 function TestimonialsSection({ title, items }: any) {
   return (
     <section dir="rtl">
-      {/* Title — small purple, right-aligned, no horizontal rule. */}
-      <h2 className="mb-4 text-right text-lg font-black text-[#7C3AED] sm:text-xl">
+      {/* Title — purple, right-aligned, larger than before */}
+      <h2 className="mb-5 text-right text-2xl font-black text-[#7C3AED] sm:text-3xl md:text-4xl">
         {title || "آراء العملاء"}
       </h2>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Snap-scroll carousel:
+            mobile  → 1 card per screen,
+            desktop → 4 cards per screen.
+          The same overflow-x track works whether you have 3 testimonials or 30;
+          if items fit fully on screen the user just sees them all without
+          scrolling. */}
+      <div
+        className="-mx-2 flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 pb-3 [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {items?.map((t: any, i: number) => (
           <div
             key={i}
-            className="relative flex flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] p-4 text-center text-white shadow-md"
+            className="snap-start shrink-0 basis-full lg:basis-[calc(25%-12px)]"
           >
-            {/* Stars row — centered */}
-            <div className="flex gap-0.5" aria-label={`${t.rating} stars`}>
-              {Array.from({ length: 5 }).map((_, si) => (
-                <Star
-                  key={si}
-                  className={`h-4 w-4 ${si < t.rating ? "fill-amber-300 text-amber-300" : "text-white/30"}`}
-                />
-              ))}
-            </div>
+            <div className="relative flex h-full flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] p-4 text-center text-white shadow-md">
+              {/* Stars row — centered */}
+              <div className="flex gap-0.5" aria-label={`${t.rating} stars`}>
+                {Array.from({ length: 5 }).map((_, si) => (
+                  <Star
+                    key={si}
+                    className={`h-4 w-4 ${si < t.rating ? "fill-amber-300 text-amber-300" : "text-white/30"}`}
+                  />
+                ))}
+              </div>
 
-            {/* Quote */}
-            <p className="text-sm leading-relaxed text-white" dir="rtl">
-              &ldquo;{t.text}&rdquo;
-            </p>
+              {/* Quote */}
+              <p className="text-sm leading-relaxed text-white" dir="rtl">
+                &ldquo;{t.text}&rdquo;
+              </p>
 
-            {/* Optional little emoji accent under the quote — keeps the
-                visual rhythm of the source design (💜 / 🔥 / ❤️ / 👋). */}
-            {t.emoji && <span className="text-base leading-none">{t.emoji}</span>}
+              {/* Optional emoji accent */}
+              {t.emoji && <span className="text-base leading-none">{t.emoji}</span>}
 
-            {/* Name + date row */}
-            <div className="mt-auto flex w-full items-center justify-between gap-2 pt-1 text-xs text-white/85">
-              <span className="font-bold text-white">{t.name}</span>
-              {t.date && <time className="font-mono">{t.date}</time>}
+              {/* Name + date row */}
+              <div className="mt-auto flex w-full items-center justify-between gap-2 pt-1 text-xs text-white/85">
+                <span className="font-bold text-white">{t.name}</span>
+                {t.date && <time className="font-mono">{t.date}</time>}
+              </div>
             </div>
           </div>
         ))}
