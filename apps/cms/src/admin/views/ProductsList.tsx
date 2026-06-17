@@ -148,6 +148,36 @@ const ProductsList: React.FC<{
   const totalPages = data?.totalPages || 1;
   const currentPage = data?.page || 1;
 
+  /* ─── Image URL hydration ────────────────────────────────────────
+     Payload's admin list controller fetches docs with depth=0, so
+     `images[0].image` arrives as the media ID rather than the full
+     media object with a `url`. Re-fetch just the visible products
+     with depth=1 and remember each one's thumbnail in a Map. */
+  const [imageMap, setImageMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const ids = docs.map((d) => d.id).filter(Boolean);
+    if (!ids.length) {
+      setImageMap({});
+      return;
+    }
+    const idsQuery = ids.map((id) => `where[id][in][]=${encodeURIComponent(String(id))}`).join('&');
+    const url = `${serverURL}/api/products?depth=1&limit=${ids.length}&${idsQuery}`;
+    fetch(url, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((json) => {
+        const map: Record<string, string> = {};
+        for (const p of json.docs || []) {
+          const img = p.images?.[0]?.image;
+          const url = (img && typeof img === 'object') ? (img.url || img.sizes?.thumbnail?.url || '') : '';
+          if (url) map[String(p.id)] = url;
+        }
+        setImageMap(map);
+      })
+      .catch((err) => console.error('[ProductsList] thumbnail refetch failed', err));
+    // Re-run whenever the visible doc IDs change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverURL, docs.map((d) => d.id).join(',')]);
+
   /* ─── Render ───────────────────────────────────────────── */
   return (
     <div className="pl" dir="rtl">
@@ -239,10 +269,14 @@ const ProductsList: React.FC<{
             const status = STATUS[p.status || 'draft'] || STATUS.draft;
             const badge = p.badge && p.badge !== 'none' ? BADGE[p.badge] : null;
             const firstImage = p.images?.[0]?.image;
+            // Depth=1 refetch result first; fall back to whatever the list
+            // controller happened to give us in case the refetch hasn't
+            // landed yet (or returns nothing).
             const thumb =
-              firstImage && typeof firstImage === 'object'
+              imageMap[String(p.id)] ||
+              (firstImage && typeof firstImage === 'object'
                 ? firstImage.url || (firstImage.sizes?.thumbnail?.url ?? '')
-                : '';
+                : '');
             const editUrl = `/admin/collections/products/${p.id}`;
 
             return (
