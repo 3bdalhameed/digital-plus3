@@ -73,13 +73,13 @@ function SectionWrapper({ section, children }: { section: any; children: React.R
   return <div className={`${w} ${p}`}>{children}</div>;
 }
 
-export function SectionRenderer({ section }: { section: HomePageSection }) {
+export function SectionRenderer({ section, logoUrl }: { section: HomePageSection; logoUrl?: string | null }) {
   if (!section.enabled) return null;
 
   switch (section.blockType) {
     case "heroBanner":       return <SectionWrapper section={section}><HeroBannerSection {...section} /></SectionWrapper>;
     case "multiImageBanner": return <SectionWrapper section={section}><MultiImageBanner {...section} /></SectionWrapper>;
-    case "featuredProducts": return <SectionWrapper section={section}><FeaturedProductsSection {...section} /></SectionWrapper>;
+    case "featuredProducts": return <SectionWrapper section={section}><FeaturedProductsSection {...section} logoUrl={logoUrl} /></SectionWrapper>;
     case "categoryGrid":     return <SectionWrapper section={section}><CategoryGridSection {...section} /></SectionWrapper>;
     case "categoryBanners":  return <CategoryBannersSection {...section} />;
     case "categoryRow":      return <CategoryRowSection {...section} />;
@@ -327,7 +327,26 @@ const colsClass: Record<string, string> = {
   "6": "grid-cols-2 md:grid-cols-4 lg:grid-cols-6",
 };
 
-function FeaturedProductsSection({ title, subtitle, products }: any) {
+function FeaturedProductsSection({ title, subtitle, products, logoUrl }: any) {
+  // Render the CMS-uploaded logo inside each side chip when available; fall
+  // back to the Sparkles icon so the title bar still has decoration if the
+  // logo hasn't been set yet.
+  const chip = (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
+      {logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt=""
+          width={28}
+          height={28}
+          className="h-5 w-5 object-contain sm:h-6 sm:w-6"
+          unoptimized
+        />
+      ) : (
+        <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+      )}
+    </span>
+  );
   return (
     <section>
       {title && (
@@ -335,15 +354,11 @@ function FeaturedProductsSection({ title, subtitle, products }: any) {
           className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-3 py-2.5 text-white shadow-md sm:px-4 sm:py-3"
           dir="rtl"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
-            <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
-          </span>
+          {chip}
           <h2 className="flex flex-1 items-center justify-center gap-2 text-sm font-black sm:text-base md:text-xl">
             <span>{title}</span>
           </h2>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
-            <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
-          </span>
+          {chip}
         </div>
       )}
       {subtitle && <p className="mb-4 text-center text-sm text-[#6b7280]">{subtitle}</p>}
