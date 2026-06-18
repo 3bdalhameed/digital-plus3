@@ -2,6 +2,7 @@ import { CollectionConfig } from "payload/types";
 import { ordersAccess, hiddenUnless } from "../access";
 import { sendOrderStatusChangeEmail } from "../lib/email";
 import OrdersList from "../admin/views/OrdersList";
+import OrderSummaryCards from "../admin/components/OrderSummaryCards";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -90,6 +91,16 @@ export const Orders: CollectionConfig = {
     ],
   },
   fields: [
+    // Shopify-style visual summary rendered above the default edit form.
+    // Pure read-only UI; the form fields below remain the source of truth.
+    {
+      name: "summaryCards",
+      type: "ui",
+      admin: {
+        components: { Field: OrderSummaryCards as any },
+        condition: (_data, _siblingData, { operation }) => operation === "update",
+      },
+    },
     {
       name: "orderNumber",
       label: "رقم الطلب",
