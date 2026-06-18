@@ -1,5 +1,10 @@
 import { CollectionConfig } from "payload/types";
-import MediaList from "../admin/views/MediaList";
+// Custom MediaList view is intentionally NOT registered — when an editor
+// clicks "اختر من القائمة" on an upload field, Payload's picker drawer
+// re-renders the collection's List view inside the modal. The custom view's
+// react-router hooks (useHistory/useLocation) don't work in that modal
+// context and the picker renders blank, blocking media selection. Keeping
+// Payload's default List preserves picker functionality.
 
 async function uploadFileToR2(filename: string, mimeType: string) {
   const r: NodeRequire = eval("require");
@@ -38,11 +43,6 @@ export const Media: CollectionConfig = {
     listSearchableFields: ["filename", "alt"],
     hidden: ({ user }: { user: any }) =>
       !["super_admin", "admin", "catalog"].includes(user?.role),
-    components: {
-      views: {
-        List: MediaList as any,
-      },
-    },
   },
   access: {
     read: () => true,
