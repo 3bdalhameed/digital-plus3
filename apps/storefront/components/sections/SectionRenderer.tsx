@@ -368,23 +368,19 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
             <ProductCard product={product} />
           </div>
         ))}
-        {/* Trailing "show more" card — last in DOM order, so it appears on the
-            visual LEFT in this dir="rtl" carousel. Links to the category that
-            the products in this block share (or /products if mixed). */}
-        <div className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
-          <ShowMoreCard href={showMoreHref(products)} />
+        {/* Trailing "show more" slot — last in DOM order, so it appears on the
+            visual LEFT in this dir="rtl" carousel. Renders as a centered pill
+            button, not a full card; links to the category that the products
+            in this block share (or /products if mixed). */}
+        <div className="flex w-[170px] shrink-0 items-center justify-center sm:w-[280px] lg:w-[300px]">
+          <Link
+            href={showMoreHref(products)}
+            className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
+          >
+            عرض المزيد
+          </Link>
         </div>
       </ProductCarousel>
-
-      {/* Pill CTA centered below the carousel — matches the source design */}
-      <div className="mt-5 flex justify-center">
-        <Link
-          href={showMoreHref(products)}
-          className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
-        >
-          عرض المزيد
-        </Link>
-      </div>
     </section>
   );
 }
@@ -414,21 +410,6 @@ function showMoreHref(products: any[] | undefined): string {
   return slug ? `/collections/${slug}` : "/products";
 }
 
-function ShowMoreCard({ href }: { href: string }) {
-  return (
-    <Link
-      href={href}
-      className="group flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#DDD6FE] bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] p-6 text-center text-[#7C3AED] transition-all hover:border-[#7C3AED] hover:from-[#EDE9FE] hover:to-[#DDD6FE] hover:shadow-md"
-      dir="rtl"
-    >
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/80 text-2xl text-[#7C3AED] transition-transform group-hover:scale-110">
-        <ArrowLeft className="h-6 w-6" strokeWidth={2.5} />
-      </span>
-      <span className="text-base font-black sm:text-lg">عرض المزيد</span>
-      <span className="text-xs text-[#6b7280] sm:text-sm">تصفح كل منتجات هذا القسم</span>
-    </Link>
-  );
-}
 
 /* ═══════════════════════════════════════
    4. CATEGORY GRID
