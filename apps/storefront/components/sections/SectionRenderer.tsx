@@ -628,10 +628,7 @@ function FeatureBlocksSection({ title, items }: any) {
             <div className="grid__">
               {items?.map((f: any, i: number) => (
                 <div key={i} className="el__">
-                  <h6>
-                    {f.title}
-                    {f.emoji && <span className="ms-1.5">{f.emoji}</span>}
-                  </h6>
+                  <h6>{f.title}</h6>
                   <span className="icons_para icons_para_with_background">
                     {f.icon?.url ? (
                       <Image src={f.icon.url} alt="" width={42} height={42} className="object-contain" />

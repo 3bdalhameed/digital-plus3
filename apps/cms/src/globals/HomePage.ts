@@ -315,7 +315,6 @@ export const HomePage: GlobalConfig = {
               fields: [
                 { name: "title",       label: "العنوان",       type: "text",     required: true },
                 { name: "description", label: "الوصف",         type: "textarea", required: true },
-                { name: "emoji",       label: "إيموجي",        type: "text" },
                 { name: "icon",        label: "صورة الأيقونة", type: "upload",   relationTo: "media" },
               ],
             },
