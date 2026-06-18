@@ -206,3 +206,324 @@
 
 /* ── Selection ── */
 ::selection { background: rgba(124, 58, 237, 0.15); color: #7C3AED; }
+
+/* ═══════════════════════════════════════════════════════════
+   FAQ section — class names mirror the original Shopify template
+   (.faq__title, .faq__wrapper, .outer__faq, .elem__faq, .head__,
+   .content__). Visuals follow the screenshot the editor approved:
+   purple title, light-grey rounded pills, arrow flips on open.
+   ═══════════════════════════════════════════════════════════ */
+.faq__title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #7C3AED;
+  margin: 0 0 24px;
+}
+@media (min-width: 640px) {
+  .faq__title { font-size: 22px; }
+}
+
+.faq__wrapper { width: 100%; }
+.faq__wrapper .wrapper {
+  max-width: 64rem; /* matches Tailwind max-w-5xl from the previous build */
+  margin: 0 auto;
+}
+.outer__faq {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.elem__faq {
+  background: #F3F4F6;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.elem__faq .head__ {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: right;
+  color: #1f2937;
+}
+.elem__faq .head__ p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  flex: 1;
+}
+@media (min-width: 640px) {
+  .elem__faq .head__ p { font-size: 16px; }
+}
+
+.elem__faq .head__ span {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transition: transform 0.2s ease;
+}
+/* Arrow points up by default (matches the original asset). Rotate 180
+   when collapsed so it points down -- toggling reads as opening upward. */
+.elem__faq:not(.is-open) .head__ span {
+  transform: rotate(180deg);
+}
+.elem__faq .head__ svg {
+  width: 22px;
+  height: 22px;
+}
+.elem__faq .head__ svg path {
+  fill: #7C3AED;
+}
+
+.elem__faq .content__ {
+  padding: 12px 16px 14px;
+  border-top: 1px solid #E5E7EB;
+  background: #FAFAFB;
+}
+.elem__faq .content__ p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b7280;
+}
+@media (min-width: 640px) {
+  .elem__faq .content__ p { font-size: 15px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   "أيقونات مع نص (4 مميزات)" — class names mirror the original
+   Shopify about section so the JSX can stay structural.
+   ═══════════════════════════════════════════════════════════ */
+.about__wrapper { width: 100%; }
+.about__wrapper .wrapper { width: 100%; }
+
+.about__wrapper .outer__about {
+  background: linear-gradient(135deg, #702dff 0%, #a77fff 100%);
+  border-radius: 28px;
+  padding: 28px 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(9, 0, 64, 0.2);
+}
+
+/* 4-up grid on desktop, 2-up on mobile. The Shopify version uses 767px
+   as the breakpoint; we match it instead of Tailwind's 640px so the
+   visual matches the source design exactly. */
+.about__wrapper .outer__about .grid__ {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  text-align: center;
+  position: relative;
+}
+@media (max-width: 767px) {
+  .about__wrapper .outer__about .grid__ {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 26px;
+  }
+}
+
+/* Card layout — 3 fixed rows so every cell aligns regardless of how
+   long the heading or sub-text runs. */
+.about__wrapper .outer__about .el__ {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 80px auto;
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  padding: 18px 10px;
+}
+
+.about__wrapper .outer__about .el__ h6 {
+  color: #fff;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.25;
+  min-height: 28px;
+  margin: 0 0 6px;
+}
+
+.about__wrapper .outer__about .icons_para {
+  width: 72px;
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.about__wrapper .outer__about .icons_para svg,
+.about__wrapper .outer__about .icons_para img {
+  width: 42px;
+  height: 42px;
+}
+.about__wrapper .outer__about .icons_para_with_background {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  padding: 10px;
+}
+
+.about__wrapper .outer__about .el__ p {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+  line-height: 1.8;
+  margin: 10px 0 0;
+  min-height: 52px;
+}
+
+/* Desktop dividers between cells — gradient hairline that fades at the
+   ends so it doesn't read as a hard rule. */
+@media (min-width: 768px) {
+  .about__wrapper .outer__about .el__::after {
+    content: "";
+    position: absolute;
+    top: 18%;
+    bottom: 18%;
+    inset-inline-end: -11px;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+  }
+  .about__wrapper .outer__about .el__:last-child::after { display: none; }
+}
+
+/* Mobile dividers — centered vertical line + horizontal line between rows */
+@media (max-width: 767px) {
+  .about__wrapper .outer__about .el__::after { display: none; }
+
+  .about__wrapper .outer__about .grid__::before {
+    content: "";
+    position: absolute;
+    top: 10%;
+    bottom: 10%;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-0.5px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+  }
+  .about__wrapper .outer__about .grid__::after {
+    content: "";
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-0.5px);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   "آراء العملاء (بطاقات)" — class names mirror the original
+   Shopify testimonials section. CSS variables can be overridden
+   per-instance (e.g. via inline style) for theming.
+   ═══════════════════════════════════════════════════════════ */
+.tst-section {
+  /* Defaults match the Shopify section's settings.default values. */
+  --tst-card: #702dff;
+  --tst-text: #ffffff;
+  --tst-star: #FFD700;
+  --tst-radius: 20px;
+  --tst-heading: #702dff;
+}
+.tst-container {
+  width: 100%;
+}
+.tst-heading {
+  color: var(--tst-heading);
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0 0 16px;
+  text-align: right;
+}
+@media (min-width: 640px) { .tst-heading { font-size: 28px; } }
+@media (min-width: 768px) { .tst-heading { font-size: 32px; } }
+
+/* Grid → scroll-snap track. On mobile, one card per screen; on lg the
+   tst-cols-N value picks 2/3/4 per screen via the basis utility. */
+.tst-grid {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 8px 12px;
+  margin: 0 -8px;
+}
+.tst-grid > .tst-card {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  flex-basis: 100%;
+}
+@media (min-width: 1024px) {
+  .tst-cols-2 > .tst-card { flex-basis: calc((100% - 16px) / 2); }
+  .tst-cols-3 > .tst-card { flex-basis: calc((100% - 32px) / 3); }
+  .tst-cols-4 > .tst-card { flex-basis: calc((100% - 48px) / 4); }
+}
+
+.tst-card {
+  background: var(--tst-card);
+  color: var(--tst-text);
+  border-radius: var(--tst-radius);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(112, 45, 255, 0.18);
+}
+
+.tst-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.tst-star {
+  width: 18px;
+  height: 18px;
+  fill: rgba(255, 255, 255, 0.35);
+}
+.tst-star.fill {
+  fill: var(--tst-star);
+}
+
+.tst-quote {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--tst-text);
+}
+@media (min-width: 640px) { .tst-quote { font-size: 15px; } }
+
+.tst-meta {
+  margin-top: auto;
+  padding-top: 6px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.tst-name {
+  font-weight: 800;
+  color: var(--tst-text);
+}
+.tst-date {
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}

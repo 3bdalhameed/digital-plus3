@@ -608,6 +608,10 @@ function ImageWithTextSection({ image, title, text, ctaLabel, ctaLink, imagePosi
    8. STORE FEATURES / ICONS WITH TEXT
 ═══════════════════════════════════════ */
 function FeatureBlocksSection({ title, items }: any) {
+  // Markup mirrors the original Shopify "أيقونات مع نص (4 مميزات)" section:
+  // .about__wrapper > .wrapper > .outer__about > .grid__ > .el__ × N.
+  // Each .el__ stacks: h6 (heading) → .icons_para (round icon chip) → p (sub).
+  // Styles live in storefront/styles/globals.css under the same class names.
   return (
     <section dir="rtl">
       {title && (
@@ -618,32 +622,28 @@ function FeatureBlocksSection({ title, items }: any) {
         </div>
       )}
 
-      {/* One big purple gradient card holding all features in a 4-col grid */}
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-4 py-8 text-white shadow-md sm:px-8 sm:py-10">
-        <div className="grid grid-cols-2 gap-y-8 sm:gap-y-6 lg:grid-cols-4">
-          {items?.map((f: any, i: number) => (
-            <div key={i} className="flex flex-col items-center gap-3 text-center">
-              {/* Title row with emoji at the top */}
-              <h3 className="flex items-center gap-1.5 text-sm font-black text-white sm:text-base">
-                <span>{f.title}</span>
-                {f.emoji && <span className="text-base leading-none">{f.emoji}</span>}
-              </h3>
-
-              {/* Round icon chip */}
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm sm:h-14 sm:w-14">
-                {f.icon?.url ? (
-                  <Image src={f.icon.url} alt="" width={28} height={28} className="object-contain" />
-                ) : (
-                  <span className="text-2xl">⚡</span>
-                )}
-              </div>
-
-              {/* Description */}
-              <p className="max-w-[18ch] text-xs leading-relaxed text-white/90 sm:text-sm">
-                {f.description}
-              </p>
+      <div className="about__wrapper">
+        <div className="wrapper">
+          <div className="outer__about">
+            <div className="grid__">
+              {items?.map((f: any, i: number) => (
+                <div key={i} className="el__">
+                  <h6>
+                    {f.title}
+                    {f.emoji && <span className="ms-1.5">{f.emoji}</span>}
+                  </h6>
+                  <span className="icons_para icons_para_with_background">
+                    {f.icon?.url ? (
+                      <Image src={f.icon.url} alt="" width={42} height={42} className="object-contain" />
+                    ) : (
+                      <span className="text-2xl">⚡</span>
+                    )}
+                  </span>
+                  <p>{f.description}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>
@@ -757,55 +757,51 @@ function parseStatValue(raw: string): { target: number; prefix: string; suffix: 
    10. TESTIMONIALS
 ═══════════════════════════════════════ */
 function TestimonialsSection({ title, items }: any) {
+  // Markup mirrors the original Shopify "آراء العملاء (بطاقات)" block:
+  // .tst-section > .tst-container > .tst-heading + .tst-grid > .tst-card × N.
+  // Each .tst-card has .tst-stars (5 SVGs, filled vs outlined per rating),
+  // .tst-quote, and .tst-meta with .tst-name and .tst-date. We keep the
+  // scroll-snap slider behavior (1 on mobile, 4 on lg+) requested
+  // separately by piping .tst-grid through overflow-x + snap utilities.
   return (
-    <section dir="rtl">
-      {/* Title — purple, right-aligned, larger than before */}
-      <h2 className="mb-5 text-right text-2xl font-black text-[#7C3AED] sm:text-3xl md:text-4xl">
-        {title || "آراء العملاء"}
-      </h2>
+    <section className="tst-section" dir="rtl">
+      <div className="tst-container">
+        {title && <h2 className="tst-heading">{title || "آراء العملاء"}</h2>}
 
-      {/* Snap-scroll carousel:
-            mobile  → 1 card per screen,
-            desktop → 4 cards per screen.
-          The same overflow-x track works whether you have 3 testimonials or 30;
-          if items fit fully on screen the user just sees them all without
-          scrolling. */}
-      <div
-        className="-mx-2 flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 pb-3 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {items?.map((t: any, i: number) => (
-          <div
-            key={i}
-            className="snap-start shrink-0 basis-full lg:basis-[calc(25%-12px)]"
-          >
-            <div className="relative flex h-full flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] p-4 text-center text-white shadow-md">
-              {/* Stars row — centered */}
-              <div className="flex gap-0.5" aria-label={`${t.rating} stars`}>
-                {Array.from({ length: 5 }).map((_, si) => (
-                  <Star
-                    key={si}
-                    className={`h-4 w-4 ${si < t.rating ? "fill-amber-300 text-amber-300" : "text-white/30"}`}
-                  />
-                ))}
-              </div>
+        <div
+          className="tst-grid tst-cols-4 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {items?.map((t: any, i: number) => {
+            const rating = Math.max(0, Math.min(5, Number(t.rating ?? 5)));
+            return (
+              <article key={i} className="tst-card">
+                <div className="tst-stars" aria-label={`${rating} من 5`}>
+                  {Array.from({ length: 5 }).map((_, si) => (
+                    <svg
+                      key={si}
+                      viewBox="0 0 24 24"
+                      className={`tst-star${si < rating ? " fill" : ""}`}
+                    >
+                      {si < rating ? (
+                        <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                      ) : (
+                        <path d="M22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24zM12 15.4 8.24 17.67l1-4.28L6.5 10.5l4.38-.38L12 6.1l1.12 4.02 4.38.38-2.74 2.89 1 4.28z" />
+                      )}
+                    </svg>
+                  ))}
+                </div>
 
-              {/* Quote */}
-              <p className="text-sm leading-relaxed text-white" dir="rtl">
-                &ldquo;{t.text}&rdquo;
-              </p>
+                {t.text && <p className="tst-quote">&ldquo;{t.text}&rdquo;</p>}
 
-              {/* Optional emoji accent */}
-              {t.emoji && <span className="text-base leading-none">{t.emoji}</span>}
-
-              {/* Name + date row */}
-              <div className="mt-auto flex w-full items-center justify-between gap-2 pt-1 text-xs text-white/85">
-                <span className="font-bold text-white">{t.name}</span>
-                {t.date && <time className="font-mono">{t.date}</time>}
-              </div>
-            </div>
-          </div>
-        ))}
+                <div className="tst-meta">
+                  {t.name && <strong className="tst-name">{t.name}</strong>}
+                  {t.date && <span className="tst-date">{t.date}</span>}
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -816,61 +812,51 @@ function TestimonialsSection({ title, items }: any) {
 ═══════════════════════════════════════ */
 function FAQSectionBlock({ title, items }: any) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Markup mirrors the original Shopify section: <h2 class="faq__title"> +
+  // .faq__wrapper > .wrapper > .outer__faq > .elem__faq (.head__ / .content__).
+  // Styles live in storefront/app/globals.css under the same class names.
   return (
     <section dir="rtl">
-      {/* Title — small purple text on a lavender pill, centered */}
-      <div className="mb-6 flex justify-center">
-        <span className="inline-flex items-center gap-2 rounded-lg bg-[#EDE9FE] px-4 py-1.5 text-base font-black text-[#7C3AED] sm:text-lg">
-          <span>{title || "الأسئلة الشائعة"}</span>
-          <span aria-hidden>💬</span>
-        </span>
-      </div>
+      <h2 className="faq__title">{title || "الأسئلة الشائعة"} 💬</h2>
 
-      <div className="mx-auto max-w-5xl space-y-3">
-        {items?.map((faq: any, i: number) => {
-          const isOpen = openIndex === i;
-          return (
-            <div key={i} className="overflow-hidden rounded-2xl bg-[#F3F4F6]">
-              <button
-                onClick={() => setOpenIndex(isOpen ? null : i)}
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-right"
-                aria-expanded={isOpen}
-              >
-                {/* Numbered badge — right side (first in RTL flex) */}
-                <span
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#60A5FA] text-xs font-black text-white"
-                  dir="ltr"
-                >
-                  {i + 1}
-                </span>
-
-                {/* Question text */}
-                <span className="flex-1 text-sm font-bold text-[#1f2937] sm:text-base">
-                  {faq.question}
-                </span>
-
-                {/* Triangle toggle — last in RTL flex => visually on the left */}
-                <span
-                  aria-hidden
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center text-[#7C3AED] transition-transform duration-200 ${isOpen ? "" : "rotate-180"}`}
-                >
-                  {/* Solid triangle: pointing up by default, rotated to point down when closed */}
-                  <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current">
-                    <path d="M8 4l6 8H2z" />
-                  </svg>
-                </span>
-              </button>
-
-              {isOpen && (
-                <div className="border-t border-[#E5E7EB] px-4 py-3.5">
-                  <p className="text-sm leading-relaxed text-[#6b7280] sm:text-base">
-                    {faq.answer}
-                  </p>
+      <div className="faq__wrapper">
+        <div className="wrapper">
+          <div className="outer__faq">
+            {items?.map((faq: any, i: number) => {
+              const isOpen = openIndex === i;
+              return (
+                <div key={i} className={`elem__faq${isOpen ? " is-open" : ""}`}>
+                  <button
+                    type="button"
+                    className="head__"
+                    onClick={() => setOpenIndex(isOpen ? null : i)}
+                    aria-expanded={isOpen}
+                  >
+                    <p>{faq.question}</p>
+                    <span aria-hidden>
+                      <svg
+                        id="Iconly_Bold_Arrow_-_Up_2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                      >
+                        <g transform="translate(6 7)">
+                          <path d="M7.131.369c.058.057.306.27.51.469a21.69,21.69,0,0,1,4.024,5.8A4.617,4.617,0,0,1,12,7.812a1.933,1.933,0,0,1-.218.9,1.874,1.874,0,0,1-.9.795,9.84,9.84,0,0,1-1.064.256A23.979,23.979,0,0,1,6.008,10a27.724,27.724,0,0,1-3.689-.213A8.495,8.495,0,0,1,.992,9.446,1.785,1.785,0,0,1,0,7.868V7.812A4.879,4.879,0,0,1,.409,6.491,21.69,21.69,0,0,1,4.375.823,5.66,5.66,0,0,1,4.929.341,1.783,1.783,0,0,1,5.993,0,1.875,1.875,0,0,1,7.131.369" fill="#200e32" />
+                        </g>
+                      </svg>
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="content__">
+                      <p>{faq.answer}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );
