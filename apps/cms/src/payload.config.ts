@@ -31,7 +31,9 @@ dotenv.config();
 
 const plugins: any[] = [];
 
-// Rebuild marker — bumped 2026-05-27 (run 2) after hardcoding
+// Rebuild marker — bumped 2026-06-18 to force CMS image rebuild after CI
+// silently failed to push a new image for the prior Latin numeral / Dashboard
+// speed / Order summary cards commits. Bumped 2026-05-27 (run 2) after hardcoding
 // PAYLOAD_PUBLIC_SERVER_URL in the workflow yaml. The first rebuild
 // changed the bundle hash but still baked in the sslip.io URL because
 // the CMS_URL GitHub secret hadn't been updated. Workflow now sets
