@@ -54,7 +54,7 @@ export async function Footer() {
 
   return (
     <footer
-      className="mx-auto mb-6 mt-20 max-w-[1400px] overflow-hidden rounded-[28px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#7C3AED] text-white shadow-[0_18px_40px_rgba(91,33,182,0.25)] sm:mx-4 lg:mx-auto"
+      className="mx-5 mb-6 mt-20 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#7C3AED] text-white shadow-[0_18px_40px_rgba(91,33,182,0.25)]"
       dir="rtl"
     >
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
