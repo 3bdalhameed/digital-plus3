@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  drizzle-kit: 0.23.2
+
 importers:
 
   .:
@@ -3453,8 +3456,8 @@ packages:
     resolution: {integrity: sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==}
     engines: {node: '>=10'}
 
-  drizzle-kit@0.23.2-df9e596:
-    resolution: {integrity: sha512-MOvoeDE1c05XGevXLqhRVu/TNHwueibPZqMUH/kG1v6DOHD5pB2poRpjphr4sjae2QDS6h+PU5pCfzqEa6le6Q==}
+  drizzle-kit@0.23.2:
+    resolution: {integrity: sha512-NWkQ7GD2OTbQ7HzcjsaCOf3n0tlFPSEAF38fvDpwDj8jRbGWGFtN2cD8I8wp4lU+5Os/oyP2xycTKGLHdPipUw==}
     hasBin: true
 
   drizzle-orm@0.32.1:
@@ -8228,7 +8231,7 @@ snapshots:
     dependencies:
       '@libsql/client': 0.3.6
       console-table-printer: 2.11.2
-      drizzle-kit: 0.23.2-df9e596
+      drizzle-kit: 0.23.2
       drizzle-orm: 0.32.1(@libsql/client@0.3.6)(@prisma/client@5.22.0(prisma@5.22.0))(@types/react@18.3.28)(pg@8.11.3)(prisma@5.22.0)(react@18.3.1)
       payload: 2.32.3(@swc/helpers@0.5.5)(@types/react@18.3.28)(esbuild@0.19.12)(typescript@5.9.3)(webpack@5.106.1)
       pg: 8.11.3
@@ -10197,7 +10200,7 @@ snapshots:
 
   dotenv@8.6.0: {}
 
-  drizzle-kit@0.23.2-df9e596:
+  drizzle-kit@0.23.2:
     dependencies:
       '@drizzle-team/brocli': 0.8.2
       '@esbuild-kit/esm-loader': 2.6.5

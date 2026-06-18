@@ -28,6 +28,9 @@
       "esbuild",
       "prisma",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "drizzle-kit": "0.23.2"
+    }
   }
 }
