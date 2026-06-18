@@ -364,7 +364,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
       {subtitle && <p className="mb-4 text-center text-sm text-[#6b7280]">{subtitle}</p>}
       <ProductCarousel>
         {products?.map((product: any) => (
-          <div key={product.id} className="w-[160px] shrink-0 sm:w-[210px] lg:w-[230px]">
+          <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
             <ProductCard product={product} />
           </div>
         ))}
