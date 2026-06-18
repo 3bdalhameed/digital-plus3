@@ -552,7 +552,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   });
 
   return (
-    <section className="py-8">
+    <section className="py-2 sm:py-3">
       {title && <div className="section-title">{title}</div>}
       <SeamlessMarquee itemWidth={wNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
         {cards}
@@ -590,7 +590,7 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
   });
 
   return (
-    <section className="py-8">
+    <section className="py-2 sm:py-3">
       {title && <div className="section-title">{title}</div>}
       <SeamlessMarquee itemWidth={szNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
         {cards}
