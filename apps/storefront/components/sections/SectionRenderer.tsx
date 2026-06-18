@@ -695,25 +695,25 @@ function StatsSectionBlock({ title, stats }: any) {
   return (
     <section
       ref={sectionRef}
-      className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] shadow-md"
+      className="overflow-hidden rounded-[28px] bg-gradient-to-r from-[#8B5CF6] via-[#A78BFA] to-[#8B5CF6] px-4 py-6 shadow-[0_10px_30px_rgba(124,58,237,0.25)] sm:px-8 sm:py-8"
       dir="rtl"
     >
-      {/* Title strip — darker purple band across the top */}
+      {/* Title sits centered at top of the same gradient — no separate strip */}
       {title && (
-        <div className="bg-gradient-to-r from-[#6D28D9] via-[#7C3AED] to-[#6D28D9] px-4 py-3 text-center sm:px-6 sm:py-4">
-          <h2 className="text-base font-black text-white sm:text-xl md:text-2xl">{title}</h2>
-        </div>
+        <h2 className="mb-5 text-center text-base font-black text-white sm:mb-6 sm:text-xl md:text-2xl">
+          {title}
+        </h2>
       )}
 
       {/* Stats row — 4 columns separated by vertical dividers */}
-      <div className="grid grid-cols-2 px-2 py-6 sm:grid-cols-4 sm:px-4 sm:py-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4">
         {items.map((s: any, i: number) => {
           const { prefix, suffix } = parsed[i];
           return (
             <div
               key={i}
               className={`flex flex-col items-center gap-1 px-2 text-center text-white sm:px-4 ${
-                i < items.length - 1 ? "sm:border-l sm:border-white/20" : ""
+                i < items.length - 1 ? "sm:border-l sm:border-white/25" : ""
               }`}
             >
               {s.emoji && <span className="mb-1 text-2xl">{s.emoji}</span>}
@@ -726,7 +726,7 @@ function StatsSectionBlock({ title, stats }: any) {
                 <span>{counts[i].toLocaleString("en-US")}</span>
                 {suffix}
               </div>
-              <div className="mt-1 text-xs text-white/85 sm:text-sm md:text-base">{s.label}</div>
+              <div className="mt-2 text-xs text-white/85 sm:text-sm md:text-base">{s.label}</div>
             </div>
           );
         })}
