@@ -16,6 +16,7 @@ import { NextRequest } from "next/server";
  *   - collections → /collections/<slug>   (categories + subcategories,
  *                                          since both live at the same
  *                                          unified URL now)
+ *   - posts       → /blogs/news/<slug>
  *   - home-page (or anything else) → /
  */
 export async function GET(request: NextRequest) {
@@ -69,6 +70,10 @@ export async function GET(request: NextRequest) {
 
   if (collection === "collections" && slug) {
     redirect(`/collections/${slug}`);
+  }
+
+  if (collection === "posts" && slug) {
+    redirect(`/blogs/news/${slug}`);
   }
 
   // home-page global, no slug, or anything else → homepage
