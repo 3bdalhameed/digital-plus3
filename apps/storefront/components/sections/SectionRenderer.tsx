@@ -15,7 +15,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
     const el = trackRef.current;
     if (!el) return;
     const cardW = (el.firstChild as HTMLElement)?.offsetWidth ?? 220;
-    el.scrollBy({ left: dir === "left" ? -(cardW + 12) : (cardW + 12), behavior: "smooth" });
+    el.scrollBy({ left: dir === "left" ? -(cardW + 8) : (cardW + 8), behavior: "smooth" });
   };
 
   return (
@@ -23,7 +23,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
       {/* Track */}
       <div
         ref={trackRef}
-        className="flex gap-3 overflow-x-auto pt-2 pb-3 scroll-smooth"
+        className="flex gap-2 overflow-x-auto pt-2 pb-3 scroll-smooth"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}
