@@ -93,12 +93,14 @@ export const Orders: CollectionConfig = {
   fields: [
     // Shopify-style visual summary rendered above the default edit form.
     // Pure read-only UI; the form fields below remain the source of truth.
+    // Only renders when an order document already exists (data.id present) —
+    // skips the "create new order" page where there's nothing to summarise.
     {
       name: "summaryCards",
       type: "ui",
       admin: {
         components: { Field: OrderSummaryCards as any },
-        condition: (_data, _siblingData, { operation }) => operation === "update",
+        condition: (data) => Boolean(data?.id),
       },
     },
     {
