@@ -526,6 +526,26 @@ html[dir="rtl"] .ot-toggle { right: auto !important; left: -14px !important; }
   max-width: 180px;
   opacity: 1;
 }
+/* Numeric count chip rendered beside an item (e.g. orders count).
+   Small purple pill, blends with the sidebar theme. */
+.ot-item__badge {
+  flex-shrink: 0;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.18);
+  color: var(--ot-item-text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ot-item--active .ot-item__badge,
+.ot-item.active .ot-item__badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--ot-item-active-text);
+}
 .ot-sidebar[data-collapsed="true"] .ot-item {
   justify-content: center !important;
   padding: 0 !important;
@@ -1822,6 +1842,247 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
 .Toastify__close-button {
   color: currentColor !important;
   opacity: 0.7 !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   18b. ORDER SUMMARY CARDS (top of Orders edit page)
+   Shopify-style two-column summary rendered above the default
+   Payload edit form. Pure visual, no inputs.
+   ═══════════════════════════════════════════════════════════ */
+.osc { margin-bottom: var(--dp-space-6) !important; font-family: inherit; }
+.osc * { box-sizing: border-box; }
+
+.osc__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dp-space-4);
+  margin-bottom: var(--dp-space-4);
+}
+.osc__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--dp-space-3);
+  flex-wrap: wrap;
+}
+.osc__order-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dp-text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.osc__header-meta {
+  font-size: 12px;
+  color: var(--dp-text-muted);
+}
+.osc__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.osc__badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.osc__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--dp-space-4);
+}
+@media (min-width: 1024px) {
+  .osc__grid {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+.osc__main,
+.osc__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-4);
+}
+
+.osc__card {
+  background: #fff;
+  border: 1px solid var(--dp-border-subtle);
+  border-radius: var(--dp-radius-md);
+  padding: var(--dp-space-4);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+
+.osc__card-header {
+  margin-bottom: var(--dp-space-3);
+}
+.osc__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.osc__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-3);
+}
+.osc__empty {
+  color: var(--dp-text-muted);
+  font-size: 13px;
+  padding: var(--dp-space-3) 0;
+  text-align: center;
+}
+.osc__item {
+  display: grid;
+  grid-template-columns: 48px 1fr auto auto;
+  align-items: center;
+  gap: var(--dp-space-3);
+  padding: var(--dp-space-2) 0;
+  border-top: 1px solid var(--dp-border-subtle);
+}
+.osc__item:first-child { border-top: 0; }
+.osc__item-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: var(--dp-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 22px;
+}
+.osc__item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.osc__item-body { min-width: 0; }
+.osc__item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dp-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.osc__item-link {
+  font-size: 11px;
+  color: var(--dp-brand-600);
+  text-decoration: none;
+  direction: ltr;
+  display: inline-block;
+  margin-top: 2px;
+}
+.osc__item-link:hover { text-decoration: underline; }
+.osc__item-qty {
+  font-size: 13px;
+  color: var(--dp-text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+.osc__item-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dp-text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+
+/* Totals card */
+.osc__totals {
+  display: flex;
+  flex-direction: column;
+}
+.osc__totals-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: var(--dp-space-3);
+  padding: 10px 0;
+  border-top: 1px solid var(--dp-border-subtle);
+}
+.osc__totals-row:first-child { border-top: 0; }
+.osc__totals-label {
+  font-size: 13px;
+  color: var(--dp-text-primary);
+}
+.osc__totals-meta {
+  font-size: 12px;
+  color: var(--dp-text-muted);
+}
+.osc__totals-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dp-text-primary);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+.osc__totals-value--neg {
+  color: var(--dp-text-muted);
+}
+.osc__totals-row--strong .osc__totals-label,
+.osc__totals-row--strong .osc__totals-value {
+  font-weight: 800;
+  font-size: 14px;
+}
+.osc__totals-row--paid {
+  border-top: 2px solid var(--dp-border-subtle);
+}
+
+/* Sidebar */
+.osc__side-section-head {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dp-text-primary);
+  margin-bottom: var(--dp-space-2);
+}
+.osc__customer { display: flex; flex-direction: column; gap: 6px; }
+.osc__customer-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dp-brand-600);
+  text-decoration: none;
+}
+.osc__customer-name:hover { text-decoration: underline; }
+.osc__customer-orders {
+  font-size: 12px;
+  color: var(--dp-brand-600);
+  text-decoration: none;
+}
+.osc__customer-orders:hover { text-decoration: underline; }
+.osc__side-sub {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dp-text-primary);
+  margin-top: var(--dp-space-3);
+  margin-bottom: 2px;
+}
+.osc__side-link {
+  font-size: 13px;
+  color: var(--dp-brand-600);
+  text-decoration: none;
+}
+.osc__side-link:hover { text-decoration: underline; }
+.osc__side-text {
+  font-size: 13px;
+  color: var(--dp-text-primary);
+}
+.osc__side-muted {
+  font-size: 13px;
+  color: var(--dp-text-muted);
 }
 
 

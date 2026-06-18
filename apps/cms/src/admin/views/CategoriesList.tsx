@@ -28,7 +28,7 @@ type Category = {
 };
 
 const fmtDate = (d?: string) =>
-  d ? new Date(d).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  d ? new Date(d).toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
 const mediaUrl = (m?: MediaRef, base = ''): string => {
   if (!m) return '';
@@ -128,7 +128,7 @@ const CategoriesList: React.FC<{
       <header className="pl__header">
         <div className="pl__title-wrap">
           <h1 className="pl__title">التصنيفات</h1>
-          <span className="pl__title-count">{stats.total.toLocaleString('ar-SA')}</span>
+          <span className="pl__title-count">{stats.total.toLocaleString('en-US')}</span>
         </div>
         {hasCreatePermission && (
           <NavLink to={newDocumentURL} className="pl__create-btn">
@@ -156,7 +156,7 @@ const CategoriesList: React.FC<{
             >
               <span className="pl__stat-emoji">{s.emoji}</span>
               <span className="pl__stat-text">
-                <span className="pl__stat-count">{s.count.toLocaleString('ar-SA')}</span>
+                <span className="pl__stat-count">{s.count.toLocaleString('en-US')}</span>
                 <span className="pl__stat-label">{s.label}</span>
               </span>
             </button>
@@ -243,7 +243,7 @@ const CategoriesList: React.FC<{
                     )}
                     {brandsCount > 0 && (
                       <span className="pl-card__chip" title="عدد شعارات العلامات التجارية">
-                        <span aria-hidden>🏷️</span> {brandsCount.toLocaleString('ar-SA')} شعار
+                        <span aria-hidden>🏷️</span> {brandsCount.toLocaleString('en-US')} شعار
                       </span>
                     )}
                     {typeof c.position === 'number' && (
@@ -298,7 +298,7 @@ const CategoriesList: React.FC<{
                   className={`pl__page-btn ${n === currentPage ? 'pl__page-btn--active' : ''}`}
                   onClick={() => goPage(n as number)}
                 >
-                  {(n as number).toLocaleString('ar-SA')}
+                  {(n as number).toLocaleString('en-US')}
                 </button>
               )
             )}
@@ -313,8 +313,8 @@ const CategoriesList: React.FC<{
           </button>
 
           <span className="pl__page-info">
-            {data?.totalDocs?.toLocaleString('ar-SA') || 0} تصنيف · صفحة{' '}
-            {currentPage.toLocaleString('ar-SA')} من {totalPages.toLocaleString('ar-SA')}
+            {data?.totalDocs?.toLocaleString('en-US') || 0} تصنيف · صفحة{' '}
+            {currentPage.toLocaleString('en-US')} من {totalPages.toLocaleString('en-US')}
           </span>
         </nav>
       )}

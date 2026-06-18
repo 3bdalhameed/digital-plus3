@@ -105,60 +105,82 @@ const AttentionRow = ({ order, fmtDate }: any) => {
 type Stats = { orders: number; customers: number; products: number; tickets: number; revenue: number; pendingCount: number; disputedCount: number }
 type Order  = { id: string; orderNumber: string; status: string; totalAmount: number; currency: string; createdAt: string }
 
+const CACHE_KEY = 'dp-dashboard-v1'
+const CACHE_TTL_MS = 60_000
+
 const Dashboard: React.FC = () => {
   const { serverURL, routes: { api } } = useConfig()
-  const [stats, setStats]         = useState<Stats>({ orders:0, customers:0, products:0, tickets:0, revenue:0, pendingCount:0, disputedCount:0 })
-  const [recent, setRecent]       = useState<Order[]>([])
-  const [attention, setAttention] = useState<Order[]>([])
-  const [loading, setLoading]     = useState(true)
+  // Read any sessionStorage cache on the FIRST render so revisiting the
+  // dashboard during the same session shows numbers instantly while a
+  // background refetch runs.
+  const initial = (() => {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw)
+      if (Date.now() - parsed.t > CACHE_TTL_MS) return null
+      return parsed
+    } catch { return null }
+  })()
+  const [stats, setStats]         = useState<Stats>(initial?.stats ?? { orders:0, customers:0, products:0, tickets:0, revenue:0, pendingCount:0, disputedCount:0 })
+  const [recent, setRecent]       = useState<Order[]>(initial?.recent ?? [])
+  const [attention, setAttention] = useState<Order[]>(initial?.attention ?? [])
+  // No spinner if we already have a cached snapshot; just refresh quietly.
+  const [loading, setLoading]     = useState(!initial)
 
   useEffect(() => {
+    let cancelled = false
+    const j = (url: string) => fetch(url, { credentials:'include' }).then(r => r.json()).catch(() => ({}))
+    const base = `${serverURL}${api}`
+
     const load = async () => {
+      // Single Promise.all: fetch + parse in one round-trip per endpoint.
+      // allSettled-style resilience inline via .catch above; one slow
+      // endpoint can't block the others past their own latency.
+      const [recentOrders, customers, products, tickets, dispOrders] = await Promise.all([
+        j(`${base}/orders?limit=5&sort=-createdAt&depth=0`),
+        j(`${base}/customers?limit=0&depth=0`),
+        j(`${base}/products?limit=0&depth=0`),
+        j(`${base}/support-tickets?limit=0&depth=0&where[status][not_equals]=resolved`),
+        j(`${base}/orders?limit=10&depth=0&where[status][in][]=disputed&where[status][in][]=pending&sort=-createdAt`),
+      ])
+      if (cancelled) return
+
+      const pendingList = (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending' || o.status === 'disputed')
+      const nextStats: Stats = {
+        orders:       recentOrders.totalDocs ?? 0,
+        customers:    customers.totalDocs ?? 0,
+        products:     products.totalDocs ?? 0,
+        tickets:      tickets.totalDocs ?? 0,
+        // Revenue dropped from initial fetch -- summing N orders client-side
+        // doesn't scale and the previous query returned 0 rows anyway
+        // (limit=0 means count-only on Payload v2). Keep the slot in the
+        // Stats shape but always 0; we'll wire a server-side sum later.
+        revenue: 0,
+        pendingCount: (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending').length,
+        disputedCount:(dispOrders.docs ?? []).filter((o: any) => o.status === 'disputed').length,
+      }
+      const mapOrder = (o: any): Order => ({
+        id: o.id, orderNumber: o.orderNumber ?? `#${String(o.id).slice(0,8)}`,
+        status: o.status ?? 'pending', totalAmount: o.totalAmount ?? 0,
+        currency: o.currency ?? 'USD', createdAt: o.createdAt,
+      })
+      const nextRecent    = (recentOrders.docs ?? []).map(mapOrder)
+      const nextAttention = pendingList.map(mapOrder)
+
+      setStats(nextStats); setRecent(nextRecent); setAttention(nextAttention)
+      setLoading(false)
       try {
-        const [ordAll, ordRecent, custRes, prodRes, tickRes, disputedRes] = await Promise.all([
-          fetch(`${serverURL}${api}/orders?limit=0&where[status][in][]=paid&where[status][in][]=delivered`, { credentials:'include' }),
-          fetch(`${serverURL}${api}/orders?limit=5&sort=-createdAt`, { credentials:'include' }),
-          fetch(`${serverURL}${api}/customers?limit=0`, { credentials:'include' }),
-          fetch(`${serverURL}${api}/products?limit=0`, { credentials:'include' }),
-          fetch(`${serverURL}${api}/support-tickets?limit=0&where[status][not_equals]=resolved`, { credentials:'include' }).catch(() => ({ json: () => ({}) })),
-          fetch(`${serverURL}${api}/orders?limit=10&where[status][in][]=disputed&where[status][in][]=pending&sort=-createdAt`, { credentials:'include' }),
-        ])
-        const [paidOrders, recentOrders, customers, products, tickets, dispOrders] = await Promise.all([
-          ordAll.json(), ordRecent.json(), custRes.json(), prodRes.json(),
-          tickRes.json ? tickRes.json() : Promise.resolve({}), disputedRes.json(),
-        ])
-
-        const revenue = (paidOrders.docs ?? []).reduce((s: number, o: any) => s + (o.totalAmount ?? 0), 0)
-        const pendingList = (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending' || o.status === 'disputed')
-
-        setStats({
-          orders:       recentOrders.totalDocs ?? 0,
-          customers:    customers.totalDocs ?? 0,
-          products:     products.totalDocs ?? 0,
-          tickets:      tickets.totalDocs ?? 0,
-          revenue,
-          pendingCount: (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending').length,
-          disputedCount:(dispOrders.docs ?? []).filter((o: any) => o.status === 'disputed').length,
-        })
-        setRecent((recentOrders.docs ?? []).map((o: any) => ({
-          id: o.id, orderNumber: o.orderNumber ?? `#${String(o.id).slice(0,8)}`,
-          status: o.status ?? 'pending', totalAmount: o.totalAmount ?? 0,
-          currency: o.currency ?? 'USD', createdAt: o.createdAt,
-        })))
-        setAttention(pendingList.map((o: any) => ({
-          id: o.id, orderNumber: o.orderNumber ?? `#${String(o.id).slice(0,8)}`,
-          status: o.status ?? 'pending', totalAmount: o.totalAmount ?? 0,
-          currency: o.currency ?? 'USD', createdAt: o.createdAt,
-        })))
-      } catch (e) { console.error('[Dashboard]', e) }
-      finally { setLoading(false) }
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), stats: nextStats, recent: nextRecent, attention: nextAttention }))
+      } catch {}
     }
-    load()
+    load().catch(e => { console.error('[Dashboard]', e); setLoading(false) })
+    return () => { cancelled = true }
   }, [serverURL, api])
 
-  const fmt     = (n: number) => new Intl.NumberFormat('ar-SA').format(n)
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ar-SA', { day:'numeric', month:'short', year:'numeric' })
-  const today   = new Date().toLocaleDateString('ar-SA', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+  const fmt     = (n: number) => new Intl.NumberFormat('en-US').format(n)
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ar-u-nu-latn', { day:'numeric', month:'short', year:'numeric' })
+  const today   = new Date().toLocaleDateString('ar-u-nu-latn', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
 
   return (
     <div dir="rtl" style={{

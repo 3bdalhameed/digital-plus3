@@ -84,7 +84,7 @@ const Tooltip: React.FC<{ label: string }> = ({ label }) => (
    OttertagNav — registered as admin.components.Nav
    ────────────────────────────────────────────────────────────*/
 const OttertagNav: React.FC = () => {
-  const { collections, globals, routes } = useConfig();
+  const { collections, globals, routes, serverURL } = useConfig();
   const { user, logOut, permissions } = useAuth();
   // useLocation can return null when the Nav is mounted by Payload's
   // upload-picker drawer outside the main Router context. Treat that as
@@ -104,6 +104,26 @@ const OttertagNav: React.FC = () => {
   );
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  /* Per-collection live counts shown as small badges next to menu items.
+     Keyed by collection slug. Currently only orders is fetched, but the
+     shape allows adding more (e.g. support-tickets, customers) without
+     touching the render loop. */
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!user || !serverURL) return;
+    let cancelled = false;
+    fetch(`${serverURL}${routes?.api || "/api"}/orders?limit=0&depth=0`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        if (typeof j?.totalDocs === "number") {
+          setCounts((c) => ({ ...c, orders: j.totalDocs }));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user, serverURL, routes?.api]);
 
   useEffect(() => {
     try { localStorage.setItem(LS_THEME, theme); } catch {}
@@ -341,6 +361,7 @@ const OttertagNav: React.FC = () => {
                 {section.items.map((it) => {
                   const Icon = iconFor(it.slug);
                   const active = isItemActive(it.href);
+                  const count = counts[it.slug];
                   return (
                     <li key={it.id}>
                       <NavLink
@@ -349,6 +370,9 @@ const OttertagNav: React.FC = () => {
                       >
                         <Icon className="ot-item__icon" size={18} strokeWidth={active ? 2.25 : 2} />
                         <span className="ot-item__label">{it.label}</span>
+                        {typeof count === "number" && !collapsed && (
+                          <span className="ot-item__badge" dir="ltr">{count.toLocaleString("en-US")}</span>
+                        )}
                         {collapsed && <Tooltip label={it.label} />}
                       </NavLink>
                     </li>
