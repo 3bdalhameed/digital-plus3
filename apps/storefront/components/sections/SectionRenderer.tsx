@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, Zap, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Zap, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";
@@ -14,37 +14,37 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
   const scroll = (dir: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    const cardW = (el.firstChild as HTMLElement)?.offsetWidth ?? 260;
-    el.scrollBy({ left: dir === "left" ? -(cardW + 16) : (cardW + 16), behavior: "smooth" });
+    const cardW = (el.firstChild as HTMLElement)?.offsetWidth ?? 220;
+    el.scrollBy({ left: dir === "left" ? -(cardW + 12) : (cardW + 12), behavior: "smooth" });
   };
 
   return (
-    <div className="relative group/carousel">
-      {/* Left arrow */}
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#e8e4f8] shadow-md text-[#7C3AED] opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-[#EDE9FE]"
-        aria-label="السابق"
-      >
-        <ArrowRight className="h-5 w-5" />
-      </button>
-
+    <div className="relative">
       {/* Track */}
       <div
         ref={trackRef}
-        className="flex gap-4 overflow-x-auto pt-2 pb-3 scroll-smooth"
+        className="flex gap-3 overflow-x-auto pt-2 pb-3 scroll-smooth"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}
       </div>
 
-      {/* Right arrow */}
+      {/* Minimal chevron arrows — desktop only. Click hit-area is generous
+          (40px square) while the icon stays small and thin so it reads as
+          a hint, not a heavy nav button. */}
+      <button
+        onClick={() => scroll("right")}
+        className="absolute right-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 translate-x-1/2 items-center justify-center text-[#6b7280] transition-colors hover:text-[#1e1b4b] sm:flex"
+        aria-label="السابق"
+      >
+        <ChevronRight className="h-7 w-7" strokeWidth={1.5} />
+      </button>
       <button
         onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#e8e4f8] shadow-md text-[#7C3AED] opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-[#EDE9FE]"
+        className="absolute left-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 -translate-x-1/2 items-center justify-center text-[#6b7280] transition-colors hover:text-[#1e1b4b] sm:flex"
         aria-label="التالي"
       >
-        <ArrowLeft className="h-5 w-5" />
+        <ChevronLeft className="h-7 w-7" strokeWidth={1.5} />
       </button>
     </div>
   );
@@ -364,7 +364,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
       {subtitle && <p className="mb-4 text-center text-sm text-[#6b7280]">{subtitle}</p>}
       <ProductCarousel>
         {products?.map((product: any) => (
-          <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
+          <div key={product.id} className="w-[160px] shrink-0 sm:w-[210px] lg:w-[230px]">
             <ProductCard product={product} />
           </div>
         ))}
@@ -372,7 +372,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
             visual LEFT in this dir="rtl" carousel. Renders as a centered pill
             button, not a full card; links to the category that the products
             in this block share (or /products if mixed). */}
-        <div className="flex w-[170px] shrink-0 items-center justify-center sm:w-[280px] lg:w-[300px]">
+        <div className="flex w-[160px] shrink-0 items-center justify-center sm:w-[210px] lg:w-[230px]">
           <Link
             href={showMoreHref(products)}
             className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
