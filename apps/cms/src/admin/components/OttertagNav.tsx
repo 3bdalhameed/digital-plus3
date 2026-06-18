@@ -86,7 +86,12 @@ const Tooltip: React.FC<{ label: string }> = ({ label }) => (
 const OttertagNav: React.FC = () => {
   const { collections, globals, routes } = useConfig();
   const { user, logOut, permissions } = useAuth();
+  // useLocation can return null when the Nav is mounted by Payload's
+  // upload-picker drawer outside the main Router context. Treat that as
+  // "no active path" so the Nav still renders instead of throwing
+  // `TypeError: can't access property "pathname"` and blanking the drawer.
   const location = useLocation();
+  const pathname = location?.pathname ?? "";
 
   const adminRoute = routes?.admin || "/admin";
 
@@ -222,10 +227,7 @@ const OttertagNav: React.FC = () => {
   /* Helpers */
   const isItemActive = (href: string) => {
     // Match exact and child routes (e.g. /admin/collections/products/...)
-    return (
-      location.pathname === href ||
-      location.pathname.startsWith(href + "/")
-    );
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   const themeBtns: Array<{ id: ThemeKey; Icon: any; title: string }> = [
