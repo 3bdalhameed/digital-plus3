@@ -34,7 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-[#DDD6FE] bg-white transition-all duration-300 hover:border-[#7C3AED] hover:shadow-xl hover:-translate-y-0.5">
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-[#7C3AED] bg-white shadow-[0_2px_8px_rgba(124,58,237,0.12)] transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
 
       {/* ── Image area with corner badges ── */}
       <Link href={`/products/${product.slug}`} className="relative block">
