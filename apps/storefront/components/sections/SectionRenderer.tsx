@@ -55,7 +55,7 @@ const widthClass: Record<string, string> = {
   sm:   "max-w-2xl mx-auto",
   md:   "max-w-4xl mx-auto",
   lg:   "max-w-6xl mx-auto",
-  xl:   "max-w-7xl mx-auto",
+  xl:   "max-w-[90rem] mx-auto",
   full: "w-full",
 };
 const paddingClass: Record<string, string> = {

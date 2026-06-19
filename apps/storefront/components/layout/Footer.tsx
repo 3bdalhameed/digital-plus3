@@ -57,59 +57,12 @@ export async function Footer() {
       className="mx-3 mb-6 mt-20 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#7C3AED] text-white ring-1 ring-white/20 shadow-[0_18px_40px_rgba(91,33,182,0.25)] sm:mx-4"
       dir="rtl"
     >
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-8">
 
-        {/* ─── Top: 4 content columns ─────────────────────────── */}
+        {/* ─── Top: 4 content columns (RTL — brand first / right) ──── */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
 
-          {/* 1. Contact us */}
-          <div>
-            <h3 className="mb-5 text-sm font-black text-white">تواصل معنا</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-center justify-between gap-2">
-                <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">+962795580312</a>
-                <span className="text-white/70">: رقم الهاتف</span>
-              </li>
-              <li className="flex items-center justify-between gap-2">
-                <a href="mailto:info@digital-plus3.com" dir="ltr" className="text-white/90 hover:text-white">info@digital-plus3.com</a>
-                <span className="text-white/70">: البريد الإلكتروني</span>
-              </li>
-              <li className="flex items-center justify-between gap-2">
-                <Link href="/support" className="text-white/90 underline-offset-2 hover:text-white hover:underline">هنا</Link>
-                <span className="text-white/70">نموذج الاتصال من</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* 2. Policy column (no header in the source design) */}
-          <div>
-            <h3 className="mb-5 text-sm font-black text-white/0 select-none" aria-hidden>.</h3>
-            <ul className="space-y-3 text-sm">
-              {policyLinks.map((l) => (
-                <li key={l.href + l.label}>
-                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 3. Important links */}
-          <div>
-            <h3 className="mb-5 text-sm font-black text-white">روابط مهمة</h3>
-            <ul className="space-y-3 text-sm">
-              {importantLinks.map((l) => (
-                <li key={l.href + l.label}>
-                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 4. Brand block */}
+          {/* 1. Brand block (right-most in RTL) */}
           <div>
             <Link href="/" className="mb-4 inline-flex items-center gap-2" aria-label={storeName}>
               {logoUrl ? (
@@ -137,6 +90,53 @@ export async function Footer() {
               <SocialIcon href="https://instagram.com" label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
               <SocialIcon href="https://threads.net" label="Threads"><AtSign className="h-4 w-4" /></SocialIcon>
             </div>
+          </div>
+
+          {/* 2. Important links */}
+          <div>
+            <h3 className="mb-5 text-sm font-black text-white">روابط مهمة</h3>
+            <ul className="space-y-3 text-sm">
+              {importantLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 3. Policy column (no header in the source design) */}
+          <div>
+            <h3 className="mb-5 text-sm font-black text-white/0 select-none" aria-hidden>.</h3>
+            <ul className="space-y-3 text-sm">
+              {policyLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 4. Contact us (left-most in RTL) */}
+          <div>
+            <h3 className="mb-5 text-sm font-black text-white">تواصل معنا</h3>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-center justify-between gap-2">
+                <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">+962795580312</a>
+                <span className="text-white/70">: رقم الهاتف</span>
+              </li>
+              <li className="flex items-center justify-between gap-2">
+                <a href="mailto:info@digital-plus3.com" dir="ltr" className="text-white/90 hover:text-white">info@digital-plus3.com</a>
+                <span className="text-white/70">: البريد الإلكتروني</span>
+              </li>
+              <li className="flex items-center justify-between gap-2">
+                <Link href="/support" className="text-white/90 underline-offset-2 hover:text-white hover:underline">هنا</Link>
+                <span className="text-white/70">نموذج الاتصال من</span>
+              </li>
+            </ul>
           </div>
         </div>
 

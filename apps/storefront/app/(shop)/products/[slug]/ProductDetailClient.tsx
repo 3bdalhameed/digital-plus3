@@ -477,7 +477,7 @@ export function ProductDetailClient({ product, productName }: Props) {
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-gradient-to-r from-[#7C3AED]/95 to-[#9333EA]/95 backdrop-blur">
         <div
-          className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+          className="mx-auto flex max-w-[90rem] flex-wrap items-center justify-between gap-3 px-4 py-3"
           dir="rtl"
         >
           {/* Quantity (start side = right in RTL) */}

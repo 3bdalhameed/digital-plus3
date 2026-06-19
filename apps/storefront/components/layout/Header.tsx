@@ -187,7 +187,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
         {/* ── Main header — purple gradient with bow-curved bottom ── */}
         <div className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA]" style={{ borderRadius: "0 0 50% 50% / 0 0 14px 14px" }}>
-          <div className="relative mx-auto flex max-w-7xl items-center px-4 py-3 pb-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
+          <div className="relative mx-auto flex max-w-[90rem] items-center px-4 py-3 pb-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
 
             {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
             <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
@@ -305,7 +305,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
         {/* ── Desktop nav row (optional — only when CMS has links) ── */}
         {navbarConfig?.links?.length ? (
           <nav className="hidden border-b border-gray-100 bg-white lg:block">
-            <div className="mx-auto flex max-w-7xl items-center justify-center gap-1 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-[90rem] items-center justify-center gap-1 px-4 sm:px-6 lg:px-8">
               {navLinks.map((link) => (
                 <div key={link.href} className="relative group">
                   {link.children?.length ? (

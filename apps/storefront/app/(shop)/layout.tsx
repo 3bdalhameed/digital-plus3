@@ -24,7 +24,7 @@ export default async function ShopLayout({
     <>
       <PreviewBanner />
       <Header settings={settings} navbarConfig={navbarConfig} />
-      <main className="mx-auto min-h-screen max-w-7xl px-2 pb-8 pt-3 sm:px-3 lg:px-4">
+      <main className="mx-auto min-h-screen max-w-[90rem] px-2 pb-8 pt-3 sm:px-3 lg:px-4">
         {children}
       </main>
       <Footer />
