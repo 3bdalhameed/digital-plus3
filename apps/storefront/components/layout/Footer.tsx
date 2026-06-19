@@ -78,7 +78,7 @@ export async function Footer() {
                 <span className="text-lg font-black tracking-tight">{storeName}</span>
               )}
             </Link>
-            <p className="text-sm leading-relaxed text-white/90">
+            <p className="text-base leading-relaxed text-white/90">
               نحن في ديجيتال بلس نوفّر اشتراكات رقمية أصلية لأشهر المنصات العالمية مثل Adobe و Canva و Envato و YouTube Premium وغيرها. نحرص على تقديم تجربة شراء آمنة وسريعة مع دعم فني متواصل
               <span className="ms-1 text-pink-200">♥</span>
             </p>
@@ -94,8 +94,8 @@ export async function Footer() {
 
           {/* 2. Important links */}
           <div>
-            <h3 className="mb-5 text-sm font-black text-white">روابط مهمة</h3>
-            <ul className="space-y-3 text-sm">
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">روابط مهمة</h3>
+            <ul className="space-y-3 text-base">
               {importantLinks.map((l) => (
                 <li key={l.href + l.label}>
                   <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
@@ -108,8 +108,8 @@ export async function Footer() {
 
           {/* 3. Policy column (no header in the source design) */}
           <div>
-            <h3 className="mb-5 text-sm font-black text-white/0 select-none" aria-hidden>.</h3>
-            <ul className="space-y-3 text-sm">
+            <h3 className="mb-5 text-base font-black text-white/0 select-none sm:text-lg" aria-hidden>.</h3>
+            <ul className="space-y-3 text-base">
               {policyLinks.map((l) => (
                 <li key={l.href + l.label}>
                   <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
@@ -122,8 +122,8 @@ export async function Footer() {
 
           {/* 4. Contact us (left-most in RTL) */}
           <div>
-            <h3 className="mb-5 text-sm font-black text-white">تواصل معنا</h3>
-            <ul className="space-y-3 text-sm">
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">تواصل معنا</h3>
+            <ul className="space-y-3 text-base">
               <li>
                 <span className="text-white/70">رقم الهاتف:</span>{" "}
                 <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">
@@ -162,11 +162,11 @@ export async function Footer() {
               </span>
             ))}
           </div>
-          <span className="text-sm font-bold text-white/90">طرق الدفع</span>
+          <span className="text-base font-bold text-white/90 sm:text-lg">طرق الدفع</span>
         </div>
 
         {/* ─── Copyright ─────────────────────────────────────── */}
-        <div className="mt-6 text-center text-sm text-white/80">
+        <div className="mt-6 text-center text-base text-white/80">
           <span dir="ltr">© Digital Plus</span>
           <span className="mx-2 text-white/50">|</span>
           <span>جميع الحقوق محفوظة</span>
