@@ -27,7 +27,10 @@ export function formatPrice(
       converted = (amount * (TO_USD[fromCurrency] ?? 1)) * (FROM_USD[toCurrency] ?? 1);
     }
   }
-  return new Intl.NumberFormat("ar-JO", {
+  // Arabic locale with Latin-numeral subtag so the currency symbol keeps its
+  // Arabic-friendly form (e.g. "ر.س" for SAR) but the number itself renders
+  // in Latin digits.
+  return new Intl.NumberFormat("ar-u-nu-latn", {
     style: "currency",
     currency: target,
     minimumFractionDigits: 0,
@@ -65,7 +68,7 @@ export function getRelativeTime(date: string | Date): string {
   if (minutes < 60) return `منذ ${minutes} دقيقة`;
   if (hours < 24) return `منذ ${hours} ساعة`;
   if (days < 30) return `منذ ${days} يوم`;
-  return d.toLocaleDateString("ar-JO");
+  return d.toLocaleDateString("ar-u-nu-latn");
 }
 
 /** Order status label in Arabic */

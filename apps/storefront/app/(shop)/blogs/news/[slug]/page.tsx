@@ -42,7 +42,7 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   const dateStr = post.publishedAt
-    ? new Date(post.publishedAt).toLocaleDateString("ar-SA", {
+    ? new Date(post.publishedAt).toLocaleDateString("ar-u-nu-latn", {
         day: "numeric",
         month: "long",
         year: "numeric",

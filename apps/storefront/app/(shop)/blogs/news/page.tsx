@@ -33,7 +33,7 @@ export default async function BlogIndexPage({
         </p>
         {totalDocs > 0 && (
           <p className="mt-1 text-xs text-gray-400">
-            {totalDocs.toLocaleString("ar-SA")} مقالة
+            {totalDocs.toLocaleString("en-US")} مقالة
           </p>
         )}
       </header>
@@ -66,7 +66,7 @@ export default async function BlogIndexPage({
 
 function PostCard({ post }: { post: BlogPost }) {
   const dateStr = post.publishedAt
-    ? new Date(post.publishedAt).toLocaleDateString("ar-SA", {
+    ? new Date(post.publishedAt).toLocaleDateString("ar-u-nu-latn", {
         day: "numeric",
         month: "long",
         year: "numeric",
