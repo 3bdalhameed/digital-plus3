@@ -124,17 +124,23 @@ export async function Footer() {
           <div>
             <h3 className="mb-5 text-sm font-black text-white">تواصل معنا</h3>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-center justify-between gap-2">
-                <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">+962795580312</a>
-                <span className="text-white/70">: رقم الهاتف</span>
+              <li>
+                <span className="text-white/70">رقم الهاتف:</span>{" "}
+                <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">
+                  +962795580312
+                </a>
               </li>
-              <li className="flex items-center justify-between gap-2">
-                <a href="mailto:info@digital-plus3.com" dir="ltr" className="text-white/90 hover:text-white">info@digital-plus3.com</a>
-                <span className="text-white/70">: البريد الإلكتروني</span>
+              <li>
+                <span className="text-white/70">البريد الإلكتروني:</span>{" "}
+                <a href="mailto:info@digital-plus3.com" dir="ltr" className="text-white/90 hover:text-white">
+                  info@digital-plus3.com
+                </a>
               </li>
-              <li className="flex items-center justify-between gap-2">
-                <Link href="/support" className="text-white/90 underline-offset-2 hover:text-white hover:underline">هنا</Link>
-                <span className="text-white/70">نموذج الاتصال من</span>
+              <li>
+                <span className="text-white/70">نموذج الاتصال من</span>{" "}
+                <Link href="/support" className="text-white/90 underline-offset-2 hover:text-white hover:underline">
+                  هنا
+                </Link>
               </li>
             </ul>
           </div>
