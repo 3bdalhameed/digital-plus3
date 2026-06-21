@@ -149,8 +149,9 @@ export async function Footer() {
         {/* ─── Divider ───────────────────────────────────────── */}
         <div className="my-10 h-px w-full bg-white/20" />
 
-        {/* ─── Payment methods row ───────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+        {/* ─── Payment methods row (centered, label above chips) ─── */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-base font-bold text-white/90 sm:text-lg">طرق الدفع</span>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {paymentMethods.map((p, i) => (
               <span
@@ -162,7 +163,6 @@ export async function Footer() {
               </span>
             ))}
           </div>
-          <span className="text-base font-bold text-white/90 sm:text-lg">طرق الدفع</span>
         </div>
 
         {/* ─── Copyright ─────────────────────────────────────── */}
