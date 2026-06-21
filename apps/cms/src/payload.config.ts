@@ -117,6 +117,47 @@ export default buildConfig({
           "fp_title_icon",
           "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
         );
+        // Multi-image Banner block + its `slides` array.
+        // The slides sub-table is what Payload's Drizzle adapter is missing
+        // when it crashes saving the global with:
+        //   Cannot read properties of undefined (reading
+        //   'home_page_blocks_multi_image_banner_slides_pkey')
+        // Recreate idempotently. _parent_id is varchar because Payload uses
+        // a UUID-like string for inner block rows on this side.
+        await run("mib_block_table", `
+          CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner (
+            _order INTEGER NOT NULL,
+            _parent_id INTEGER NOT NULL REFERENCES home_page(id) ON DELETE CASCADE,
+            _path TEXT NOT NULL,
+            id VARCHAR PRIMARY KEY,
+            block_name VARCHAR,
+            aspect_ratio VARCHAR,
+            autoplay BOOLEAN,
+            width VARCHAR,
+            padding_y VARCHAR,
+            enabled BOOLEAN
+          )
+        `);
+        await run("mib_slides_table", `
+          CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner_slides (
+            _order INTEGER NOT NULL,
+            _parent_id VARCHAR NOT NULL REFERENCES home_page_blocks_multi_image_banner(id) ON DELETE CASCADE,
+            id VARCHAR PRIMARY KEY,
+            image_id INTEGER REFERENCES media(id) ON DELETE SET NULL,
+            title VARCHAR,
+            subtitle VARCHAR,
+            cta_label VARCHAR,
+            cta_link VARCHAR
+          )
+        `);
+        await run(
+          "mib_block_parent_idx",
+          "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_parent_idx ON home_page_blocks_multi_image_banner (_parent_id)"
+        );
+        await run(
+          "mib_slides_parent_idx",
+          "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_slides_parent_idx ON home_page_blocks_multi_image_banner_slides (_parent_id)"
+        );
         // Footer global — paymentMethods array
         // Payload v2 creates one table per array field, named
         // <global_slug>_<field_path>. Drizzle push:false again so we DDL it.
