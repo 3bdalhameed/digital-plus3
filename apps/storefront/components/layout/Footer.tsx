@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Facebook, Twitter, Instagram, AtSign } from "lucide-react";
-import { getSettings } from "@/lib/payload";
+import { getSettings, getFooterConfig } from "@/lib/payload";
 
 function resolveLogoUrl(raw: string | undefined): string | null {
   if (!raw) return null;
@@ -27,9 +27,11 @@ const policyLinks = [
   { label: "خدمة التوريد B2B للتجار", href: "/about#b2b" },
 ];
 
-/* Payment methods — rendered as small white pill chips with the brand
-   name in its trademark color. Cheap visual stand-in for real SVGs. */
-const paymentMethods: Array<{ name: string; color: string }> = [
+/* Default payment methods — rendered as small white pill chips with the brand
+   name in its trademark color. Used only when the editor hasn't filled in the
+   paymentMethods array on the Footer global; once they do, the CMS list
+   replaces this verbatim. */
+const DEFAULT_PAYMENT_METHODS: Array<{ name: string; color: string }> = [
   { name: "DISCOVER",  color: "#FF6000" },
   { name: "Diners",    color: "#0079BE" },
   { name: "Maestro",   color: "#0066B2" },
@@ -44,10 +46,22 @@ const paymentMethods: Array<{ name: string; color: string }> = [
 export async function Footer() {
   let logoUrl: string | null = null;
   let storeName = "ديجيتال بلس";
+  let paymentMethods: Array<{ name: string; color: string }> = DEFAULT_PAYMENT_METHODS;
   try {
-    const settings = await getSettings();
+    const [settings, footerCfg] = await Promise.all([
+      getSettings(),
+      getFooterConfig().catch(() => null),
+    ]);
     logoUrl = resolveLogoUrl((settings as any)?.logo?.url);
     if ((settings as any)?.siteName) storeName = (settings as any).siteName;
+    // Use CMS-supplied payment methods if the editor filled any; otherwise
+    // fall back to the hardcoded list so existing deploys keep their chips.
+    const cmsMethods = (footerCfg as any)?.paymentMethods as Array<{ name?: string; color?: string }> | undefined;
+    if (cmsMethods && cmsMethods.length > 0) {
+      paymentMethods = cmsMethods
+        .filter((m) => m?.name)
+        .map((m) => ({ name: String(m.name), color: String(m.color || "#1A1F71") }));
+    }
   } catch {}
 
   const year = new Date().getFullYear();

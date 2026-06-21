@@ -117,6 +117,22 @@ export default buildConfig({
           "fp_title_icon",
           "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
         );
+        // Footer global — paymentMethods array
+        // Payload v2 creates one table per array field, named
+        // <global_slug>_<field_path>. Drizzle push:false again so we DDL it.
+        await run("footer_payment_methods_table", `
+          CREATE TABLE IF NOT EXISTS footer_config_payment_methods (
+            _order INTEGER NOT NULL,
+            _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
+            id VARCHAR PRIMARY KEY,
+            name VARCHAR,
+            color VARCHAR
+          )
+        `);
+        await run(
+          "footer_payment_methods_parent_idx",
+          "CREATE INDEX IF NOT EXISTS footer_config_payment_methods_parent_idx ON footer_config_payment_methods (_parent_id)"
+        );
         // Posts (blog) — created when the Shopify blog import lands.
         // Drizzle push:false won't auto-build these, so spell them out.
         await run("posts_table", `

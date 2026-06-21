@@ -420,9 +420,15 @@ export interface FooterColumn {
   links: { label: LocalizedString; href: string }[];
 }
 
+export interface FooterPaymentMethod {
+  name: string;
+  color?: string;
+}
+
 export interface FooterConfig {
   columns: FooterColumn[];
   bottomText?: string;
+  paymentMethods?: FooterPaymentMethod[];
 }
 
 export interface PoliciesContent {
