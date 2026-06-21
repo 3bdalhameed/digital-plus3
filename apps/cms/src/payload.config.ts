@@ -126,9 +126,15 @@ export default buildConfig({
             _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
             id VARCHAR PRIMARY KEY,
             name VARCHAR,
-            color VARCHAR
+            color VARCHAR,
+            image_id INTEGER REFERENCES media(id) ON DELETE SET NULL
           )
         `);
+        // For deploys that already created the table without the image column.
+        await run(
+          "footer_payment_methods_image_col",
+          "ALTER TABLE footer_config_payment_methods ADD COLUMN IF NOT EXISTS image_id INTEGER REFERENCES media(id) ON DELETE SET NULL"
+        );
         await run(
           "footer_payment_methods_parent_idx",
           "CREATE INDEX IF NOT EXISTS footer_config_payment_methods_parent_idx ON footer_config_payment_methods (_parent_id)"

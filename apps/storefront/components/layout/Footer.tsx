@@ -27,11 +27,13 @@ const policyLinks = [
   { label: "خدمة التوريد B2B للتجار", href: "/about#b2b" },
 ];
 
+type PaymentChip = { name: string; color: string; imageUrl?: string };
+
 /* Default payment methods — rendered as small white pill chips with the brand
    name in its trademark color. Used only when the editor hasn't filled in the
    paymentMethods array on the Footer global; once they do, the CMS list
    replaces this verbatim. */
-const DEFAULT_PAYMENT_METHODS: Array<{ name: string; color: string }> = [
+const DEFAULT_PAYMENT_METHODS: PaymentChip[] = [
   { name: "DISCOVER",  color: "#FF6000" },
   { name: "Diners",    color: "#0079BE" },
   { name: "Maestro",   color: "#0066B2" },
@@ -46,7 +48,7 @@ const DEFAULT_PAYMENT_METHODS: Array<{ name: string; color: string }> = [
 export async function Footer() {
   let logoUrl: string | null = null;
   let storeName = "ديجيتال بلس";
-  let paymentMethods: Array<{ name: string; color: string }> = DEFAULT_PAYMENT_METHODS;
+  let paymentMethods: PaymentChip[] = DEFAULT_PAYMENT_METHODS;
   try {
     const [settings, footerCfg] = await Promise.all([
       getSettings(),
@@ -56,11 +58,20 @@ export async function Footer() {
     if ((settings as any)?.siteName) storeName = (settings as any).siteName;
     // Use CMS-supplied payment methods if the editor filled any; otherwise
     // fall back to the hardcoded list so existing deploys keep their chips.
-    const cmsMethods = (footerCfg as any)?.paymentMethods as Array<{ name?: string; color?: string }> | undefined;
+    const cmsMethods = (footerCfg as any)?.paymentMethods as
+      | Array<{ name?: string; color?: string; image?: any }>
+      | undefined;
     if (cmsMethods && cmsMethods.length > 0) {
       paymentMethods = cmsMethods
         .filter((m) => m?.name)
-        .map((m) => ({ name: String(m.name), color: String(m.color || "#1A1F71") }));
+        .map((m) => ({
+          name: String(m.name),
+          color: String(m.color || "#1A1F71"),
+          imageUrl:
+            m.image && typeof m.image === "object" && typeof m.image.url === "string"
+              ? m.image.url
+              : undefined,
+        }));
     }
   } catch {}
 
@@ -170,10 +181,22 @@ export async function Footer() {
             {paymentMethods.map((p, i) => (
               <span
                 key={`${p.name}-${i}`}
-                className="flex h-7 min-w-[44px] items-center justify-center rounded-md bg-white px-2 text-[10px] font-black shadow-sm"
+                className="flex h-7 min-w-[44px] items-center justify-center overflow-hidden rounded-md bg-white px-2 text-[10px] font-black shadow-sm"
                 style={{ color: p.color }}
+                title={p.name}
               >
-                {p.name}
+                {p.imageUrl ? (
+                  <Image
+                    src={p.imageUrl}
+                    alt={p.name}
+                    width={48}
+                    height={24}
+                    className="h-5 w-auto object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  p.name
+                )}
               </span>
             ))}
           </div>

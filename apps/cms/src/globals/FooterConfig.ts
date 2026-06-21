@@ -47,16 +47,26 @@ export const FooterConfig: GlobalConfig = {
           label: "الاسم",
           type: "text",
           required: true,
-          admin: { description: "النص الظاهر على البطاقة (مثل VISA، Apple Pay)" },
+          admin: { description: "يستخدم كنص بديل للصورة، ويظهر على البطاقة إذا لم ترفع صورة" },
+        },
+        {
+          name: "image",
+          label: "صورة الشعار",
+          type: "upload",
+          relationTo: "media",
+          admin: {
+            description:
+              "SVG شفاف أو PNG بخلفية شفافة يعطي أفضل نتيجة. إذا لم ترفع صورة سيظهر اسم الطريقة كنص فقط.",
+          },
         },
         {
           name: "color",
-          label: "لون النص",
+          label: "لون النص (في حال عدم وجود صورة)",
           type: "text",
           defaultValue: "#1A1F71",
           admin: {
             description:
-              "لون النص داخل البطاقة (HEX). أمثلة: VISA #1A1F71 ، MasterCard #EB001B ، Apple Pay #000000",
+              "لون نص الاسم داخل البطاقة (HEX). يهمل عند وجود صورة. أمثلة: VISA #1A1F71 ، MasterCard #EB001B ، Apple Pay #000000",
           },
         },
       ],

@@ -423,6 +423,7 @@ export interface FooterColumn {
 export interface FooterPaymentMethod {
   name: string;
   color?: string;
+  image?: { url?: string; alt?: string } | string;
 }
 
 export interface FooterConfig {
