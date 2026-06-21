@@ -82,6 +82,20 @@ export default buildConfig({
 
   plugins,
 
+  // onInit runs once on every container start. We use it to apply our
+  // idempotent DDL migrations BEFORE any HTTP request can hit the DB --
+  // so deploys don't need an external curl to /api/migrate to keep
+  // the schema in sync. Manual /api/migrate endpoint stays as a fallback
+  // and a way to re-check status without restarting.
+  onInit: async (payload: any) => {
+    try {
+      const results = await runMigrations(payload.db);
+      payload.logger.info({ msg: "[migrate:onInit] complete", results });
+    } catch (e: any) {
+      payload.logger.error({ msg: "[migrate:onInit] failed", error: e?.message ?? String(e) });
+    }
+  },
+
   endpoints: [
     {
       path: "/version",
@@ -97,127 +111,12 @@ export default buildConfig({
       path: "/migrate",
       method: "get",
       handler: async (req, res) => {
-        const db = req.payload.db as any;
-        const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
-        const dbKeys = Object.keys(db);
-        if (!pool?.query) {
-          res.json({ error: "pool not found", dbKeys });
-          return;
+        try {
+          const results = await runMigrations(req.payload.db);
+          res.json({ ok: true, results });
+        } catch (e: any) {
+          res.status(500).json({ error: e?.message ?? String(e) });
         }
-        const results: Record<string, string> = {};
-        const run = async (label: string, sql: string) => {
-          try { await pool.query(sql); results[label] = "ok"; }
-          catch (e: any) { results[label] = e.message; }
-        };
-        // Products
-        await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
-        // Featured Products block — title icon upload
-        // Drizzle push:false so a manual column add is needed for the new field.
-        await run(
-          "fp_title_icon",
-          "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
-        );
-        // Multi-image Banner block + its `slides` array.
-        // The slides sub-table is what Payload's Drizzle adapter is missing
-        // when it crashes saving the global with:
-        //   Cannot read properties of undefined (reading
-        //   'home_page_blocks_multi_image_banner_slides_pkey')
-        // Recreate idempotently. _parent_id is varchar because Payload uses
-        // a UUID-like string for inner block rows on this side.
-        await run("mib_block_table", `
-          CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner (
-            _order INTEGER NOT NULL,
-            _parent_id INTEGER NOT NULL REFERENCES home_page(id) ON DELETE CASCADE,
-            _path TEXT NOT NULL,
-            id VARCHAR PRIMARY KEY,
-            block_name VARCHAR,
-            aspect_ratio VARCHAR,
-            autoplay BOOLEAN,
-            width VARCHAR,
-            padding_y VARCHAR,
-            enabled BOOLEAN
-          )
-        `);
-        await run("mib_slides_table", `
-          CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner_slides (
-            _order INTEGER NOT NULL,
-            _parent_id VARCHAR NOT NULL REFERENCES home_page_blocks_multi_image_banner(id) ON DELETE CASCADE,
-            id VARCHAR PRIMARY KEY,
-            image_id INTEGER REFERENCES media(id) ON DELETE SET NULL,
-            title VARCHAR,
-            subtitle VARCHAR,
-            cta_label VARCHAR,
-            cta_link VARCHAR
-          )
-        `);
-        await run(
-          "mib_block_parent_idx",
-          "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_parent_idx ON home_page_blocks_multi_image_banner (_parent_id)"
-        );
-        await run(
-          "mib_slides_parent_idx",
-          "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_slides_parent_idx ON home_page_blocks_multi_image_banner_slides (_parent_id)"
-        );
-        // Footer global — paymentMethods array
-        // Payload v2 creates one table per array field, named
-        // <global_slug>_<field_path>. Drizzle push:false again so we DDL it.
-        await run("footer_payment_methods_table", `
-          CREATE TABLE IF NOT EXISTS footer_config_payment_methods (
-            _order INTEGER NOT NULL,
-            _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
-            id VARCHAR PRIMARY KEY,
-            name VARCHAR,
-            color VARCHAR,
-            image_id INTEGER REFERENCES media(id) ON DELETE SET NULL
-          )
-        `);
-        // For deploys that already created the table without the image column.
-        await run(
-          "footer_payment_methods_image_col",
-          "ALTER TABLE footer_config_payment_methods ADD COLUMN IF NOT EXISTS image_id INTEGER REFERENCES media(id) ON DELETE SET NULL"
-        );
-        await run(
-          "footer_payment_methods_parent_idx",
-          "CREATE INDEX IF NOT EXISTS footer_config_payment_methods_parent_idx ON footer_config_payment_methods (_parent_id)"
-        );
-        // Posts (blog) — created when the Shopify blog import lands.
-        // Drizzle push:false won't auto-build these, so spell them out.
-        await run("posts_table", `
-          CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR NOT NULL,
-            slug VARCHAR NOT NULL UNIQUE,
-            excerpt VARCHAR,
-            featured_image_url VARCHAR,
-            body_html VARCHAR NOT NULL,
-            published_at TIMESTAMP(3) WITH TIME ZONE,
-            author VARCHAR,
-            status VARCHAR DEFAULT 'published',
-            source_url VARCHAR,
-            updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL,
-            created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL
-          )
-        `);
-        await run("posts_tags_table", `
-          CREATE TABLE IF NOT EXISTS posts_tags (
-            _order INTEGER NOT NULL,
-            _parent_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-            id VARCHAR PRIMARY KEY,
-            tag VARCHAR
-          )
-        `);
-        await run("posts_slug_idx", "CREATE INDEX IF NOT EXISTS posts_slug_idx ON posts (slug)");
-        await run("posts_published_idx", "CREATE INDEX IF NOT EXISTS posts_published_idx ON posts (published_at DESC NULLS LAST)");
-        await run("posts_tags_parent_idx", "CREATE INDEX IF NOT EXISTS posts_tags_parent_idx ON posts_tags (_parent_id)");
-        // Settings — drop orphan tables if they exist from old array fields
-        await run("drop_social_links", "DROP TABLE IF EXISTS settings_social_links CASCADE");
-        await run("drop_notif_emails", "DROP TABLE IF EXISTS settings_order_notification_emails CASCADE");
-        // Settings — add new flat social columns
-        const socialCols = ["instagram_url","twitter_url","facebook_url","tiktok_url","youtube_url","telegram_url","whatsapp_url","order_notification_emails"];
-        for (const col of socialCols) {
-          await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
-        }
-        res.json({ ok: true, results });
       },
     },
     {
@@ -277,3 +176,127 @@ export default buildConfig({
     outputFile: path.resolve(__dirname, "payload-types.ts"),
   },
 });
+
+
+// ── Shared migration runner ───────────────────────────────────────
+// Called by both the onInit hook (runs on every container start) and
+// the /api/migrate endpoint (manual re-run). All SQL is idempotent
+// (CREATE TABLE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS / etc.) so
+// running this on every boot is safe and cheap.
+async function runMigrations(db: any): Promise<Record<string, string>> {
+  const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
+  if (!pool?.query) {
+    throw new Error("DB pool not found on payload.db");
+  }
+  const results: Record<string, string> = {};
+  const run = async (label: string, sql: string) => {
+    try { await pool.query(sql); results[label] = "ok"; }
+    catch (e: any) { results[label] = e.message; }
+  };
+
+  // Products
+  await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
+  // Featured Products block — title icon upload
+  await run(
+    "fp_title_icon",
+    "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
+  );
+  // Multi-image Banner block + its `slides` array. The slides sub-table
+  // is what Payload's Drizzle adapter complains about with:
+  //   Cannot read properties of undefined (reading
+  //   'home_page_blocks_multi_image_banner_slides_pkey')
+  await run("mib_block_table", `
+    CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner (
+      _order INTEGER NOT NULL,
+      _parent_id INTEGER NOT NULL REFERENCES home_page(id) ON DELETE CASCADE,
+      _path TEXT NOT NULL,
+      id VARCHAR PRIMARY KEY,
+      block_name VARCHAR,
+      aspect_ratio VARCHAR,
+      autoplay BOOLEAN,
+      width VARCHAR,
+      padding_y VARCHAR,
+      enabled BOOLEAN
+    )
+  `);
+  await run("mib_slides_table", `
+    CREATE TABLE IF NOT EXISTS home_page_blocks_multi_image_banner_slides (
+      _order INTEGER NOT NULL,
+      _parent_id VARCHAR NOT NULL REFERENCES home_page_blocks_multi_image_banner(id) ON DELETE CASCADE,
+      id VARCHAR PRIMARY KEY,
+      image_id INTEGER REFERENCES media(id) ON DELETE SET NULL,
+      title VARCHAR,
+      subtitle VARCHAR,
+      cta_label VARCHAR,
+      cta_link VARCHAR
+    )
+  `);
+  await run(
+    "mib_block_parent_idx",
+    "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_parent_idx ON home_page_blocks_multi_image_banner (_parent_id)"
+  );
+  await run(
+    "mib_slides_parent_idx",
+    "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_slides_parent_idx ON home_page_blocks_multi_image_banner_slides (_parent_id)"
+  );
+  // Footer global — paymentMethods array
+  await run("footer_payment_methods_table", `
+    CREATE TABLE IF NOT EXISTS footer_config_payment_methods (
+      _order INTEGER NOT NULL,
+      _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
+      id VARCHAR PRIMARY KEY,
+      name VARCHAR,
+      color VARCHAR,
+      image_id INTEGER REFERENCES media(id) ON DELETE SET NULL
+    )
+  `);
+  await run(
+    "footer_payment_methods_image_col",
+    "ALTER TABLE footer_config_payment_methods ADD COLUMN IF NOT EXISTS image_id INTEGER REFERENCES media(id) ON DELETE SET NULL"
+  );
+  await run(
+    "footer_payment_methods_parent_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_payment_methods_parent_idx ON footer_config_payment_methods (_parent_id)"
+  );
+  // Posts (blog)
+  await run("posts_table", `
+    CREATE TABLE IF NOT EXISTS posts (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR NOT NULL,
+      slug VARCHAR NOT NULL UNIQUE,
+      excerpt VARCHAR,
+      featured_image_url VARCHAR,
+      body_html VARCHAR NOT NULL,
+      published_at TIMESTAMP(3) WITH TIME ZONE,
+      author VARCHAR,
+      status VARCHAR DEFAULT 'published',
+      source_url VARCHAR,
+      updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL,
+      created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL
+    )
+  `);
+  await run("posts_tags_table", `
+    CREATE TABLE IF NOT EXISTS posts_tags (
+      _order INTEGER NOT NULL,
+      _parent_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      id VARCHAR PRIMARY KEY,
+      tag VARCHAR
+    )
+  `);
+  await run("posts_slug_idx", "CREATE INDEX IF NOT EXISTS posts_slug_idx ON posts (slug)");
+  await run("posts_published_idx", "CREATE INDEX IF NOT EXISTS posts_published_idx ON posts (published_at DESC NULLS LAST)");
+  await run("posts_tags_parent_idx", "CREATE INDEX IF NOT EXISTS posts_tags_parent_idx ON posts_tags (_parent_id)");
+  // Settings — drop orphan tables if they exist from old array fields
+  await run("drop_social_links", "DROP TABLE IF EXISTS settings_social_links CASCADE");
+  await run("drop_notif_emails", "DROP TABLE IF EXISTS settings_order_notification_emails CASCADE");
+  // Settings — add new flat social columns
+  const socialCols = [
+    "instagram_url", "twitter_url", "facebook_url", "tiktok_url",
+    "youtube_url", "telegram_url", "whatsapp_url", "order_notification_emails",
+  ];
+  for (const col of socialCols) {
+    await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
+  }
+
+  return results;
+}
