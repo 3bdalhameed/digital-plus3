@@ -55,6 +55,12 @@ jobs:
       - name: Trigger Coolify redeploy
         env:
           WEBHOOK: ${{ secrets.COOLIFY_CMS_WEBHOOK }}
-        if: env.WEBHOOK != ''
-        continue-on-error: true
-        run: curl -fsSL -X GET "$WEBHOOK"
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        # Fail the workflow loudly if the deploy notification doesn't go through
+        # (continue-on-error: true is removed). Coolify v4 requires the API
+        # token in the Authorization header — without it the webhook returns
+        # 401 and the new image just sits in GHCR unused.
+        if: env.WEBHOOK != '' && env.COOLIFY_TOKEN != ''
+        run: |
+          curl -fsSL -X GET "$WEBHOOK" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN"

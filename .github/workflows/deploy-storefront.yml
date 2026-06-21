@@ -47,5 +47,12 @@ jobs:
       - name: Trigger Coolify redeploy
         env:
           WEBHOOK: ${{ secrets.COOLIFY_STOREFRONT_WEBHOOK }}
-        if: env.WEBHOOK != ''
-        run: curl -fsSL -X GET "$WEBHOOK"
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        # Coolify v4 requires the API token in the Authorization header --
+        # the previous "no auth" version returned 401 silently, leaving
+        # newly-built images in GHCR unused. Fails loudly now if it can't
+        # call Coolify so the issue surfaces immediately.
+        if: env.WEBHOOK != '' && env.COOLIFY_TOKEN != ''
+        run: |
+          curl -fsSL -X GET "$WEBHOOK" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN"
