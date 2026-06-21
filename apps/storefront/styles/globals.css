@@ -524,3 +524,97 @@
   font-variant-numeric: tabular-nums;
   direction: ltr;
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   Stats Section — class names mirror the original Shopify
+   "stats4" section so styling stays portable across both
+   surfaces. CSS variables drive the look so per-instance
+   theming via inline style works the same way it did in Liquid.
+   ═══════════════════════════════════════════════════════════ */
+.stats4__wrapper {
+  --outer-bg: transparent;
+  --box-bg: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #8B5CF6 100%);
+  --label: rgba(255, 255, 255, 0.85);
+  --divider: rgba(255, 255, 255, 0.25);
+
+  background: var(--outer-bg);
+  width: 100%;
+}
+
+.stats4__inner {
+  background: var(--box-bg);
+  border-radius: 28px;
+  padding: 24px 16px;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .stats4__inner { padding: 32px 28px; }
+}
+
+.stats4__header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.stats4__header h2 {
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0;
+}
+@media (min-width: 640px) { .stats4__header h2 { font-size: 22px; } }
+@media (min-width: 768px) { .stats4__header h2 { font-size: 26px; } }
+
+.stats4__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 640px) {
+  .stats4__grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.stat4__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 12px;
+  color: #ffffff;
+  position: relative;
+}
+/* Vertical dividers between columns -- desktop only, gradient hairline
+   that fades at the ends so it doesn't read as a hard rule. */
+@media (min-width: 640px) {
+  .stat4__item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    bottom: 22%;
+    inset-inline-end: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--divider), transparent);
+  }
+}
+
+.stat4__emoji {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.stat4__value {
+  font-weight: 900;
+  font-size: 24px;
+  line-height: 1;
+}
+@media (min-width: 640px) { .stat4__value { font-size: 34px; } }
+@media (min-width: 768px) { .stat4__value { font-size: 42px; } }
+
+.stat4__label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--label);
+}
+@media (min-width: 640px) { .stat4__label { font-size: 14px; } }
+@media (min-width: 768px) { .stat4__label { font-size: 16px; } }

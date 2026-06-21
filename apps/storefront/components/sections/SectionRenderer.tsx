@@ -351,7 +351,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
     <section>
       {title && (
         <div
-          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-3 py-2.5 text-white shadow-md sm:px-4 sm:py-3"
+          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-3 py-1.5 text-white shadow-md sm:px-4 sm:py-3"
           dir="rtl"
         >
           {chip}
@@ -692,44 +692,50 @@ function StatsSectionBlock({ title, stats }: any) {
 
   if (!items.length) return null;
 
+  // Markup mirrors the original Shopify section's DOM:
+  //   .stats4__wrapper > .stats4__inner > (.stats4__header)? + .stats4__grid > .stat4__item × N
+  // CSS variables drive the look so a future Settings global could pipe
+  // these through per-instance. Defaults match the source design.
   return (
     <section
       ref={sectionRef}
-      className="overflow-hidden rounded-[28px] bg-gradient-to-r from-[#8B5CF6] via-[#A78BFA] to-[#8B5CF6] px-4 py-6 shadow-[0_10px_30px_rgba(124,58,237,0.25)] sm:px-8 sm:py-8"
+      className="stats4__wrapper"
+      style={{
+        // @ts-expect-error CSS variables aren't in the React style type
+        "--outer-bg": "transparent",
+        "--box-bg": "linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #8B5CF6 100%)",
+        "--label": "rgba(255,255,255,0.85)",
+        "--divider": "rgba(255,255,255,0.25)",
+      }}
       dir="rtl"
     >
-      {/* Title sits centered at top of the same gradient — no separate strip */}
-      {title && (
-        <h2 className="mb-5 text-center text-base font-black text-white sm:mb-6 sm:text-xl md:text-2xl">
-          {title}
-        </h2>
-      )}
+      <div className="stats4__inner">
+        {title && (
+          <div className="stats4__header">
+            <h2>{title}</h2>
+          </div>
+        )}
 
-      {/* Stats row — 4 columns separated by vertical dividers */}
-      <div className="grid grid-cols-2 sm:grid-cols-4">
-        {items.map((s: any, i: number) => {
-          const { prefix, suffix } = parsed[i];
-          return (
-            <div
-              key={i}
-              className={`flex flex-col items-center gap-1 px-2 text-center text-white sm:px-4 ${
-                i < items.length - 1 ? "sm:border-l sm:border-white/25" : ""
-              }`}
-            >
-              {s.emoji && <span className="mb-1 text-2xl">{s.emoji}</span>}
-              <div
-                className="text-2xl font-black leading-none sm:text-4xl md:text-5xl"
-                style={{ fontFeatureSettings: '"tnum"' }}
-                dir="ltr"
-              >
-                {prefix}
-                <span>{counts[i].toLocaleString("en-US")}</span>
-                {suffix}
+        <div className="stats4__grid">
+          {items.map((s: any, i: number) => {
+            const { prefix, suffix } = parsed[i];
+            return (
+              <div key={i} className="stat4__item">
+                {s.emoji && <span className="stat4__emoji">{s.emoji}</span>}
+                <div
+                  className="stat4__value"
+                  style={{ fontFeatureSettings: '"tnum"' }}
+                  dir="ltr"
+                >
+                  {prefix}
+                  <span>{counts[i].toLocaleString("en-US")}</span>
+                  {suffix}
+                </div>
+                <div className="stat4__label">{s.label}</div>
               </div>
-              <div className="mt-2 text-xs text-white/85 sm:text-sm md:text-base">{s.label}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );
