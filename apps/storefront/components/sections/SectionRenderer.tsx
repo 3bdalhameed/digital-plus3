@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Zap, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Zap, ArrowLeft, ArrowRight, RefreshCw, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";
@@ -351,7 +351,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
     <section>
       {title && (
         <div
-          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#6366F1] px-3 py-1.5 text-white shadow-md sm:px-4 sm:py-3"
+          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-md sm:px-4 sm:py-3"
           dir="rtl"
         >
           {chip}
@@ -607,6 +607,11 @@ function ImageWithTextSection({ image, title, text, ctaLabel, ctaLink, imagePosi
 /* ═══════════════════════════════════════
    8. STORE FEATURES / ICONS WITH TEXT
 ═══════════════════════════════════════ */
+// Default icon set for Feature Blocks when no media is uploaded. Indexed by
+// position: 1st cell gets the shield, 2nd a person, etc. -- matches the
+// "trust / support / payment / fast delivery" rhythm of the source design.
+const FEATURE_FALLBACK_ICONS = [ShieldCheck, UserIcon, CreditCard, Hourglass];
+
 function FeatureBlocksSection({ title, items }: any) {
   // Markup mirrors the original Shopify "أيقونات مع نص (4 مميزات)" section:
   // .about__wrapper > .wrapper > .outer__about > .grid__ > .el__ × N.
@@ -626,19 +631,22 @@ function FeatureBlocksSection({ title, items }: any) {
         <div className="wrapper">
           <div className="outer__about">
             <div className="grid__">
-              {items?.map((f: any, i: number) => (
-                <div key={i} className="el__">
-                  <h6>{f.title}</h6>
-                  <span className="icons_para icons_para_with_background">
-                    {f.icon?.url ? (
-                      <Image src={f.icon.url} alt="" width={42} height={42} className="object-contain" />
-                    ) : (
-                      <span className="text-2xl">⚡</span>
-                    )}
-                  </span>
-                  <p>{f.description}</p>
-                </div>
-              ))}
+              {items?.map((f: any, i: number) => {
+                const Fallback = FEATURE_FALLBACK_ICONS[i % FEATURE_FALLBACK_ICONS.length];
+                return (
+                  <div key={i} className="el__">
+                    <h6>{f.title}</h6>
+                    <span className="icons_para icons_para_with_background">
+                      {f.icon?.url ? (
+                        <Image src={f.icon.url} alt="" width={42} height={42} className="object-contain" />
+                      ) : (
+                        <Fallback className="h-8 w-8" strokeWidth={2} />
+                      )}
+                    </span>
+                    <p>{f.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
