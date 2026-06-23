@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown, LogOut } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useWishlistStore } from "@/lib/wishlist-store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { useSession, signOut } from "next-auth/react";
 import type { SiteSettings, NavbarConfig, NavLink } from "@my-store/types";
@@ -29,6 +30,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [searchValue, setSearchValue] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const totalItems = useCartStore((s) => s.totalItems());
+  const wishlistCount = useWishlistStore((s) => s.items.length);
   const { lang, currency, setLang, setCurrency, fetchRates, detectCurrency } = useLocaleStore();
 
   const { data: session } = useSession();
@@ -269,12 +271,18 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               </select>
 
               {/* Wishlist */}
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
+              <Link
+                href="/wishlist"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
                 aria-label="المفضلة"
               >
                 <Heart className="h-5 w-5" strokeWidth={2} />
-              </button>
+                {wishlistCount > 0 && (
+                  <span className="absolute -left-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white shadow-md ring-2 ring-[#7C3AED]">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
 
               {/* Cart — visible on all sizes, with count badge in the corner */}
               <Link
@@ -292,6 +300,30 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             </div>
 
           </div>
+
+          {/* ── Mobile search bar — appears as a second row below the icons,
+              only on phones (desktop has the absolute-centered one above). */}
+          <form
+            action="/products"
+            method="get"
+            className="px-4 pb-3 sm:hidden"
+          >
+            <div className="relative">
+              <button
+                type="submit"
+                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
+                aria-label="بحث"
+              >
+                <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </button>
+              <input
+                type="text"
+                name="q"
+                placeholder="أبحث عن..."
+                className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
+              />
+            </div>
+          </form>
         </div>
 
         {/* ── Desktop nav row (optional — only when CMS has links) ── */}

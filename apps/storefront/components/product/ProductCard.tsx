@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
+import { useWishlistStore } from "@/lib/wishlist-store";
 import { formatPrice } from "@/lib/utils";
 import type { Product } from "@my-store/types";
 
@@ -14,6 +15,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const toggleFav = useWishlistStore((s) => s.toggle);
+  const isFav = useWishlistStore((s) => s.hasItem(product.id));
   const { lang, currency, rates } = useLocaleStore();
 
   const p = product as any;
@@ -70,6 +73,25 @@ export function ProductCard({ product }: ProductCardProps) {
               -{discountPct}%
             </div>
           )}
+
+          {/* Heart toggle — bottom-right of the image. preventDefault on the
+              button stops the wrapping <Link> from navigating to the product. */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFav(product);
+            }}
+            aria-pressed={isFav}
+            aria-label={isFav ? "إزالة من المفضلة" : "أضف إلى المفضلة"}
+            className="absolute bottom-1.5 right-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur transition hover:scale-110 sm:bottom-2 sm:right-2 sm:h-8 sm:w-8"
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors ${isFav ? "fill-[#EF4444] text-[#EF4444]" : "text-[#7C3AED]"} sm:h-[18px] sm:w-[18px]`}
+              strokeWidth={isFav ? 2 : 2.5}
+            />
+          </button>
         </div>
       </Link>
 
