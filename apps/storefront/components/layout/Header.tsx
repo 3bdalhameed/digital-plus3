@@ -147,14 +147,6 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             </select>
           </div>
 
-          <Link
-            href="/cart"
-            onClick={() => setDrawerOpen(false)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#7C3AED] py-3 text-sm font-bold text-[#7C3AED]"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            السلة
-          </Link>
           {session?.user ? (
             <>
               <Link href="/account" onClick={() => setDrawerOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white">
