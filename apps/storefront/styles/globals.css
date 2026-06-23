@@ -132,23 +132,26 @@
   .section-title {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
     justify-content: center;
-    font-size: 1.375rem;
-    font-weight: 800;
-    color: #1e1b4b;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #7C3AED;
+    letter-spacing: 0.01em;
     margin-bottom: 2rem;
   }
+  /* Gradient hairlines on both sides — fade from transparent at the
+     outer edge to the brand purple where they meet the title. */
   .section-title::before,
   .section-title::after {
     content: '';
     flex: 1;
     height: 1px;
-    max-width: 120px;
-    background: linear-gradient(to right, transparent, #c4b5fd);
+    max-width: 180px;
+    background: linear-gradient(to right, transparent, #7C3AED);
   }
   .section-title::after {
-    background: linear-gradient(to left, transparent, #c4b5fd);
+    background: linear-gradient(to left, transparent, #7C3AED);
   }
 
   /* ── Input / search ── */
