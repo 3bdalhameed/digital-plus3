@@ -278,21 +278,21 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
               {/* Wishlist */}
               <button
-                className="hidden h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10 sm:flex"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
                 aria-label="المفضلة"
               >
                 <Heart className="h-5 w-5" strokeWidth={2} />
               </button>
 
-              {/* Cart */}
+              {/* Cart — visible on all sizes, with count badge in the corner */}
               <Link
                 href="/cart"
-                className="relative hidden h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10 sm:flex"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
                 aria-label="السلة"
               >
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} />
                 {totalItems > 0 && (
-                  <span className="absolute -left-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white shadow">
+                  <span className="absolute -left-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#F97316] px-1 text-[10px] font-black text-white shadow-md ring-2 ring-[#7C3AED]">
                     {totalItems}
                   </span>
                 )}
