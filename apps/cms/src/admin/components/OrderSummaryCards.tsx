@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState, useMemo } from "react";
-import { useFormFields, useConfig } from "payload/components/utilities";
+import { useConfig } from "payload/components/utilities";
+import { useFormFields } from "payload/components/forms";
 
 /* ─────────────────────────────────────────────────────────────
    OrderSummaryCards
