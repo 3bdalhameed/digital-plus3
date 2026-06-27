@@ -34,7 +34,6 @@ export const options = {
   },
 };
 
-const POOL = buildPool(BASE_URL);
 const sessionDuration = new Trend("session_duration", true);
 
 const SEARCH_TERMS = [
@@ -42,7 +41,11 @@ const SEARCH_TERMS = [
   "discord", "xbox", "steam", "youtube",
 ];
 
-export default function () {
+export function setup() {
+  return buildPool(BASE_URL);
+}
+
+export default function (pool) {
   const start = Date.now();
 
   // 1. Land on the homepage (every session starts here).
@@ -53,9 +56,9 @@ export default function () {
   sleep(rand(1, 3));
 
   // 2. Browse a category or search (50/50). Then click a product from it.
-  if (Math.random() < 0.5) {
+  if (Math.random() < 0.5 && pool.collections.length > 0) {
     group("collection", () => {
-      const res = http.get(`${BASE_URL}${pick(POOL.collections)}`, {
+      const res = http.get(`${BASE_URL}${pick(pool.collections)}`, {
         tags: { name: "collection" },
       });
       check(res, { "collection 200": (r) => r.status === 200 });
@@ -72,18 +75,20 @@ export default function () {
   sleep(rand(2, 5));
 
   // 3. Open one product detail.
-  group("product", () => {
-    const res = http.get(`${BASE_URL}${pick(POOL.products)}`, {
-      tags: { name: "product" },
+  if (pool.products.length > 0) {
+    group("product", () => {
+      const res = http.get(`${BASE_URL}${pick(pool.products)}`, {
+        tags: { name: "product" },
+      });
+      check(res, { "product 200": (r) => r.status === 200 });
     });
-    check(res, { "product 200": (r) => r.status === 200 });
-  });
-  sleep(rand(2, 6));
+    sleep(rand(2, 6));
+  }
 
   // 4. 30% of visitors also read a blog post before leaving.
-  if (Math.random() < 0.3) {
+  if (Math.random() < 0.3 && pool.posts.length > 0) {
     group("post", () => {
-      const res = http.get(`${BASE_URL}${pick(POOL.posts)}`, {
+      const res = http.get(`${BASE_URL}${pick(pool.posts)}`, {
         tags: { name: "post" },
       });
       check(res, { "post 200": (r) => r.status === 200 });

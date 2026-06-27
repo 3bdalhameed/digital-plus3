@@ -19,18 +19,29 @@ export const options = {
   },
 };
 
-const POOL = buildPool(BASE_URL);
+// k6 runs setup() once on the test runner before VUs start. Anything we
+// return here is passed into every VU iteration as the first argument.
+export function setup() {
+  return buildPool(BASE_URL);
+}
 
-export default function () {
+export default function (pool) {
+  // Pick one URL from each kind that has at least one entry. Skip the
+  // ones with empty pools so the check doesn't 404 on a missing URL.
   const targets = [
-    pick(POOL.home),
-    pick(POOL.products),
-    pick(POOL.collections),
-    pick(POOL.posts),
-  ];
+    pick(pool.home),
+    pick(pool.products),
+    pick(pool.collections),
+    pick(pool.posts),
+  ].filter(Boolean);
 
   for (const path of targets) {
-    const res = http.get(`${BASE_URL}${path}`, { tags: { name: pathKind(path) } });
+    // redirects: "follow" is the default, but we set explicitly so a
+    // future k6 version that changes the default doesn't surprise us.
+    const res = http.get(`${BASE_URL}${path}`, {
+      tags: { name: pathKind(path) },
+      redirects: 5,
+    });
     check(res, {
       [`${path} returned 200`]: (r) => r.status === 200,
     });

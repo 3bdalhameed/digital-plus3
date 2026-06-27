@@ -29,17 +29,20 @@ export const options = {
   },
 };
 
-const POOL = buildPool(BASE_URL);
+export function setup() {
+  return buildPool(BASE_URL);
+}
 
-export default function () {
+export default function (pool) {
   const all = [
-    ...POOL.home.map((p) => ({ p, k: "home" })),
-    ...POOL.products.map((p) => ({ p, k: "product" })),
-    ...POOL.collections.map((p) => ({ p, k: "collection" })),
-    ...POOL.posts.map((p) => ({ p, k: "post" })),
+    ...pool.home.map((p) => ({ p, k: "home" })),
+    ...pool.products.map((p) => ({ p, k: "product" })),
+    ...pool.collections.map((p) => ({ p, k: "collection" })),
+    ...pool.posts.map((p) => ({ p, k: "post" })),
   ];
-  const { p, k } = pick(all);
-  const res = http.get(`${BASE_URL}${p}`, { tags: { name: k } });
+  const choice = pick(all);
+  if (!choice) return;
+  const res = http.get(`${BASE_URL}${choice.p}`, { tags: { name: choice.k } });
   check(res, { "200": (r) => r.status === 200 });
   sleep(Math.random() * 2);
 }
