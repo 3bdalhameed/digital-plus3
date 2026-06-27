@@ -136,11 +136,24 @@ export const HomePage: GlobalConfig = {
                 { label: "3 أعمدة", value: "3" },
                 { label: "4 أعمدة", value: "4" },
                 { label: "5 أعمدة", value: "5" },
+                { label: "6 أعمدة", value: "6" },
+                { label: "7 أعمدة", value: "7" },
+                { label: "8 أعمدة", value: "8" },
               ],
             },
             {
               name: "products", label: "المنتجات", type: "relationship",
               relationTo: "products", hasMany: true,
+            },
+            {
+              name: "showMoreSubcategory",
+              label: "وجهة زر «عرض المزيد»",
+              type: "relationship",
+              relationTo: "subcategories",
+              admin: {
+                description:
+                  "اختياري. عند تحديده، يوجه زر «عرض المزيد» إلى صفحة هذا القسم الفرعي. إذا تركته فارغاً، سيتم اشتقاق الوجهة تلقائياً من تصنيف المنتجات.",
+              },
             },
             ...layoutFields,
           ],

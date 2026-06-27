@@ -201,6 +201,11 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "fp_title_icon",
     "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS title_icon_id integer REFERENCES media(id) ON DELETE SET NULL"
   );
+  // Featured Products block — "show more" subcategory target
+  await run(
+    "fp_show_more_subcategory",
+    "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS show_more_subcategory_id integer REFERENCES subcategories(id) ON DELETE SET NULL"
+  );
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:
   //   Cannot read properties of undefined (reading

@@ -185,7 +185,7 @@ const colsClass: Record<string, string> = {
   "6": "grid-cols-2 md:grid-cols-4 lg:grid-cols-6",
 };
 
-function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) {
+function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMoreSubcategory }: any) {
   // Editors can upload a custom title icon (PNG with transparent bg works best)
   // per block. Falls back to the Sparkles vector when nothing is uploaded.
   const iconUrl = titleIcon?.url as string | undefined;
@@ -232,7 +232,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
             in this block share (or /products if mixed). */}
         <div className="flex w-[160px] shrink-0 items-center justify-center sm:w-[210px] lg:w-[230px]">
           <Link
-            href={showMoreHref(products)}
+            href={showMoreHref(products, showMoreSubcategory)}
             className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
           >
             عرض المزيد
@@ -244,18 +244,29 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon }: any) 
 }
 
 /**
- * Resolve the "show more" target for a Featured Products block:
- *  - If every product in the block belongs to the same category and we
- *    can read its slug from the depth=2 payload, link to /collections/<slug>.
- *  - Otherwise fall back to /products.
+ * Resolve the "show more" target for a Featured Products block.
+ * Priority:
+ *   1. Explicit `showMoreSubcategory` relationship picked in the CMS
+ *      → /collections/<subcategory.slug>. Most precise, and editors can
+ *      point the button at a subcategory that isn't represented in the
+ *      products array (e.g. a curated row of bestsellers from across a
+ *      subcategory).
+ *   2. Otherwise, if every product in the block belongs to the same
+ *      category and we can read its slug from the depth=2 payload,
+ *      link to /collections/<category.slug>.
+ *   3. Otherwise fall back to /products.
  *
- * `category` on a Product is either a string ID (depth=0) or the full
- * Category doc (depth>=1). getHomePage fetches at depth=2 so we expect
- * the full doc in normal operation, but we still handle the ID case to
- * avoid crashing the homepage on a depth misconfiguration.
+ * `subcategory` / `category` on a Product is either a string/number ID
+ * (depth=0) or the full doc (depth>=1). getHomePage fetches at depth=2
+ * so the full doc is expected, but the ID branch is kept to be safe.
  */
-function showMoreHref(products: any[] | undefined): string {
+function showMoreHref(products: any[] | undefined, explicitSubcategory?: any): string {
+  // 1. Explicit CMS override beats auto-derivation.
+  if (explicitSubcategory && typeof explicitSubcategory === "object" && explicitSubcategory.slug) {
+    return `/collections/${explicitSubcategory.slug}`;
+  }
   if (!products?.length) return "/products";
+  // 2. Auto-derive from a shared category across all products.
   const slugs = new Set<string>();
   for (const p of products) {
     const cat = p?.category;
