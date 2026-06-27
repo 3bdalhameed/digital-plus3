@@ -302,6 +302,70 @@ export async function getProductBySlug(
   return data.docs[0] || null;
 }
 
+/**
+ * Return up to `limit` other published products that look "related" to the
+ * given one. Order of preference:
+ *   1. Same subcategory
+ *   2. Same category (if step 1 didn't fill the slot)
+ *   3. Any other published product (fallback)
+ *
+ * The current product is always excluded. Used to power the "منتجات ذات صلة"
+ * row on the product detail page.
+ */
+export async function getRelatedProducts(
+  product: Product,
+  limit = 12
+): Promise<Product[]> {
+  const p = product as any;
+  const productId = p?.id;
+  const subcategoryId =
+    p?.subcategory && typeof p.subcategory === "object" ? p.subcategory.id : p?.subcategory;
+  const categoryId =
+    p?.category && typeof p.category === "object" ? p.category.id : p?.category;
+
+  const fetchByRelation = async (
+    relation: "subcategory" | "category",
+    relationId: string | number | undefined,
+    take: number
+  ): Promise<Product[]> => {
+    if (!relationId || take <= 0) return [];
+    const params: Record<string, string> = {
+      [`where[${relation}][equals]`]: String(relationId),
+      "where[status][equals]": "published",
+      depth: "2",
+      limit: String(take + 1),
+    };
+    try {
+      const data = await payloadFetch<PayloadDocs<Product>>("/products", {
+        params,
+        next: { revalidate: 60 },
+      });
+      return (data.docs || []).filter((d: any) => String(d.id) !== String(productId)).slice(0, take);
+    } catch {
+      return [];
+    }
+  };
+
+  const out: Product[] = [];
+  const seen = new Set<string>();
+
+  for (const tier of [
+    fetchByRelation("subcategory", subcategoryId, limit),
+    fetchByRelation("category", categoryId, limit),
+  ]) {
+    if (out.length >= limit) break;
+    for (const candidate of await tier) {
+      const id = String((candidate as any).id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(candidate);
+      if (out.length >= limit) break;
+    }
+  }
+
+  return out;
+}
+
 // ---------------------
 // Categories
 // ---------------------

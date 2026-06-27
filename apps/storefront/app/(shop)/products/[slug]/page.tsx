@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "@/lib/payload";
+import { getProductBySlug, getRelatedProducts } from "@/lib/payload";
 import { ProductDetailClient } from "./ProductDetailClient";
+import { RelatedProducts } from "./RelatedProducts";
 
 export const revalidate = 60;
 
@@ -22,5 +23,14 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   const product = await getProductBySlug(params.slug).catch(() => null);
   if (!product) notFound();
 
-  return <ProductDetailClient product={product} productName={productName(product)} />;
+  // Fetch related products in the background. If it fails (network / new DB
+  // shape / whatever), just render an empty row -- never block the main page.
+  const related = await getRelatedProducts(product, 12).catch(() => []);
+
+  return (
+    <>
+      <ProductDetailClient product={product} productName={productName(product)} />
+      <RelatedProducts products={related} />
+    </>
+  );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Zap, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";
@@ -29,22 +29,22 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
         {children}
       </div>
 
-      {/* Minimal chevron arrows — desktop only. Click hit-area is generous
-          (40px square) while the icon stays small and thin so it reads as
+      {/* Thin grey arrow nav — desktop only. Click hit-area is generous
+          (40px square) while the icon stays small and light so it reads as
           a hint, not a heavy nav button. */}
       <button
         onClick={() => scroll("right")}
-        className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 translate-x-1/2 items-center justify-center text-[#6b7280] transition-colors hover:text-[#1e1b4b] sm:flex"
+        className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 translate-x-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex"
         aria-label="السابق"
       >
-        <ChevronRight className="h-7 w-7" strokeWidth={1.5} />
+        <ArrowRight className="h-6 w-6" strokeWidth={1.5} />
       </button>
       <button
         onClick={() => scroll("left")}
-        className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 -translate-x-1/2 items-center justify-center text-[#6b7280] transition-colors hover:text-[#1e1b4b] sm:flex"
+        className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 -translate-x-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex"
         aria-label="التالي"
       >
-        <ChevronLeft className="h-7 w-7" strokeWidth={1.5} />
+        <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
       </button>
     </div>
   );
