@@ -6,9 +6,9 @@ import http from "k6/http";
 
 const FALLBACK = {
   home: ["/", "/products", "/about", "/blogs/news"],
-  products: ["/products/chat-gpt-12", "/products/forza-horizon-5"],
+  products: ["/products/chat-gpt-12"],
   collections: [],
-  posts: ["/blogs/news/best-pc-games-store", "/blogs/news/forza-horizon-5"],
+  posts: ["/blogs/news/best-pc-games-store"],
 };
 
 /**
@@ -20,17 +20,28 @@ const FALLBACK = {
 export function buildPool(baseUrl) {
   const pool = JSON.parse(JSON.stringify(FALLBACK));
 
+  // responseType:"text" forces k6 to return the body as a UTF-8 string;
+  // without it, application/xml comes back as a goja byte buffer that
+  // String() turns into "[object Object]"-like garbage and the regex
+  // matches nothing.
   const res = http.get(`${baseUrl}/sitemap.xml`, {
     tags: { name: "sitemap" },
     timeout: "30s",
+    responseType: "text",
   });
   if (res.status !== 200) {
     console.log(`[pool] sitemap returned ${res.status}, using fallback`);
     return pool;
   }
 
-  const xml = String(res.body || "");
-  const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const xml = typeof res.body === "string" ? res.body : "";
+  console.log(`[pool] sitemap body length: ${xml.length}`);
+  // Use a global RegExp.exec loop instead of matchAll -- some k6/goja
+  // builds don't implement String.prototype.matchAll yet.
+  const locs = [];
+  const re = /<loc>([^<]+)<\/loc>/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) locs.push(m[1]);
 
   const products = [];
   const collections = [];
