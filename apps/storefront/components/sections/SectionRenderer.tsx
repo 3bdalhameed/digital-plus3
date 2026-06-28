@@ -31,17 +31,18 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
 
       {/* Thin grey arrow nav — desktop only. Click hit-area is generous
           (40px square) while the icon stays small and light so it reads as
-          a hint, not a heavy nav button. */}
+          a hint, not a heavy nav button. Sits outside the carousel padding
+          so it doesn't crowd the first/last card. */}
       <button
         onClick={() => scroll("right")}
-        className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 translate-x-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex"
+        className="absolute -right-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-right-10"
         aria-label="السابق"
       >
         <ArrowRight className="h-6 w-6" strokeWidth={1.5} />
       </button>
       <button
         onClick={() => scroll("left")}
-        className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 -translate-x-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex"
+        className="absolute -left-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-left-10"
         aria-label="التالي"
       >
         <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
@@ -420,10 +421,13 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
    6. CATEGORY ROW — seamless marquee
 ═══════════════════════════════════════ */
 function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }: any) {
-  const szMap: Record<string, number> = { sm: 80, md: 112, lg: 144 };
-  const mobileMap: Record<string, number> = { sm: 60, md: 80, lg: 96 };
-  const szNum = szMap[iconSize ?? "md"] ?? 112;
-  const mNum = mobileMap[iconSize ?? "md"] ?? 80;
+  // Bumped ~40% so the home-page subcategory marquee reads at a comparable
+  // size to the new category cards above it. Each tier still maps to the
+  // same CMS option name (sm/md/lg) so editors don't need to re-pick.
+  const szMap: Record<string, number> = { sm: 112, md: 160, lg: 200 };
+  const mobileMap: Record<string, number> = { sm: 80, md: 120, lg: 160 };
+  const szNum = szMap[iconSize ?? "md"] ?? 160;
+  const mNum = mobileMap[iconSize ?? "md"] ?? 120;
 
   if (!items?.length) return null;
 
