@@ -244,6 +244,48 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "mib_slides_parent_idx",
     "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_slides_parent_idx ON home_page_blocks_multi_image_banner_slides (_parent_id)"
   );
+  // Footer global — new text fields (everything CMS-editable in the footer)
+  for (const col of [
+    "brand_description TEXT",
+    "important_links_title VARCHAR",
+    "contact_title VARCHAR",
+    "phone VARCHAR",
+    "email VARCHAR",
+    "contact_form_url VARCHAR",
+    "payment_title VARCHAR",
+    "copyright_text VARCHAR",
+  ]) {
+    const [name] = col.split(" ");
+    await run(`footer_${name}`, `ALTER TABLE footer_config ADD COLUMN IF NOT EXISTS ${col}`);
+  }
+  // Footer global — importantLinks array
+  await run("footer_important_links_table", `
+    CREATE TABLE IF NOT EXISTS footer_config_important_links (
+      _order INTEGER NOT NULL,
+      _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
+      id VARCHAR PRIMARY KEY,
+      label VARCHAR,
+      href VARCHAR
+    )
+  `);
+  await run(
+    "footer_important_links_parent_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_important_links_parent_idx ON footer_config_important_links (_parent_id)"
+  );
+  // Footer global — policyLinks array
+  await run("footer_policy_links_table", `
+    CREATE TABLE IF NOT EXISTS footer_config_policy_links (
+      _order INTEGER NOT NULL,
+      _parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
+      id VARCHAR PRIMARY KEY,
+      label VARCHAR,
+      href VARCHAR
+    )
+  `);
+  await run(
+    "footer_policy_links_parent_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_policy_links_parent_idx ON footer_config_policy_links (_parent_id)"
+  );
   // Footer global — paymentMethods array
   await run("footer_payment_methods_table", `
     CREATE TABLE IF NOT EXISTS footer_config_payment_methods (

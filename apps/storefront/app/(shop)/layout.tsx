@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PreviewBanner } from "@/components/layout/PreviewBanner";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { getSettings, getNavbarConfig } from "@/lib/payload";
 import type { SiteSettings, NavbarConfig } from "@my-store/types";
@@ -28,6 +29,10 @@ export default async function ShopLayout({
         {children}
       </main>
       <Footer />
+      <WhatsAppButton
+        url={settings?.whatsappUrl}
+        phone={settings?.whatsappNumber}
+      />
       <ExitIntentPopup />
     </>
   );

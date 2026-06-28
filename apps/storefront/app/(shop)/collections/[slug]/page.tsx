@@ -60,25 +60,25 @@ export default async function CollectionPage({
             <h2 className="mb-4 text-center text-sm font-bold text-brand-600">
               الأقسام الفرعية
             </h2>
-            <div className="flex flex-wrap items-start justify-center gap-6">
+            <div className="flex flex-wrap items-start justify-center gap-7 sm:gap-8">
               {subcategories.map((sub: any) => {
                 const iconUrl = sub.icon?.url;
                 return (
                   <Link
                     key={sub.id}
                     href={`/collections/${sub.slug}`}
-                    className="group flex w-24 flex-col items-center gap-2"
+                    className="group flex w-32 flex-col items-center gap-2.5 sm:w-36"
                   >
-                    <div className="relative h-20 w-20 transition-transform group-hover:scale-105">
+                    <div className="relative h-28 w-28 transition-transform group-hover:scale-105 sm:h-32 sm:w-32">
                       {iconUrl ? (
                         <Image src={iconUrl} alt={sub.nameAr} fill className="object-contain" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-2xl font-black text-white shadow-md">
+                        <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-3xl font-black text-white shadow-md">
                           {sub.nameAr?.[0] ?? "•"}
                         </div>
                       )}
                     </div>
-                    <span className="text-center text-xs font-medium text-brand-800 line-clamp-2">
+                    <span className="text-center text-sm font-medium text-brand-800 line-clamp-2 sm:text-base">
                       {sub.nameAr}
                     </span>
                   </Link>

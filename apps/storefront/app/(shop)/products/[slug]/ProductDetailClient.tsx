@@ -474,52 +474,95 @@ export function ProductDetailClient({ product, productName }: Props) {
         </div>
       )}
 
-      {/* Sticky bottom action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-gradient-to-r from-[#7C3AED]/95 to-[#9333EA]/95 backdrop-blur">
-        <div
-          className="mx-auto flex max-w-[90rem] flex-wrap items-center justify-between gap-3 px-4 py-3"
-          dir="rtl"
-        >
-          {/* Quantity (start side = right in RTL) */}
-          <div className="flex items-center gap-3 text-white">
-            <span className="text-xs font-bold opacity-90 md:text-sm">الكمية</span>
-            <div className="flex items-center gap-1 rounded-full bg-white px-1 py-1">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
-                aria-label="ناقص"
-              >
-                <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </button>
-              <span className="min-w-[1.5rem] text-center text-sm font-black text-[#5B21B6]">
-                {qty}
-              </span>
-              <button
-                onClick={() => setQty((q) => q + 1)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
-                aria-label="زائد"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-
-          {/* Outlined action card (end side = left in RTL) */}
-          <div className="flex items-center gap-2 rounded-2xl border-2 border-white/30 bg-white/5 p-1.5 backdrop-blur-sm">
+      {/* Sticky bottom action bar
+          - Mobile: floating rounded-full pill with margins from screen edges,
+            buttons + quantity in a single compact row (no wrapping).
+          - Desktop: full-width bar with centered button group and stacked
+            quantity on the end side. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 sm:bottom-0">
+        {/* Mobile floating pill */}
+        <div className="mx-3 mb-3 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] shadow-[0_10px_30px_rgba(91,33,182,0.35)] sm:hidden">
+          <div className="flex items-center justify-between gap-2 px-2 py-2" dir="rtl">
+            {/* Add to cart pill (start side = right in RTL) */}
             <button
               onClick={handleAdd}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
-            >
-              <Zap className="h-4 w-4 text-orange-500" strokeWidth={2.5} fill="currentColor" />
-              <span>اشتري الآن</span>
-            </button>
-            <button
-              onClick={handleAdd}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-black text-[#5B21B6] shadow-sm transition-all active:scale-95"
             >
               <ShoppingCart className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.5} />
               <span>أضف إلى السلة</span>
             </button>
+
+            {/* Quantity pill inline with the buttons on mobile */}
+            <div className="flex shrink-0 items-center gap-1.5 text-white">
+              <span className="text-[11px] font-bold opacity-90">الكمية</span>
+              <div className="flex items-center gap-0.5 rounded-full bg-white px-1 py-0.5">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  aria-label="ناقص"
+                >
+                  <Minus className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+                <span className="min-w-[1.25rem] text-center text-xs font-black text-[#5B21B6]">
+                  {qty}
+                </span>
+                <button
+                  onClick={() => setQty((q) => q + 1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  aria-label="زائد"
+                >
+                  <Plus className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop bar */}
+        <div className="hidden border-t border-white/10 bg-gradient-to-r from-[#7C3AED] to-[#9333EA] sm:block">
+          <div
+            className="mx-auto flex max-w-[90rem] items-center justify-between gap-3 px-4 py-3"
+            dir="rtl"
+          >
+            <div className="mx-auto flex items-center gap-3 rounded-2xl border border-white/40 bg-transparent p-2">
+              <button
+                onClick={handleAdd}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
+              >
+                <Zap className="h-4 w-4 text-orange-500" strokeWidth={2.5} fill="currentColor" />
+                <span>اشتري الآن</span>
+              </button>
+              <button
+                onClick={handleAdd}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
+              >
+                <ShoppingCart className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.5} />
+                <span>أضف إلى السلة</span>
+              </button>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-center gap-1.5 text-white">
+              <span className="text-sm font-bold opacity-90">الكمية</span>
+              <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  aria-label="ناقص"
+                >
+                  <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+                <span className="min-w-[1.5rem] text-center text-sm font-black text-[#5B21B6]">
+                  {qty}
+                </span>
+                <button
+                  onClick={() => setQty((q) => q + 1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  aria-label="زائد"
+                >
+                  <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

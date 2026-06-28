@@ -11,28 +11,42 @@ function resolveLogoUrl(raw: string | undefined): string | null {
   return `${cmsOrigin}${raw}`;
 }
 
-/* ── Link columns mirror the live Shopify footer exactly ──────── */
+/* ── Hardcoded fallbacks ──────────────────────────────────────────
+   Every CMS-controlled text on the footer has a fallback so a fresh
+   deploy with an empty FooterConfig still renders the original copy.
+   Editors override any of these via /admin/globals/footer-config. */
 
-const importantLinks = [
+const DEFAULT_BRAND_DESCRIPTION =
+  "نحن في ديجيتال بلس نوفّر اشتراكات رقمية أصلية لأشهر المنصات العالمية مثل Adobe و Canva و Envato و YouTube Premium وغيرها. نحرص على تقديم تجربة شراء آمنة وسريعة مع دعم فني متواصل";
+
+const DEFAULT_IMPORTANT_LINKS_TITLE = "روابط مهمة";
+const DEFAULT_IMPORTANT_LINKS: FooterLinkRow[] = [
   { label: "من نحن",                       href: "/about" },
   { label: "سياسة الاستخدام",             href: "/policies/terms" },
   { label: "سياسة الاسترجاع والاستبدال", href: "/policies/refund" },
   { label: "المدونة",                      href: "/blogs/news" },
 ];
 
-const policyLinks = [
+const DEFAULT_POLICY_LINKS: FooterLinkRow[] = [
   { label: "سياسة الشراء",            href: "/policies/terms" },
   { label: "سياسة الخصوصية",         href: "/policies/privacy" },
   { label: "وسائل الدفع المتوفرة",   href: "/about#payment" },
   { label: "خدمة التوريد B2B للتجار", href: "/about#b2b" },
 ];
 
+const DEFAULT_CONTACT_TITLE   = "تواصل معنا";
+const DEFAULT_PHONE           = "+962795580312";
+const DEFAULT_EMAIL           = "info@digital-plus3.com";
+const DEFAULT_CONTACT_FORM    = "/support";
+
+const DEFAULT_PAYMENT_TITLE = "طرق الدفع";
+
+const DEFAULT_COPYRIGHT_TEMPLATE =
+  "© Digital Plus | جميع الحقوق محفوظة | Copyright {year}";
+
+type FooterLinkRow = { label: string; href: string };
 type PaymentChip = { name: string; color: string; imageUrl?: string };
 
-/* Default payment methods — rendered as small white pill chips with the brand
-   name in its trademark color. Used only when the editor hasn't filled in the
-   paymentMethods array on the Footer global; once they do, the CMS list
-   replaces this verbatim. */
 const DEFAULT_PAYMENT_METHODS: PaymentChip[] = [
   { name: "DISCOVER",  color: "#FF6000" },
   { name: "Diners",    color: "#0079BE" },
@@ -45,37 +59,71 @@ const DEFAULT_PAYMENT_METHODS: PaymentChip[] = [
   { name: "Apple Pay", color: "#000000" },
 ];
 
+/** Substitute `{year}` in the copyright template with the current year. */
+function expandCopyright(template: string, year: number): string {
+  return template.replace(/\{year\}/gi, String(year));
+}
+
+/** Sanitize a CMS-supplied link array into a render-safe one, dropping any
+ *  rows that are missing either field. */
+function cleanLinks(arr: unknown): FooterLinkRow[] | null {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const out = arr
+    .filter((l: any) => l && typeof l.label === "string" && typeof l.href === "string" && l.label.trim() && l.href.trim())
+    .map((l: any) => ({ label: String(l.label), href: String(l.href) }));
+  return out.length > 0 ? out : null;
+}
+
 export async function Footer() {
   let logoUrl: string | null = null;
   let storeName = "ديجيتال بلس";
-  let paymentMethods: PaymentChip[] = DEFAULT_PAYMENT_METHODS;
+  let footerCfg: any = null;
   try {
-    const [settings, footerCfg] = await Promise.all([
+    const [settings, cfg] = await Promise.all([
       getSettings(),
       getFooterConfig().catch(() => null),
     ]);
     logoUrl = resolveLogoUrl((settings as any)?.logo?.url);
     if ((settings as any)?.siteName) storeName = (settings as any).siteName;
-    // Use CMS-supplied payment methods if the editor filled any; otherwise
-    // fall back to the hardcoded list so existing deploys keep their chips.
-    const cmsMethods = (footerCfg as any)?.paymentMethods as
-      | Array<{ name?: string; color?: string; image?: any }>
-      | undefined;
-    if (cmsMethods && cmsMethods.length > 0) {
-      paymentMethods = cmsMethods
-        .filter((m) => m?.name)
-        .map((m) => ({
-          name: String(m.name),
-          color: String(m.color || "#1A1F71"),
-          imageUrl:
-            m.image && typeof m.image === "object" && typeof m.image.url === "string"
-              ? m.image.url
-              : undefined,
-        }));
-    }
-  } catch {}
+    footerCfg = cfg || {};
+  } catch {
+    footerCfg = {};
+  }
+
+  // ── Text overrides ────────────────────────────────────────────
+  const brandDescription      = footerCfg.brandDescription      || DEFAULT_BRAND_DESCRIPTION;
+  const importantLinksTitle   = footerCfg.importantLinksTitle   || DEFAULT_IMPORTANT_LINKS_TITLE;
+  const contactTitle          = footerCfg.contactTitle          || DEFAULT_CONTACT_TITLE;
+  const phone                 = footerCfg.phone                 || DEFAULT_PHONE;
+  const email                 = footerCfg.email                 || DEFAULT_EMAIL;
+  const contactFormUrl        = footerCfg.contactFormUrl        || DEFAULT_CONTACT_FORM;
+  const paymentTitle          = footerCfg.paymentTitle          || DEFAULT_PAYMENT_TITLE;
+  const importantLinks        = cleanLinks(footerCfg.importantLinks) || DEFAULT_IMPORTANT_LINKS;
+  const policyLinks           = cleanLinks(footerCfg.policyLinks)    || DEFAULT_POLICY_LINKS;
+
+  // ── Payment methods (image OR text chip) ──────────────────────
+  let paymentMethods: PaymentChip[] = DEFAULT_PAYMENT_METHODS;
+  const cmsMethods = footerCfg.paymentMethods as
+    | Array<{ name?: string; color?: string; image?: any }>
+    | undefined;
+  if (cmsMethods && cmsMethods.length > 0) {
+    paymentMethods = cmsMethods
+      .filter((m) => m?.name)
+      .map((m) => ({
+        name: String(m.name),
+        color: String(m.color || "#1A1F71"),
+        imageUrl:
+          m.image && typeof m.image === "object" && typeof m.image.url === "string"
+            ? m.image.url
+            : undefined,
+      }));
+  }
 
   const year = new Date().getFullYear();
+  const copyrightText = expandCopyright(
+    footerCfg.copyrightText || DEFAULT_COPYRIGHT_TEMPLATE,
+    year
+  );
 
   return (
     <footer
@@ -104,7 +152,7 @@ export async function Footer() {
               )}
             </Link>
             <p className="text-base leading-relaxed text-white/90">
-              نحن في ديجيتال بلس نوفّر اشتراكات رقمية أصلية لأشهر المنصات العالمية مثل Adobe و Canva و Envato و YouTube Premium وغيرها. نحرص على تقديم تجربة شراء آمنة وسريعة مع دعم فني متواصل
+              {brandDescription}
               <span className="ms-1 text-pink-200">♥</span>
             </p>
 
@@ -119,7 +167,7 @@ export async function Footer() {
 
           {/* 2. Important links */}
           <div>
-            <h3 className="mb-5 text-base font-black text-white sm:text-lg">روابط مهمة</h3>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{importantLinksTitle}</h3>
             <ul className="space-y-3 text-base">
               {importantLinks.map((l) => (
                 <li key={l.href + l.label}>
@@ -147,23 +195,23 @@ export async function Footer() {
 
           {/* 4. Contact us (left-most in RTL) */}
           <div>
-            <h3 className="mb-5 text-base font-black text-white sm:text-lg">تواصل معنا</h3>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{contactTitle}</h3>
             <ul className="space-y-3 text-base">
               <li>
                 <span className="text-white/70">رقم الهاتف:</span>{" "}
-                <a href="tel:+962795580312" dir="ltr" className="text-white/90 hover:text-white">
-                  +962795580312
+                <a href={`tel:${phone}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {phone}
                 </a>
               </li>
               <li>
                 <span className="text-white/70">البريد الإلكتروني:</span>{" "}
-                <a href="mailto:info@digital-plus3.com" dir="ltr" className="text-white/90 hover:text-white">
-                  info@digital-plus3.com
+                <a href={`mailto:${email}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {email}
                 </a>
               </li>
               <li>
                 <span className="text-white/70">نموذج الاتصال من</span>{" "}
-                <Link href="/support" className="text-white/90 underline-offset-2 hover:text-white hover:underline">
+                <Link href={contactFormUrl} className="text-white/90 underline-offset-2 hover:text-white hover:underline">
                   هنا
                 </Link>
               </li>
@@ -176,7 +224,7 @@ export async function Footer() {
 
         {/* ─── Payment methods row (centered, label above chips) ─── */}
         <div className="flex flex-col items-center gap-3">
-          <span className="text-base font-bold text-white/90 sm:text-lg">طرق الدفع</span>
+          <span className="text-base font-bold text-white/90 sm:text-lg">{paymentTitle}</span>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {paymentMethods.map((p, i) => (
               <span
@@ -204,11 +252,7 @@ export async function Footer() {
 
         {/* ─── Copyright ─────────────────────────────────────── */}
         <div className="mt-6 text-center text-base text-white/80">
-          <span dir="ltr">© Digital Plus</span>
-          <span className="mx-2 text-white/50">|</span>
-          <span>جميع الحقوق محفوظة</span>
-          <span className="mx-2 text-white/50">|</span>
-          <span dir="ltr">Copyright {year}</span>
+          {copyrightText}
         </div>
       </div>
     </footer>

@@ -426,10 +426,27 @@ export interface FooterPaymentMethod {
   image?: { url?: string; alt?: string } | string;
 }
 
+export interface FooterLink {
+  label: string;
+  href: string;
+}
+
 export interface FooterConfig {
-  columns: FooterColumn[];
-  bottomText?: string;
+  // CMS-editable text + link arrays driving the current footer layout
+  brandDescription?: string;
+  importantLinksTitle?: string;
+  importantLinks?: FooterLink[];
+  policyLinks?: FooterLink[];
+  contactTitle?: string;
+  phone?: string;
+  email?: string;
+  contactFormUrl?: string;
+  paymentTitle?: string;
   paymentMethods?: FooterPaymentMethod[];
+  copyrightText?: string;
+  // Legacy fields (kept for back-compat, not rendered)
+  columns?: FooterColumn[];
+  bottomText?: string;
 }
 
 export interface PoliciesContent {

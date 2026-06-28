@@ -206,10 +206,10 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
     </span>
   );
   return (
-    <section>
+    <section className="px-2 sm:px-6 lg:px-10">
       {title && (
         <div
-          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-md sm:px-4 sm:py-3"
+          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-[0_10px_25px_rgba(112,45,255,0.35)] ring-1 ring-white/10 sm:px-4 sm:py-3"
           dir="rtl"
         >
           {chip}
@@ -288,17 +288,17 @@ function CategoryGridSection({ title, categories, columns }: any) {
   return (
     <section>
       <div className="section-title">{title}</div>
-      <div className={`grid gap-4 ${cols}`}>
+      <div className={`grid gap-5 sm:gap-6 ${cols}`}>
         {categories?.map((cat: any) => (
           <Link key={cat.id} href={`/collections/${cat.slug}`} className="cat-card group">
             {cat.icon?.url ? (
-              <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
-                <Image src={cat.icon.url} alt={cat.nameAr} fill className="object-contain p-2" />
+              <div className="relative h-28 w-28 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 sm:h-32 sm:w-32 lg:h-36 lg:w-36">
+                <Image src={cat.icon.url} alt={cat.nameAr} fill className="object-contain p-3" />
               </div>
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm text-4xl transition-transform duration-300 group-hover:scale-110">📦</div>
+              <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-white shadow-sm text-5xl transition-transform duration-300 group-hover:scale-110 sm:h-32 sm:w-32 lg:h-36 lg:w-36">📦</div>
             )}
-            <p className="text-base font-bold text-[#1e1b4b]">{cat.nameAr}</p>
+            <p className="text-base font-bold text-[#1e1b4b] sm:text-lg">{cat.nameAr}</p>
           </Link>
         ))}
       </div>
