@@ -3,21 +3,47 @@ import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import Link from "next/link";
 import { ArrowLeft, Zap, Shield, Headphones, Star } from "lucide-react";
 import { draftMode } from "next/headers";
+import { unstable_noStore as noStore } from "next/cache";
 
 export const revalidate = 60;
 
+/**
+ * Fetch the CMS homepage with a few retries. The CMS often hasn't fully
+ * warmed by the time the storefront's cold-start fires its first request
+ * right after a deploy — one transient failure used to bake the empty
+ * fallback into the ISR cache for a full minute. We retry briefly so a
+ * single hiccup doesn't promote the placeholder to "the homepage."
+ */
+async function fetchHomeWithRetry(maxAttempts = 3): Promise<any | null> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const data = await getHomePage();
+      if (data?.sections?.length) return data;
+      // Treat empty sections as a transient miss too — the global may still
+      // be hydrating from the CMS DB on cold-start.
+      console.warn(`[home] attempt ${attempt}: empty sections`);
+    } catch (err) {
+      console.warn(`[home] attempt ${attempt} failed:`, (err as Error)?.message);
+    }
+    if (attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 400 * attempt));
+    }
+  }
+  return null;
+}
+
 export default async function HomePage() {
   // Reading draftMode opts this page out of ISR when preview is active
-  const { isEnabled: isPreview } = draftMode();
+  draftMode();
 
-  let homeData;
-  try {
-    homeData = await getHomePage();
-  } catch {
-    homeData = null;
-  }
+  const homeData = await fetchHomeWithRetry();
 
   if (!homeData?.sections?.length) {
+    // CRITICAL: prevent ISR from caching the placeholder. Without noStore()
+    // here, a single failed fetch would lock the fallback in for 60 seconds
+    // — even after the CMS recovered. With it, the very next request tries
+    // the CMS again fresh.
+    noStore();
     return <FallbackHome />;
   }
 
