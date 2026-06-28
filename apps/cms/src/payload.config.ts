@@ -305,6 +305,44 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "footer_payment_methods_parent_idx",
     "CREATE INDEX IF NOT EXISTS footer_config_payment_methods_parent_idx ON footer_config_payment_methods (_parent_id)"
   );
+  // Footer global needs a `_rels` join table because paymentMethods.image is
+  // an upload (relationship). Drizzle's adapter LEFT JOINs this table on
+  // every find of the global -- without it, every read returns
+  //   ERROR: relation "footer_config_rels" does not exist
+  // which cascades and breaks ANY page that reads the footer (incl. the
+  // home page edit screen since it composites the footer global).
+  await run("footer_config_rels_table", `
+    CREATE TABLE IF NOT EXISTS footer_config_rels (
+      id SERIAL PRIMARY KEY,
+      "order" INTEGER,
+      parent_id INTEGER NOT NULL REFERENCES footer_config(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      media_id INTEGER REFERENCES media(id) ON DELETE CASCADE
+    )
+  `);
+  await run(
+    "footer_config_rels_parent_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_rels_parent_idx ON footer_config_rels(parent_id)"
+  );
+  await run(
+    "footer_config_rels_path_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_rels_path_idx ON footer_config_rels(path)"
+  );
+  await run(
+    "footer_config_rels_media_id_idx",
+    "CREATE INDEX IF NOT EXISTS footer_config_rels_media_id_idx ON footer_config_rels(media_id)"
+  );
+  // Category Banners block — cardWidth enum needs xs + xl added; the enum
+  // was created earlier with only sm/md/lg, but the CMS field offers all 5.
+  // ALTER TYPE ADD VALUE IF NOT EXISTS is idempotent and safe.
+  await run(
+    "cb_card_width_xs",
+    `ALTER TYPE enum_home_page_blocks_category_banners_card_width ADD VALUE IF NOT EXISTS 'xs'`
+  );
+  await run(
+    "cb_card_width_xl",
+    `ALTER TYPE enum_home_page_blocks_category_banners_card_width ADD VALUE IF NOT EXISTS 'xl'`
+  );
   // Posts (blog)
   await run("posts_table", `
     CREATE TABLE IF NOT EXISTS posts (
