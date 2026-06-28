@@ -294,17 +294,17 @@ function CategoryGridSection({ title, categories, columns }: any) {
   return (
     <section>
       <div className="section-title">{title}</div>
-      <div className={`grid gap-5 sm:gap-6 ${cols}`}>
+      <div className={`grid gap-6 sm:gap-8 ${cols}`}>
         {categories?.map((cat: any) => (
           <Link key={cat.id} href={`/collections/${cat.slug}`} className="cat-card group">
             {cat.icon?.url ? (
-              <div className="relative h-28 w-28 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 sm:h-32 sm:w-32 lg:h-36 lg:w-36">
+              <div className="relative h-36 w-36 overflow-hidden rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 sm:h-44 sm:w-44 lg:h-52 lg:w-52">
                 <Image src={cat.icon.url} alt={cat.nameAr} fill className="object-contain p-3" />
               </div>
             ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-white shadow-sm text-5xl transition-transform duration-300 group-hover:scale-110 sm:h-32 sm:w-32 lg:h-36 lg:w-36">📦</div>
+              <div className="flex h-36 w-36 items-center justify-center rounded-2xl bg-white shadow-sm text-6xl transition-transform duration-300 group-hover:scale-110 sm:h-44 sm:w-44 lg:h-52 lg:w-52">📦</div>
             )}
-            <p className="text-base font-bold text-[#1e1b4b] sm:text-lg">{cat.nameAr}</p>
+            <p className="text-base font-bold text-[#1e1b4b] sm:text-lg lg:text-xl">{cat.nameAr}</p>
           </Link>
         ))}
       </div>
@@ -425,13 +425,12 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
    6. CATEGORY ROW — seamless marquee
 ═══════════════════════════════════════ */
 function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }: any) {
-  // Bumped ~40% so the home-page subcategory marquee reads at a comparable
-  // size to the new category cards above it. Each tier still maps to the
-  // same CMS option name (sm/md/lg) so editors don't need to re-pick.
-  const szMap: Record<string, number> = { sm: 112, md: 160, lg: 200 };
-  const mobileMap: Record<string, number> = { sm: 80, md: 120, lg: 160 };
-  const szNum = szMap[iconSize ?? "md"] ?? 160;
-  const mNum = mobileMap[iconSize ?? "md"] ?? 120;
+  // Sized to match the larger category cards above. Each tier still maps
+  // to the same CMS option name (sm/md/lg) so editors don't need to re-pick.
+  const szMap: Record<string, number> = { sm: 140, md: 200, lg: 260 };
+  const mobileMap: Record<string, number> = { sm: 100, md: 150, lg: 200 };
+  const szNum = szMap[iconSize ?? "md"] ?? 200;
+  const mNum = mobileMap[iconSize ?? "md"] ?? 150;
 
   if (!items?.length) return null;
 

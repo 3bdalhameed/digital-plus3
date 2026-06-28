@@ -46,9 +46,9 @@ export function WhatsAppButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تواصل عبر واتساب"
-      className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_rgba(37,211,102,0.45)] ring-4 ring-white/70 transition-transform hover:scale-110 active:scale-95 sm:bottom-6 sm:right-6"
+      className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#7C3AED] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] ring-[6px] ring-[#EDE9FE] transition-transform hover:scale-110 active:scale-95 sm:bottom-6 sm:right-6"
     >
-      <WhatsAppGlyph className="h-8 w-8" />
+      <WhatsAppGlyph className="h-7 w-7" />
     </a>
   );
 }
