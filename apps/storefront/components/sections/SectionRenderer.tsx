@@ -324,6 +324,7 @@ function SeamlessMarquee({
   speed = 25,
   pauseOnHover = true,
   gap = 16,
+  reverse = false,
 }: {
   children: React.ReactNode[];
   itemWidth: number;
@@ -332,6 +333,8 @@ function SeamlessMarquee({
   speed?: number;
   pauseOnHover?: boolean;
   gap?: number;
+  /** Flip the marquee's scroll direction without touching the keyframes. */
+  reverse?: boolean;
 }) {
   const duration = typeof speed === "number" && speed > 0 ? speed : 25;
   const n = children.length;
@@ -369,6 +372,7 @@ function SeamlessMarquee({
           width: "max-content",
           willChange: "transform",
           animation: `seamless-marquee ${duration}s linear infinite`,
+          animationDirection: reverse ? "reverse" : "normal",
         }}
         onMouseEnter={e => { if (pauseOnHover) (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
         onMouseLeave={e => { if (pauseOnHover) (e.currentTarget as HTMLElement).style.animationPlayState = "running"; }}
@@ -410,7 +414,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   return (
     <section className="py-2 sm:py-3">
       {title && <div className="section-title">{title}</div>}
-      <SeamlessMarquee itemWidth={wNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
+      <SeamlessMarquee itemWidth={wNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false} reverse>
         {cards}
       </SeamlessMarquee>
     </section>
@@ -451,7 +455,7 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
   return (
     <section className="py-2 sm:py-3">
       {title && <div className="section-title">{title}</div>}
-      <SeamlessMarquee itemWidth={szNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false}>
+      <SeamlessMarquee itemWidth={szNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false} reverse>
         {cards}
       </SeamlessMarquee>
     </section>
