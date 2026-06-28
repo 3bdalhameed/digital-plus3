@@ -402,7 +402,10 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
       <Link key={i} href={href} className="group block rounded-2xl overflow-hidden" style={{ width: "100%" }}>
         <div className="relative w-full" style={{ aspectRatio: ratio }}>
           {b.image?.url ? (
-            <Image src={b.image.url} alt={cat?.nameAr ?? ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+            // object-contain (not cover) so the whole illustration is visible
+            // — these banners ship as full-frame artwork that already includes
+            // the card background + text, so cropping chops off content.
+            <Image src={b.image.url} alt={cat?.nameAr ?? ""} fill className="object-contain transition-transform duration-500 group-hover:scale-105" />
           ) : (
             <div className="flex h-full items-center justify-center bg-[#EDE9FE] text-6xl">📦</div>
           )}
