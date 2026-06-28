@@ -206,7 +206,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
     </span>
   );
   return (
-    <section className="px-2 sm:px-6 lg:px-10">
+    <section>
       {title && (
         <div
           className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-[0_10px_25px_rgba(112,45,255,0.35)] ring-1 ring-white/10 sm:px-4 sm:py-3"
@@ -220,25 +220,30 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
         </div>
       )}
       {subtitle && <p className="mb-4 text-center text-sm text-[#6b7280]">{subtitle}</p>}
-      <ProductCarousel>
-        {products?.map((product: any) => (
-          <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
-            <ProductCard product={product} />
+      {/* Inset the carousel (cards + side arrows) from the section edges so
+          they sit narrower than the title bar above. The title bar still
+          spans the page width to match other sections. */}
+      <div className="px-2 sm:px-6 lg:px-10">
+        <ProductCarousel>
+          {products?.map((product: any) => (
+            <div key={product.id} className="w-[170px] shrink-0 sm:w-[280px] lg:w-[300px]">
+              <ProductCard product={product} />
+            </div>
+          ))}
+          {/* Trailing "show more" slot — last in DOM order, so it appears on the
+              visual LEFT in this dir="rtl" carousel. Renders as a centered pill
+              button, not a full card; links to the category that the products
+              in this block share (or /products if mixed). */}
+          <div className="flex w-[160px] shrink-0 items-center justify-center sm:w-[210px] lg:w-[230px]">
+            <Link
+              href={showMoreHref(products, showMoreSubcategory)}
+              className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
+            >
+              عرض المزيد
+            </Link>
           </div>
-        ))}
-        {/* Trailing "show more" slot — last in DOM order, so it appears on the
-            visual LEFT in this dir="rtl" carousel. Renders as a centered pill
-            button, not a full card; links to the category that the products
-            in this block share (or /products if mixed). */}
-        <div className="flex w-[160px] shrink-0 items-center justify-center sm:w-[210px] lg:w-[230px]">
-          <Link
-            href={showMoreHref(products, showMoreSubcategory)}
-            className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
-          >
-            عرض المزيد
-          </Link>
-        </div>
-      </ProductCarousel>
+        </ProductCarousel>
+      </div>
     </section>
   );
 }
