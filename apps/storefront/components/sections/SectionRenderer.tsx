@@ -390,14 +390,13 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   // Only three tiers in the CMS now: small / big / very big.
   // xs + xl entries stay for back-compat with any block saved before the
   // field was simplified -- they map to the nearest new tier.
-  const wMap: Record<string, number> = { xs: 200, sm: 200, md: 280, lg: 360, xl: 360 };
-  const mobileMap: Record<string, number> = { xs: 140, sm: 140, md: 180, lg: 220, xl: 220 };
-  const wNum = wMap[cardWidth ?? "md"] ?? 280;
-  const mNum = mobileMap[cardWidth ?? "md"] ?? 180;
-  // Fixed square aspect ratio -- the CMS aspect-ratio picker was removed.
-  // Square + object-contain fits the full-frame illustration banners cleanly
-  // regardless of the source image proportions.
-  const ratio = cardAspectRatio ?? "1/1";
+  const wMap: Record<string, number> = { xs: 260, sm: 260, md: 360, lg: 460, xl: 460 };
+  const mobileMap: Record<string, number> = { xs: 200, sm: 200, md: 260, lg: 320, xl: 320 };
+  const wNum = wMap[cardWidth ?? "md"] ?? 360;
+  const mNum = mobileMap[cardWidth ?? "md"] ?? 260;
+  // 3:4 portrait ratio matches the full-frame illustration banners which
+  // are noticeably taller than wide (see the reference designs).
+  const ratio = cardAspectRatio ?? "3/4";
 
   if (!banners?.length) return null;
 
@@ -423,7 +422,16 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   return (
     <section className="py-2 sm:py-3">
       {title && <div className="section-title">{title}</div>}
-      <SeamlessMarquee itemWidth={wNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false} reverse>
+      {/* Tight 8px gap -- reference designs sit the cards almost against
+          each other so the marquee reads as a single band of artwork. */}
+      <SeamlessMarquee
+        itemWidth={wNum}
+        mobileItemWidth={mNum}
+        gap={8}
+        speed={Number(speed) || 25}
+        pauseOnHover={pauseOnHover !== false}
+        reverse
+      >
         {cards}
       </SeamlessMarquee>
     </section>
