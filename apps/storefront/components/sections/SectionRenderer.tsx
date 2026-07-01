@@ -387,11 +387,17 @@ function SeamlessMarquee({
    5. CATEGORY BANNERS — seamless marquee
 ═══════════════════════════════════════ */
 function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, speed = 25, pauseOnHover }: any) {
-  const wMap: Record<string, number> = { xs: 120, sm: 160, md: 220, lg: 280, xl: 360 };
-  const mobileMap: Record<string, number> = { xs: 90, sm: 110, md: 140, lg: 170, xl: 200 };
-  const wNum = wMap[cardWidth ?? "md"] ?? 220;
-  const mNum = mobileMap[cardWidth ?? "md"] ?? 140;
-  const ratio = cardAspectRatio ?? "3/4";
+  // Only three tiers in the CMS now: small / big / very big.
+  // xs + xl entries stay for back-compat with any block saved before the
+  // field was simplified -- they map to the nearest new tier.
+  const wMap: Record<string, number> = { xs: 200, sm: 200, md: 280, lg: 360, xl: 360 };
+  const mobileMap: Record<string, number> = { xs: 140, sm: 140, md: 180, lg: 220, xl: 220 };
+  const wNum = wMap[cardWidth ?? "md"] ?? 280;
+  const mNum = mobileMap[cardWidth ?? "md"] ?? 180;
+  // Fixed square aspect ratio -- the CMS aspect-ratio picker was removed.
+  // Square + object-contain fits the full-frame illustration banners cleanly
+  // regardless of the source image proportions.
+  const ratio = cardAspectRatio ?? "1/1";
 
   if (!banners?.length) return null;
 

@@ -188,24 +188,15 @@ export const HomePage: GlobalConfig = {
           labels: { singular: "بنرات الفئات", plural: "بنرات الفئات" },
           fields: [
             { name: "title", label: "العنوان", type: "text" },
+            // Only three sizes. Enum values (sm/md/lg) are kept the same so
+            // no DB migration is needed -- only the labels + storefront
+            // width mapping change.
             {
-              name: "cardWidth", label: "عرض البطاقة", type: "select", defaultValue: "md",
+              name: "cardWidth", label: "الحجم", type: "select", defaultValue: "md",
               options: [
-                { label: "ضيق  — 160px",        value: "sm" },
-                { label: "متوسط — 220px",       value: "md" },
-                { label: "واسع  — 280px",       value: "lg" },
-                { label: "صغير جداً — 120px",  value: "xs" },
-                { label: "واسع جداً — 360px",   value: "xl" },
-              ],
-            },
-            {
-              name: "cardAspectRatio", label: "نسبة الارتفاع", type: "select", defaultValue: "1",
-              options: [
-                { label: "بانوراما — 16:9", value: "16/9" },
-                { label: "أفقي — 4:3",     value: "4/3" },
-                { label: "مربع — 1:1",     value: "1/1" },
-                { label: "عمودي — 3:4",    value: "1" },
-                { label: "طويل — 2:3",     value: "2/3" },
+                { label: "صغير",      value: "sm" },
+                { label: "كبير",      value: "md" },
+                { label: "كبير جداً", value: "lg" },
               ],
             },
             {
@@ -232,7 +223,6 @@ export const HomePage: GlobalConfig = {
                 },
               ],
             },
-            ...layoutFields,
           ],
         },
 
