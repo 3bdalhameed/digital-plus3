@@ -244,6 +244,19 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "mib_slides_parent_idx",
     "CREATE INDEX IF NOT EXISTS home_page_blocks_multi_image_banner_slides_parent_idx ON home_page_blocks_multi_image_banner_slides (_parent_id)"
   );
+  // Category Banners block — `enabled` field. Previously provided by the
+  // shared layoutFields spread; when that spread was removed to declutter
+  // the editor, the column stopped being written and existing rows read as
+  // NULL, which the storefront treats as disabled. Add the column if
+  // missing and backfill any NULLs to true so the section reappears.
+  await run(
+    "cb_enabled_col",
+    "ALTER TABLE home_page_blocks_category_banners ADD COLUMN IF NOT EXISTS enabled BOOLEAN"
+  );
+  await run(
+    "cb_enabled_backfill",
+    "UPDATE home_page_blocks_category_banners SET enabled = TRUE WHERE enabled IS NULL"
+  );
   // Footer global — new text fields (everything CMS-editable in the footer)
   for (const col of [
     "brand_description TEXT",

@@ -223,6 +223,11 @@ export const HomePage: GlobalConfig = {
                 },
               ],
             },
+            // `enabled` is normally provided by layoutFields, but we removed
+            // that spread from this block to declutter the editor. Without
+            // this field, the storefront's SectionRenderer treats the block
+            // as disabled (returns null) and nothing renders.
+            { name: "enabled", label: "مفعل", type: "checkbox", defaultValue: true },
           ],
         },
 
