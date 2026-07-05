@@ -47,25 +47,9 @@ export function WhatsAppButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تواصل عبر واتساب"
-      className="group fixed bottom-4 right-4 z-50 transition-transform hover:scale-110 active:scale-95 sm:bottom-6 sm:right-6"
+      className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] transition-transform hover:scale-110 active:scale-95 sm:bottom-6 sm:right-6"
     >
-      {/* Wrapper is `relative` so the chat-bubble tail can absolutely
-          position itself just outside the circle, matching the tear-drop
-          notch in the reference design. */}
-      <div className="relative">
-        {/* Chat-bubble tail — a small rotated square tucked under the
-            bottom-left of the circle, painted with the same gradient so
-            it reads as one continuous bubble shape. */}
-        <span
-          aria-hidden
-          className="absolute -bottom-1 left-1 h-4 w-4 rotate-45 rounded-[2px] bg-gradient-to-br from-[#A78BFA] to-[#6D28D9]"
-        />
-        {/* Circle — subtle top-to-bottom brand gradient. Ring removed per
-            the reference: the drop-shadow alone is enough separation. */}
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)]">
-          <WhatsAppGlyph className="h-7 w-7" />
-        </div>
-      </div>
+      <WhatsAppGlyph className="h-7 w-7" />
     </a>
   );
 }

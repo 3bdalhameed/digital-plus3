@@ -35,14 +35,14 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
           so it doesn't crowd the first/last card. */}
       <button
         onClick={() => scroll("right")}
-        className="absolute -right-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-right-10"
+        className="absolute -right-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#0000] transition-colors hover:text-[#1e1b4b] sm:flex lg:-right-10"
         aria-label="السابق"
       >
         <ArrowRight className="h-6 w-6" strokeWidth={1.5} />
       </button>
       <button
         onClick={() => scroll("left")}
-        className="absolute -left-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-left-10"
+        className="absolute -left-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#0000] transition-colors hover:text-[#1e1b4b] sm:flex lg:-left-10"
         aria-label="التالي"
       >
         <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
@@ -210,7 +210,7 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
     <section>
       {title && (
         <div
-          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-[0_10px_25px_rgba(112,45,255,0.35)] ring-1 ring-white/10 sm:px-4 sm:py-3"
+          className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-[0_10px_25px_rgba(112,45,255,0.35)] ring-1 ring-white/10 sm:px-4 sm:py-2"
           dir="rtl"
         >
           {chip}
@@ -420,7 +420,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
   });
 
   return (
-    <section className="py-2 sm:py-3">
+    <section className="py-2 sm:py-2">
       {title && <div className="section-title">{title}</div>}
       {/* Tight 8px gap -- reference designs sit the cards almost against
           each other so the marquee reads as a single band of artwork. */}
