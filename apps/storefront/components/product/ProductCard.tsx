@@ -53,15 +53,19 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex h-full items-center justify-center text-6xl opacity-30">📦</div>
           )}
 
-          {/* Top-right corner — Arabic subcategory / account-type badge */}
-          {subcategoryLabel && (
+          {/* Corner platform tag — only ONE of the two renders, chosen by
+              the current UI language:
+                - Arabic UI → Arabic tag on the right (RTL start)
+                - English UI → English tag on the left (LTR start)
+              This keeps the card free of duplicate content (previously
+              both showed at once, e.g. "FREEPIK" + "فريبيك"). */}
+          {lang !== "en" && subcategoryNameAr && (
             <div className="absolute top-1.5 right-1.5 rounded-md bg-white/95 px-1.5 py-0.5 text-[9px] font-bold text-[#1e1b4b] shadow-sm backdrop-blur sm:top-2 sm:right-2 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[11px]" dir="rtl">
-              {subcategoryLabel}
+              {subcategoryNameAr}
             </div>
           )}
 
-          {/* Top-left corner — Latin platform tag (subcategory English name or product type) */}
-          {(subcategoryNameEn || typeLabel(product.type)) && (
+          {lang === "en" && (subcategoryNameEn || typeLabel(product.type)) && (
             <div className="absolute top-1.5 left-1.5 rounded-md bg-[#1e1b4b]/90 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm backdrop-blur sm:top-2 sm:left-2 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[10px]">
               {subcategoryNameEn || typeLabel(product.type)}
             </div>
