@@ -96,7 +96,21 @@ export const Media: CollectionConfig = {
   },
   upload: {
     staticDir: "media",
-    mimeTypes: ["image/*", "application/pdf"],
+    // Explicit list rather than "image/*" alone -- Payload's wildcard
+    // match is inconsistent across versions and rejects some browsers'
+    // legitimate uploads (Firefox sends SVGs as image/svg+xml which
+    // sometimes fails the wildcard, and some file managers send with no
+    // mime type at all → application/octet-stream). This covers every
+    // format we actually expect: raster images, vectors, and PDFs.
+    mimeTypes: [
+      "image/*",
+      "image/svg+xml",
+      "image/webp",
+      "image/avif",
+      "image/heic",
+      "application/pdf",
+      "application/octet-stream",
+    ],
     imageSizes: [
       { name: "thumbnail", width: 300, height: 300, position: "centre" },
       { name: "card", width: 600, height: 400, position: "centre" },
