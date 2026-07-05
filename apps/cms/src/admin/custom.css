@@ -813,6 +813,40 @@ html[dir="rtl"] .ot-tooltip {
   resize: vertical !important;
 }
 
+/* ─── Rich-text fields (Slate/Lexical) get the same bordered box as
+       plain inputs so they don't read as free-floating placeholder text.
+       Applies to Policies, product description, blog body, etc. */
+.field-type-richText,
+.field-type.rich-text,
+.rich-text {
+  border: 1.5px solid var(--dp-border-default) !important;
+  border-radius: var(--dp-radius-md) !important;
+  background: var(--dp-surface-card) !important;
+  padding: 12px 14px !important;
+  min-height: 140px !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+/* Focus / active state — brand-purple ring, matching text inputs. */
+.field-type-richText:focus-within,
+.field-type.rich-text:focus-within,
+.rich-text:focus-within {
+  border-color: var(--dp-brand-600) !important;
+  box-shadow: var(--dp-shadow-focus) !important;
+}
+
+/* The Slate content editor itself: strip its own borders so we don't
+   end up with a double box, and give it space to breathe. */
+.rich-text__editor,
+[data-slate-editor="true"],
+.field-type-richText [contenteditable="true"] {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 100px !important;
+  outline: none !important;
+}
+
 /* Date picker wrapper */
 .field-type .date-time-picker input,
 .field-type .react-datepicker-wrapper input {
