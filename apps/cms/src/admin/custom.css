@@ -852,8 +852,48 @@ html[dir="rtl"] .ot-tooltip {
   color: var(--dp-text-error) !important;
 }
 
-/* Checkbox / radio */
-input[type="checkbox"],
+/* Checkbox / radio.
+   Native accent-color leaves the unchecked box invisible against the
+   admin's pale purple background -- users literally cannot tell rows
+   have been selected. Custom appearance with a hard border and clear
+   filled state fixes the "no color when highlighted" complaint. */
+input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: 1.5px solid var(--dp-border-strong) !important;
+  border-radius: 5px !important;
+  background: #fff !important;
+  cursor: pointer !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  vertical-align: middle !important;
+  transition: border-color 0.15s, background 0.15s !important;
+  margin: 0 !important;
+}
+input[type="checkbox"]:hover {
+  border-color: var(--dp-brand-600) !important;
+}
+input[type="checkbox"]:checked {
+  background: var(--dp-brand-600) !important;
+  border-color: var(--dp-brand-600) !important;
+}
+input[type="checkbox"]:checked::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 5px !important;
+  top: 1px !important;
+  width: 5px !important;
+  height: 10px !important;
+  border: solid #fff !important;
+  border-width: 0 2px 2px 0 !important;
+  transform: rotate(45deg) !important;
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--dp-brand-600) !important;
+  outline-offset: 2px !important;
+}
 input[type="radio"] {
   accent-color: var(--dp-brand-600) !important;
   width: 16px !important;
@@ -1764,6 +1804,40 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
   font-variant-numeric: tabular-nums !important;
   color: var(--dp-brand-700) !important;
   font-weight: 600 !important;
+}
+
+/* ─── Alignment fixes so header text and cell content share the
+       same visual column edge in every list view. Payload wraps some
+       cell values (id pill, filename anchor, dates) in extra spans
+       that inherit inline layout and end up visually offset from
+       their <th> label. Forcing display-block on the top-level cell
+       content pins it to the cell's start edge. */
+.table td.cell-id > *,
+.table td.cell-filename > *,
+.table td.cell-updatedAt > *,
+.table td.cell-createdAt > *,
+.table td.cell-nameAr > *,
+.table td.cell-title > *,
+.table td.cell-titleAr > * {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+/* ─── Cap the media thumbnail height so image rows stay the same
+       size as text rows. Without this, /admin/collections/media had
+       80-100px tall rows because of the full-size thumbnail, while
+       every other row was ~40px -- headers and text values then
+       looked "off" vertically because they sat in a much larger box.
+       Constraining the thumbnail keeps every row's baseline aligned. */
+.table td .thumbnail,
+.table td [class*="thumbnail"] img,
+.table td [class*="preview"] img,
+.table td img {
+  max-height: 40px !important;
+  max-width: 60px !important;
+  object-fit: cover !important;
+  border-radius: 6px !important;
+  vertical-align: middle !important;
 }
 
 
