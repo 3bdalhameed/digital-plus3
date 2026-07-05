@@ -231,9 +231,13 @@ export async function Footer() {
         {/* ─── Divider ───────────────────────────────────────── */}
         <div className="my-10 h-px w-full bg-white/20" />
 
-        {/* ─── Payment methods row (label + inline pills, centered) ─── */}
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3" dir="rtl">
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
+        {/* ─── Payment methods row: label pinned to the RIGHT (RTL start),
+             chips fill the row to the left. `justify-start` + dir="rtl"
+             puts the label first visually on the right; the inner chip
+             flex takes the remaining space. */}
+        <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-3" dir="rtl">
+          <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
+          <div className="flex flex-wrap items-center gap-1.5">
             {paymentMethods.map((p, i) => (
               <span
                 key={`${p.name}-${i}`}
@@ -257,7 +261,6 @@ export async function Footer() {
               </span>
             ))}
           </div>
-          <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
         </div>
 
         {/* ─── Copyright ─────────────────────────────────────── */}
