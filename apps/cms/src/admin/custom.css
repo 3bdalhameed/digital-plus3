@@ -167,6 +167,12 @@ body,
 ::-webkit-scrollbar-thumb   { background: var(--dp-border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--dp-brand-400); }
 
+/* Highlighted text — Payload's default admin styles blank out ::selection,
+   so dragging over text shows no color. Force a legible brand-purple
+   highlight with white text everywhere in the admin. */
+::selection      { background: var(--dp-brand-600); color: #fff; }
+::-moz-selection { background: var(--dp-brand-600); color: #fff; }
+
 
 /* ═══════════════════════════════════════════════════════════
    4. PAGE WRAPS & TITLES — keep titles from clipping
