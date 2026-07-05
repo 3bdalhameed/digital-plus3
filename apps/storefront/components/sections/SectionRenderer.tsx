@@ -190,19 +190,22 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
   // Editors can upload a custom title icon (PNG with transparent bg works best)
   // per block. Falls back to the Sparkles vector when nothing is uploaded.
   const iconUrl = titleIcon?.url as string | undefined;
+  // Chip is intentionally sized to match the target bar height. Bumping
+  // py on the bar itself does nothing while the chip stays taller than
+  // the padding + text combined -- shrink both together to move the bar.
   const chip = (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur sm:h-9 sm:w-9" aria-hidden>
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/15 backdrop-blur sm:h-7 sm:w-7" aria-hidden>
       {iconUrl ? (
         <Image
           src={iconUrl}
           alt=""
-          width={28}
-          height={28}
-          className="h-5 w-5 object-contain sm:h-6 sm:w-6"
+          width={20}
+          height={20}
+          className="h-4 w-4 object-contain sm:h-5 sm:w-5"
           unoptimized
         />
       ) : (
-        <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+        <Sparkles className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
       )}
     </span>
   );
