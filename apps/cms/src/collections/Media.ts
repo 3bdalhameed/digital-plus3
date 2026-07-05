@@ -54,6 +54,64 @@ export const Media: CollectionConfig = {
       ["super_admin", "admin"].includes(user?.role),
   },
   hooks: {
+    /**
+     * Inject SVG dimensions before Payload's dimension probe.
+     *
+     * Payload v2.32's `generateFileData.js:126` reads `dimensions.width`.
+     * For SVG files, its internal probe (sharp / image-size) returns null
+     * whenever the SVG is missing width/height attrs, has a BOM, uses an
+     * unusual xmlns, or is otherwise "unfriendly" -- and Payload then
+     * throws `Cannot read properties of null (reading 'width')`, which
+     * bubbles up as a 400 "حدث خطأ اثناء رفع الملف" with no useful
+     * message client-side.
+     *
+     * Workaround: parse the SVG XML ourselves and stamp width/height onto
+     * `req.file` before Payload runs its probe. If everything else fails,
+     * we default to a 200x200 box -- an SVG scales anyway, so exact
+     * dimensions don't matter for rendering, only for the metadata row.
+     */
+    beforeOperation: [
+      ({ operation, req }) => {
+        if (operation !== "create") return;
+        const file: any = (req as any).file || (req as any).files?.file;
+        if (!file) return;
+        const mime = (file.mimetype || "").toLowerCase();
+        const name = (file.name || "").toLowerCase();
+        const isSvg = mime === "image/svg+xml" || name.endsWith(".svg");
+        if (!isSvg) return;
+        try {
+          const buf: Buffer | undefined = file.data;
+          if (!buf) return;
+          // Strip a BOM if the SVG starts with one -- some editors save
+          // with UTF-8 BOM which Payload's probe chokes on.
+          const raw = buf.toString("utf8").replace(/^﻿/, "");
+          const attrOf = (re: RegExp): number | null => {
+            const m = raw.match(re);
+            if (!m) return null;
+            const n = parseFloat(m[1]);
+            return Number.isFinite(n) && n > 0 ? n : null;
+          };
+          let w = attrOf(/<svg[^>]*\swidth\s*=\s*["']?(\d+(?:\.\d+)?)/i);
+          let h = attrOf(/<svg[^>]*\sheight\s*=\s*["']?(\d+(?:\.\d+)?)/i);
+          if (!w || !h) {
+            const vb = raw.match(/<svg[^>]*\sviewBox\s*=\s*["']([^"']+)["']/i);
+            if (vb) {
+              const parts = vb[1].trim().split(/[\s,]+/).map(parseFloat);
+              if (parts.length === 4 && parts.every(Number.isFinite)) {
+                w = w || parts[2];
+                h = h || parts[3];
+              }
+            }
+          }
+          file.width  = Math.round(w || 200);
+          file.height = Math.round(h || 200);
+        } catch (e: any) {
+          console.warn("[Media] SVG dimension parse failed, using defaults:", e?.message);
+          file.width  = 200;
+          file.height = 200;
+        }
+      },
+    ],
     afterRead: [
       ({ doc }) => {
         if (doc?.filename && process.env.S3_PUBLIC_URL) {
