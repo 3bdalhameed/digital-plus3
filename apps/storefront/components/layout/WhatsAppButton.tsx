@@ -18,16 +18,17 @@ function buildWaUrl(opts: { url?: string | null; phone?: string | null }): strin
   return `https://wa.me/${raw}`;
 }
 
-/** Official WhatsApp glyph — single-color, sized via `currentColor`. */
+/** Font Awesome Brands "whatsapp" glyph -- inline so the CSP doesn't
+ *  block a CDN and we don't have to bundle the whole FA package. */
 function WhatsAppGlyph({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      viewBox="0 0 32 32"
+      viewBox="0 0 448 512"
       fill="currentColor"
       aria-hidden="true"
     >
-      <path d="M16.003 3C9.376 3 4 8.376 4 15.003c0 2.34.671 4.526 1.83 6.378L4 29l7.793-1.806A11.94 11.94 0 0 0 16.003 27C22.63 27 28 21.624 28 15.003 28 8.376 22.63 3 16.003 3Zm0 21.84c-1.984 0-3.83-.554-5.4-1.51l-.388-.232-4.625 1.073 1.092-4.504-.252-.412a9.832 9.832 0 0 1-1.555-5.252c0-5.443 4.43-9.872 9.876-9.872 2.638 0 5.115 1.027 6.98 2.892a9.806 9.806 0 0 1 2.892 6.98c0 5.443-4.43 9.836-9.872 9.836Zm5.418-7.357c-.296-.148-1.755-.866-2.027-.964-.272-.099-.47-.148-.668.148-.198.296-.766.964-.94 1.163-.173.198-.347.222-.643.074-.296-.148-1.252-.461-2.385-1.47-.88-.785-1.474-1.755-1.647-2.052-.173-.296-.018-.456.13-.604.133-.133.296-.347.444-.52.148-.173.198-.296.296-.495.099-.198.05-.371-.025-.52-.074-.148-.668-1.608-.915-2.2-.241-.578-.487-.5-.668-.51l-.57-.01c-.198 0-.52.074-.792.371-.272.296-1.04 1.016-1.04 2.476s1.065 2.872 1.213 3.07c.148.198 2.094 3.198 5.075 4.487.71.306 1.263.49 1.695.628.712.226 1.36.194 1.872.118.572-.085 1.755-.717 2.003-1.41.248-.692.248-1.287.173-1.41-.074-.124-.272-.198-.568-.346Z" />
+      <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
     </svg>
   );
 }
@@ -59,9 +60,9 @@ export function WhatsAppButton({
           aria-hidden
           className="absolute -bottom-1 left-1 h-4 w-4 rotate-45 rounded-[2px] bg-gradient-to-br from-[#A78BFA] to-[#6D28D9]"
         />
-        {/* Circle — subtle top-to-bottom brand gradient + pale purple halo
-            so the button stands off any page background. */}
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] ring-[6px] ring-[#EDE9FE]">
+        {/* Circle — subtle top-to-bottom brand gradient. Ring removed per
+            the reference: the drop-shadow alone is enough separation. */}
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)]">
           <WhatsAppGlyph className="h-7 w-7" />
         </div>
       </div>
