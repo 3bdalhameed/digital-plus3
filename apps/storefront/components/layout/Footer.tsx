@@ -1,7 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Twitter, Instagram, AtSign } from "lucide-react";
+import { Facebook, Twitter, Instagram } from "lucide-react";
 import { getSettings, getFooterConfig } from "@/lib/payload";
+
+/** Inline WhatsApp glyph — brand mark, sized via currentColor. */
+function WhatsAppGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <path d="M16.003 3C9.376 3 4 8.376 4 15.003c0 2.34.671 4.526 1.83 6.378L4 29l7.793-1.806A11.94 11.94 0 0 0 16.003 27C22.63 27 28 21.624 28 15.003 28 8.376 22.63 3 16.003 3Zm0 21.84c-1.984 0-3.83-.554-5.4-1.51l-.388-.232-4.625 1.073 1.092-4.504-.252-.412a9.832 9.832 0 0 1-1.555-5.252c0-5.443 4.43-9.872 9.876-9.872 2.638 0 5.115 1.027 6.98 2.892a9.806 9.806 0 0 1 2.892 6.98c0 5.443-4.43 9.836-9.872 9.836Zm5.418-7.357c-.296-.148-1.755-.866-2.027-.964-.272-.099-.47-.148-.668.148-.198.296-.766.964-.94 1.163-.173.198-.347.222-.643.074-.296-.148-1.252-.461-2.385-1.47-.88-.785-1.474-1.755-1.647-2.052-.173-.296-.018-.456.13-.604.133-.133.296-.347.444-.52.148-.173.198-.296.296-.495.099-.198.05-.371-.025-.52-.074-.148-.668-1.608-.915-2.2-.241-.578-.487-.5-.668-.51l-.57-.01c-.198 0-.52.074-.792.371-.272.296-1.04 1.016-1.04 2.476s1.065 2.872 1.213 3.07c.148.198 2.094 3.198 5.075 4.487.71.306 1.263.49 1.695.628.712.226 1.36.194 1.872.118.572-.085 1.755-.717 2.003-1.41.248-.692.248-1.287.173-1.41-.074-.124-.272-.198-.568-.346Z" />
+    </svg>
+  );
+}
 
 function resolveLogoUrl(raw: string | undefined): string | null {
   if (!raw) return null;
@@ -48,15 +57,15 @@ type FooterLinkRow = { label: string; href: string };
 type PaymentChip = { name: string; color: string; imageUrl?: string };
 
 const DEFAULT_PAYMENT_METHODS: PaymentChip[] = [
-  { name: "DISCOVER",  color: "#FF6000" },
-  { name: "Diners",    color: "#0079BE" },
-  { name: "Maestro",   color: "#0066B2" },
-  { name: "AMEX",      color: "#2E77BB" },
-  { name: "MasterCard", color: "#EB001B" },
-  { name: "MasterCard", color: "#EB001B" },
-  { name: "VISA",      color: "#1A1F71" },
-  { name: "G Pay",     color: "#000000" },
-  { name: "Apple Pay", color: "#000000" },
+  { name: "DISCOVER",     color: "#FF6000" },
+  { name: "Diners Club",  color: "#0079BE" },
+  { name: "UnionPay",     color: "#E21836" },
+  { name: "AMEX",         color: "#2E77BB" },
+  { name: "Maestro",      color: "#EB001B" },
+  { name: "MasterCard",   color: "#EB001B" },
+  { name: "VISA",         color: "#1A1F71" },
+  { name: "G Pay",        color: "#000000" },
+  { name: "Apple Pay",    color: "#000000" },
 ];
 
 /** Substitute `{year}` in the copyright template with the current year. */
@@ -161,7 +170,7 @@ export async function Footer() {
               <SocialIcon href="https://facebook.com" label="Facebook"><Facebook className="h-4 w-4" /></SocialIcon>
               <SocialIcon href="https://x.com" label="X (Twitter)"><Twitter className="h-4 w-4" /></SocialIcon>
               <SocialIcon href="https://instagram.com" label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
-              <SocialIcon href="https://threads.net" label="Threads"><AtSign className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://wa.me/962795580312" label="WhatsApp"><WhatsAppGlyph className="h-4 w-4" /></SocialIcon>
             </div>
           </div>
 
@@ -222,24 +231,24 @@ export async function Footer() {
         {/* ─── Divider ───────────────────────────────────────── */}
         <div className="my-10 h-px w-full bg-white/20" />
 
-        {/* ─── Payment methods row (centered, label above chips) ─── */}
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-base font-bold text-white/90 sm:text-lg">{paymentTitle}</span>
-          <div className="flex flex-wrap items-center justify-center gap-2">
+        {/* ─── Payment methods row (label + inline pills, centered) ─── */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3" dir="rtl">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {paymentMethods.map((p, i) => (
               <span
                 key={`${p.name}-${i}`}
-                className="flex h-7 min-w-[44px] items-center justify-center overflow-hidden rounded-md bg-white px-2 text-[10px] font-black shadow-sm"
+                className="flex h-8 min-w-[48px] items-center justify-center overflow-hidden rounded-[6px] bg-white px-2.5 text-[11px] font-black uppercase tracking-tight shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
                 style={{ color: p.color }}
                 title={p.name}
+                dir="ltr"
               >
                 {p.imageUrl ? (
                   <Image
                     src={p.imageUrl}
                     alt={p.name}
-                    width={48}
-                    height={24}
-                    className="h-5 w-auto object-contain"
+                    width={56}
+                    height={28}
+                    className="h-6 w-auto object-contain"
                     unoptimized
                   />
                 ) : (
@@ -248,10 +257,11 @@ export async function Footer() {
               </span>
             ))}
           </div>
+          <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
         </div>
 
         {/* ─── Copyright ─────────────────────────────────────── */}
-        <div className="mt-6 text-center text-base text-white/80">
+        <div className="mt-6 text-center text-base text-white/80" dir="rtl">
           {copyrightText}
         </div>
       </div>
