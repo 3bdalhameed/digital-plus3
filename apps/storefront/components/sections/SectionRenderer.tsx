@@ -35,14 +35,14 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
           so it doesn't crowd the first/last card. */}
       <button
         onClick={() => scroll("right")}
-        className="absolute -right-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#0000] transition-colors hover:text-[#1e1b4b] sm:flex lg:-right-10"
+        className="absolute -right-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-right-10"
         aria-label="السابق"
       >
         <ArrowRight className="h-6 w-6" strokeWidth={1.5} />
       </button>
       <button
         onClick={() => scroll("left")}
-        className="absolute -left-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#0000] transition-colors hover:text-[#1e1b4b] sm:flex lg:-left-10"
+        className="absolute -left-6 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center text-[#9ca3af] transition-colors hover:text-[#1e1b4b] sm:flex lg:-left-10"
         aria-label="التالي"
       >
         <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
