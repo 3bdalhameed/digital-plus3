@@ -536,13 +536,13 @@
    theming via inline style works the same way it did in Liquid.
    ═══════════════════════════════════════════════════════════ */
 .stats4__wrapper {
-  --outer-bg: linear-gradient(90deg, #5B21B6 0%, #7C3AED 50%, #A78BFA 100%);
+  --outer-bg: linear-gradient(135deg, #702dff 0%, #a77fff 100%);
   --box-bg: rgba(255, 255, 255, 0.10);
   --label: rgba(255, 255, 255, 0.85);
   --divider: rgba(255, 255, 255, 0.30);
 
   background: var(--outer-bg);
-  border-radius: 10px;
+  border-radius: 20px;
   padding: 12px 14px;
   box-shadow: 0 10px 30px rgba(124, 58, 237, 0.28);
   overflow: hidden;
@@ -561,7 +561,7 @@
    matching the reference where the stats sit in a nested pill. */
 .stats4__inner {
   background: var(--box-bg);
-  border-radius: 10px;
+  border-radius: 20px;
   padding: 10px 8px;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);

@@ -611,8 +611,8 @@ function StatsSectionBlock({ title, stats }: any) {
       className="stats4__wrapper"
       style={{
         // @ts-expect-error CSS variables aren't in the React style type
-        // Outer: deep two-tone purple that holds the header + inner card.
-        "--outer-bg": "linear-gradient(90deg, #5B21B6 0%, #7C3AED 50%, #A78BFA 100%)",
+        // Outer: brand two-tone purple that holds the header + inner card.
+        "--outer-bg": "linear-gradient(135deg, #702dff 0%, #a77fff 100%)",
         // Inner: a lighter tinted overlay so the stats card reads as a
         // separate surface floating on top of the outer band.
         "--box-bg": "rgba(255,255,255,0.10)",
