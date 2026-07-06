@@ -239,7 +239,7 @@
 
 .elem__faq {
   background: #F3F4F6;
-  border-radius: 20px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -542,42 +542,47 @@
   --divider: rgba(255, 255, 255, 0.30);
 
   background: var(--outer-bg);
-  border-radius: 28px;
-  padding: 20px 16px;
+  border-radius: 10px;
+  padding: 12px 14px;
   box-shadow: 0 10px 30px rgba(124, 58, 237, 0.28);
   overflow: hidden;
+  /* Match the FAQ block's max-width so both sections read as the same
+     centered column. Tightened vertical padding to bring the bar down
+     to a shorter, single-band look. */
+  max-width: 72rem;
+  margin: 0 auto;
   width: 100%;
 }
 @media (min-width: 640px) {
-  .stats4__wrapper { padding: 28px 24px; }
+  .stats4__wrapper { padding: 16px 20px; }
 }
 
 /* Inner card — lighter translucent surface floating on the outer band,
    matching the reference where the stats sit in a nested pill. */
 .stats4__inner {
   background: var(--box-bg);
-  border-radius: 20px;
-  padding: 20px 12px;
+  border-radius: 10px;
+  padding: 10px 8px;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 @media (min-width: 640px) {
-  .stats4__inner { padding: 24px 20px; }
+  .stats4__inner { padding: 14px 16px; }
 }
 
 .stats4__header {
-  margin: 4px 0 18px;
+  margin: 2px 0 10px;
   text-align: center;
 }
 .stats4__header h2 {
   color: #ffffff;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.25;
   margin: 0;
 }
-@media (min-width: 640px) { .stats4__header h2 { font-size: 22px; } }
-@media (min-width: 768px) { .stats4__header h2 { font-size: 26px; } }
+@media (min-width: 640px) { .stats4__header h2 { font-size: 18px; } }
+@media (min-width: 768px) { .stats4__header h2 { font-size: 20px; } }
 
 .stats4__grid {
   display: grid;
@@ -592,7 +597,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 14px 12px;
+  padding: 6px 10px;
   color: #ffffff;
   position: relative;
 }
@@ -617,16 +622,16 @@
 
 .stat4__value {
   font-weight: 900;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
 }
-@media (min-width: 640px) { .stat4__value { font-size: 34px; } }
-@media (min-width: 768px) { .stat4__value { font-size: 42px; } }
+@media (min-width: 640px) { .stat4__value { font-size: 26px; } }
+@media (min-width: 768px) { .stat4__value { font-size: 32px; } }
 
 .stat4__label {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 11px;
   color: var(--label);
 }
-@media (min-width: 640px) { .stat4__label { font-size: 14px; } }
-@media (min-width: 768px) { .stat4__label { font-size: 16px; } }
+@media (min-width: 640px) { .stat4__label { font-size: 12px; } }
+@media (min-width: 768px) { .stat4__label { font-size: 13px; } }
