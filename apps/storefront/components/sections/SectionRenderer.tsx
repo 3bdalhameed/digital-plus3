@@ -611,20 +611,26 @@ function StatsSectionBlock({ title, stats }: any) {
       className="stats4__wrapper"
       style={{
         // @ts-expect-error CSS variables aren't in the React style type
-        "--outer-bg": "transparent",
-        "--box-bg": "linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #8B5CF6 100%)",
+        // Outer: deep two-tone purple that holds the header + inner card.
+        "--outer-bg": "linear-gradient(90deg, #5B21B6 0%, #7C3AED 50%, #A78BFA 100%)",
+        // Inner: a lighter tinted overlay so the stats card reads as a
+        // separate surface floating on top of the outer band.
+        "--box-bg": "rgba(255,255,255,0.10)",
         "--label": "rgba(255,255,255,0.85)",
-        "--divider": "rgba(255,255,255,0.25)",
+        "--divider": "rgba(255,255,255,0.30)",
       }}
       dir="rtl"
     >
-      <div className="stats4__inner">
-        {title && (
-          <div className="stats4__header">
-            <h2>{title}</h2>
-          </div>
-        )}
+      {/* Title sits at the top of the OUTER container (not the inner card),
+          matching the reference where the heading floats above the stats
+          band with only outer-container padding around it. */}
+      {title && (
+        <div className="stats4__header">
+          <h2>{title}</h2>
+        </div>
+      )}
 
+      <div className="stats4__inner">
         <div className="stats4__grid">
           {items.map((s: any, i: number) => {
             const { prefix, suffix } = parsed[i];
