@@ -194,6 +194,12 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     catch (e: any) { results[label] = e.message; }
   };
 
+  // Orders: sequence powering the human-readable "Order-XXXXX" number.
+  // START 1 so the first order becomes Order-00001. Padded to 5 digits by
+  // the collection's beforeChange hook; it'll grow past 5 digits
+  // naturally once we cross Order-99999, which is fine downstream.
+  await run("order_number_seq", "CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1");
+
   // Products
   await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
   // Featured Products block — title icon upload

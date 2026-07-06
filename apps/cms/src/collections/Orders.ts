@@ -22,9 +22,23 @@ export const Orders: CollectionConfig = {
   access: ordersAccess,
   hooks: {
     beforeChange: [
-      ({ data, operation }) => {
+      async ({ data, operation, req }) => {
+        // New format: Order-XXXXX (5-digit zero-padded, sequential via a
+        // Postgres sequence created in runMigrations). Falls back to a
+        // timestamp-based number if the sequence isn't reachable so we
+        // never block an order from saving.
         if (operation === "create" && !data.orderNumber) {
-          data.orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+          try {
+            const pool =
+              (req as any)?.payload?.db?.pool ??
+              (req as any)?.payload?.db?.drizzle?.session?.client;
+            const r = await pool.query("SELECT nextval('order_number_seq') AS n");
+            const n = String(r.rows[0].n).padStart(5, "0");
+            data.orderNumber = `Order-${n}`;
+          } catch (err) {
+            console.warn("[orders] order_number_seq unavailable, falling back:", (err as Error)?.message);
+            data.orderNumber = `Order-${String(Date.now()).slice(-8)}`;
+          }
         }
         return data;
       },
