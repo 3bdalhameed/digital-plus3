@@ -574,6 +574,11 @@
   margin: 2px 0 10px;
   text-align: center;
 }
+/* When the header sits BELOW the stats card (swap request), reverse the
+   vertical margin so the spacing is above the header, not below. */
+.stats4__header--bottom {
+  margin: 10px 0 2px;
+}
 .stats4__header h2 {
   color: #ffffff;
   font-weight: 900;

@@ -93,8 +93,10 @@ export function ProductDetailClient({ product, productName }: Props) {
 
       <div className="grid gap-8 lg:grid-cols-2">
 
-        {/* Info column */}
-        <div className="order-2 space-y-5 lg:order-1">
+        {/* Info column — LEFT side on desktop (RTL end) per the reference:
+            product illustration lives on the right, details flow on the
+            left where the eye lands next in the RTL reading order. */}
+        <div className="order-2 space-y-5 lg:order-2">
 
           {/* Title + actions */}
           <div className="flex items-start justify-between gap-3">
@@ -244,8 +246,8 @@ export function ProductDetailClient({ product, productName }: Props) {
           </div>
         </div>
 
-        {/* Image column */}
-        <div className="order-1 space-y-3 lg:order-2">
+        {/* Image column — RIGHT side on desktop (RTL start). */}
+        <div className="order-1 space-y-3 lg:order-1">
           <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f5f3ff]">
             {product.images?.[0]?.image?.url ? (
               <Image
@@ -518,13 +520,20 @@ export function ProductDetailClient({ product, productName }: Props) {
           </div>
         </div>
 
-        {/* Desktop bar */}
+        {/* Desktop bar — matches reference:
+             • Buttons live in a white-outlined pill container on the LEFT
+               (RTL end), NOT centered.
+             • Quantity sits on the RIGHT (RTL start) with the "الكمية"
+               label INLINE beside the -/1/+ pill (not stacked above). */}
         <div className="hidden border-t border-white/10 bg-gradient-to-r from-[#7C3AED] to-[#9333EA] sm:block">
           <div
             className="mx-auto flex max-w-[90rem] items-center justify-between gap-3 px-4 py-3"
             dir="rtl"
           >
-            <div className="mx-auto flex items-center gap-3 rounded-2xl border border-white/40 bg-transparent p-2">
+            {/* Buttons container (DOM first in RTL flex-between → visual
+                right); pushed to the LEFT visually via order-2 so
+                quantity claims the right. */}
+            <div className="order-2 flex items-center gap-3 rounded-2xl border border-white/40 bg-transparent p-2">
               <button
                 onClick={handleAdd}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
@@ -541,7 +550,9 @@ export function ProductDetailClient({ product, productName }: Props) {
               </button>
             </div>
 
-            <div className="flex shrink-0 flex-col items-center gap-1.5 text-white">
+            {/* Quantity — order-1 pins it to the right (RTL start).
+                Label + pill on the same row. */}
+            <div className="order-1 flex shrink-0 items-center gap-2 text-white">
               <span className="text-sm font-bold opacity-90">الكمية</span>
               <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
                 <button
