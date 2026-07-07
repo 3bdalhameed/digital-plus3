@@ -10,11 +10,20 @@ type Order = {
   orderNumber?: string;
   customer?: CustomerRef;
   status?: 'pending' | 'paid' | 'delivered' | 'disputed' | 'refunded' | 'cancelled';
+  confirmedBy?: 'customer' | 'auto' | 'admin' | null;
   totalAmount?: number;
   currency?: string;
   items?: any[];
   createdAt?: string;
   updatedAt?: string;
+};
+
+/** Small chip explaining who took the paid → delivered decision on this
+ *  order. Nothing renders while the field is null. */
+const CONFIRMED_BY: Record<string, { label: string; bg: string; color: string; emoji: string }> = {
+  customer: { label: 'أكّده العميل',      bg: '#DCFCE7', color: '#166534', emoji: '👤' },
+  auto:     { label: 'تلقائي بعد 7 أيام', bg: '#FEF3C7', color: '#854D0E', emoji: '⏱️' },
+  admin:    { label: 'أكّده المشرف',       bg: '#EDE9FE', color: '#5B21B6', emoji: '🛡️' },
 };
 
 const STATUS: Record<string, { label: string; bg: string; color: string; dot: string; emoji: string }> = {
@@ -245,6 +254,34 @@ const OrdersList: React.FC<{
                       <span className="pl-card__status-dot" style={{ background: status.dot }} />
                       {status.label}
                     </span>
+                    {/* Confirmation source — only for delivered orders
+                        where we know who flipped the switch. */}
+                    {o.status === 'delivered' && o.confirmedBy && CONFIRMED_BY[o.confirmedBy] && (
+                      <span
+                        className="pl-card__status"
+                        style={{
+                          background: CONFIRMED_BY[o.confirmedBy].bg,
+                          color:      CONFIRMED_BY[o.confirmedBy].color,
+                        }}
+                        title="مصدر تأكيد الاستلام"
+                      >
+                        <span aria-hidden>{CONFIRMED_BY[o.confirmedBy].emoji}</span>
+                        {CONFIRMED_BY[o.confirmedBy].label}
+                      </span>
+                    )}
+                    {/* Paid orders that haven't been confirmed yet get an
+                        explicit "waiting" chip so support can spot them
+                        without reading the status pill twice. */}
+                    {o.status === 'paid' && (
+                      <span
+                        className="pl-card__status"
+                        style={{ background: '#FEF3C7', color: '#854D0E' }}
+                        title="لم يؤكد العميل الاستلام بعد"
+                      >
+                        <span aria-hidden>⏳</span>
+                        بانتظار تأكيد العميل
+                      </span>
+                    )}
                   </div>
 
                   <div className="pl-card__meta-row">

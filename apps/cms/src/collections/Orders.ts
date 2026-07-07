@@ -192,6 +192,24 @@ export const Orders: CollectionConfig = {
       admin: { position: "sidebar" },
     },
     {
+      // Who flipped status = paid → delivered. Null while status is
+      // pending or paid; set by the storefront's manual confirm
+      // endpoint ('customer'), the 7-day auto-sweep ('auto'), or an
+      // admin editing the row in place ('admin'). Purely informational
+      // -- surfaced in the OrdersList view so support can tell at a
+      // glance whether the customer confirmed themselves or the sweep
+      // did.
+      name: "confirmedBy",
+      label: "أكّده",
+      type: "select",
+      options: [
+        { label: "العميل يدوياً",          value: "customer" },
+        { label: "تلقائي بعد 7 أيام",       value: "auto" },
+        { label: "المشرف",                  value: "admin" },
+      ],
+      admin: { position: "sidebar" },
+    },
+    {
       type: "row",
       fields: [
         {

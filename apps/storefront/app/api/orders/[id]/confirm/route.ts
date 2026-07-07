@@ -56,13 +56,16 @@ export async function POST(
 
     // Flip status to delivered via Payload. The internal secret grants
     // write access (see cms/src/access.ts fromStorefront helper).
+    // confirmedBy='customer' distinguishes this from the 7-day auto-
+    // sweep which sets 'auto' -- support can tell them apart in the
+    // admin list view.
     const res = await fetch(`${CMS}/orders/${params.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         "x-internal-secret": INTERNAL_SECRET,
       },
-      body: JSON.stringify({ status: "delivered" }),
+      body: JSON.stringify({ status: "delivered", confirmedBy: "customer" }),
     });
 
     if (!res.ok) {

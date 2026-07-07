@@ -221,6 +221,14 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   // the collection's beforeChange hook; it'll grow past 5 digits
   // naturally once we cross Order-99999, which is fine downstream.
   await run("order_number_seq", "CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1");
+  // Orders: confirmedBy column so support can tell whether the customer
+  // manually confirmed the order or the 7-day auto-sweep did. Nullable
+  // while status is pending/paid; populated when status flips to
+  // delivered. See collections/Orders.ts for the select field.
+  await run(
+    "orders_confirmed_by_col",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmed_by VARCHAR"
+  );
 
   // Products
   await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
@@ -472,6 +480,7 @@ async function runOrderMaintenance(db: any): Promise<{ confirmed: number; autoRe
   const confirmRes = await pool.query(`
     UPDATE orders
        SET status = 'delivered',
+           confirmed_by = 'auto',
            updated_at = NOW()
      WHERE status = 'paid'
        AND created_at < NOW() - INTERVAL '7 days'
