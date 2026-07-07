@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getOrder, getOrderEvidence, getOrderReviewsByProduct } from "@/lib/payload";
 import { UsageConfirmButton } from "@/components/evidence/UsageConfirmButton";
 import { ConfirmOrderButton } from "@/components/orders/ConfirmOrderButton";
+import { RateProductButton } from "@/components/orders/RateProductButton";
 import { getOrderStatusLabel, getOrderStatusColor, formatPrice } from "@/lib/utils";
 
 export const metadata = { title: "تفاصيل الطلب" };
@@ -116,16 +117,15 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   <span className="text-sm font-bold text-brand-600">
                     {formatPrice(item.totalPrice, order.currency)}
                   </span>
-                  {delivered && !review && slug && (
-                    <Link
-                      href={`/products/${slug}#reviews`}
-                      className="inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-700 active:scale-95"
-                    >
-                      <Star className="h-3.5 w-3.5" strokeWidth={2.5} fill="currentColor" />
-                      <span>قيّم المنتج</span>
-                    </Link>
+                  {delivered && !review && Number.isFinite(productId) && (
+                    <RateProductButton
+                      orderId={order.id}
+                      productId={productId}
+                      productName={item.product?.name?.ar || item.product?.nameAr}
+                      size="md"
+                    />
                   )}
-                  {delivered && !review && !slug && (
+                  {delivered && !review && !Number.isFinite(productId) && (
                     <span className="text-xs text-gray-400">بانتظار التقييم</span>
                   )}
                 </div>

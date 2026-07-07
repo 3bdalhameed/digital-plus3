@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { getCustomerOrders } from "@/lib/payload";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Star, Clock, CheckCircle2 } from "lucide-react";
+import { Star, Clock, CheckCircle2, Package } from "lucide-react";
+import { RateProductButton } from "@/components/orders/RateProductButton";
 import { getOrderStatusLabel, getOrderStatusColor, formatPrice, getRelativeTime } from "@/lib/utils";
 
 export const metadata = { title: "طلباتي" };
@@ -94,23 +95,39 @@ export default async function OrdersPage() {
                   </div>
                 )}
 
-                {isDelivered && totalItems > 0 && (
-                  <div className="mt-4 flex items-start gap-2 rounded-xl border border-green-100 bg-green-50 p-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-green-800">
-                        تم تأكيد الاستلام
-                      </p>
-                      <p className="mt-0.5 text-xs text-green-700">
-                        {ratedItems === totalItems
-                          ? `قيّمت جميع المنتجات (${ratedItems}/${totalItems})`
-                          : ratedItems === 0
-                          ? `بانتظار التقييم (${totalItems} منتج)`
-                          : `قيّمت ${ratedItems} من أصل ${totalItems}`}
-                      </p>
+                {isDelivered && totalItems > 0 && (() => {
+                  // Distinguish who confirmed so we don't mislabel an
+                  // auto-swept or admin-flipped order as "you confirmed."
+                  const cfg =
+                    order.confirmedBy === "customer"
+                      ? { title: "تم تأكيد الاستلام", border: "border-green-100", bg: "bg-green-50", titleClr: "text-green-800", subClr: "text-green-700", icon: "text-green-600" }
+                      : order.confirmedBy === "auto"
+                      ? { title: "تم التأكيد تلقائياً بعد 7 أيام", border: "border-amber-100", bg: "bg-amber-50", titleClr: "text-amber-800", subClr: "text-amber-700", icon: "text-amber-600" }
+                      : order.confirmedBy === "admin"
+                      ? { title: "تم التأكيد من قبل المتجر", border: "border-brand-100", bg: "bg-brand-50", titleClr: "text-brand-800", subClr: "text-brand-700", icon: "text-brand-600" }
+                      : { title: "تم التسليم", border: "border-green-100", bg: "bg-green-50", titleClr: "text-green-800", subClr: "text-green-700", icon: "text-green-600" };
+                  return (
+                    <div className={`mt-4 flex items-start gap-2 rounded-xl border ${cfg.border} ${cfg.bg} p-3`}>
+                      {order.confirmedBy === "auto" ? (
+                        <Clock className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
+                      ) : order.confirmedBy === "admin" ? (
+                        <Package className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
+                      ) : (
+                        <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
+                      )}
+                      <div className="flex-1">
+                        <p className={`text-xs font-bold ${cfg.titleClr}`}>{cfg.title}</p>
+                        <p className={`mt-0.5 text-xs ${cfg.subClr}`}>
+                          {ratedItems === totalItems
+                            ? `قيّمت جميع المنتجات (${ratedItems}/${totalItems})`
+                            : ratedItems === 0
+                            ? `بانتظار التقييم (${totalItems} منتج)`
+                            : `قيّمت ${ratedItems} من أصل ${totalItems}`}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Per-item review status.
                     - Rated: shows the stars + a small "تلقائي" tag when
@@ -136,14 +153,13 @@ export default async function OrdersPage() {
                               </span>
                             )}
                           </span>
-                        ) : item.productSlug ? (
-                          <Link
-                            href={`/products/${item.productSlug}#reviews`}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-700"
-                          >
-                            <Star className="h-3 w-3" fill="currentColor" strokeWidth={2.5} />
-                            <span>قيّم المنتج</span>
-                          </Link>
+                        ) : item.productId ? (
+                          <RateProductButton
+                            orderId={order.id}
+                            productId={item.productId}
+                            productName={item.productName}
+                            size="sm"
+                          />
                         ) : (
                           <span className="shrink-0 text-xs text-gray-400">
                             بانتظار التقييم

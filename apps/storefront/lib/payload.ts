@@ -617,6 +617,9 @@ export type CustomerOrderSummary = {
   id: string;
   orderNumber: string;
   status: Order["status"];
+  /** Who flipped paid → delivered: 'customer' | 'auto' | 'admin' | null.
+   *  Null for legacy orders that predate the confirmed_by column. */
+  confirmedBy: "customer" | "auto" | "admin" | null;
   totalAmount: number;
   currency: Order["currency"];
   createdAt: string;
@@ -627,11 +630,13 @@ export async function getCustomerOrders(customerEmail: string): Promise<Customer
   try {
     type OrderRow = {
       id: number; order_number: string; status: string;
+      confirmed_by: string | null;
       total_amount: string; currency: string; created_at: Date;
       customer_id: number;
     };
     const orderRows = await prisma.$queryRaw<OrderRow[]>(Prisma.sql`
-      SELECT o.id, o.order_number, o.status, o.total_amount, o.currency, o.created_at,
+      SELECT o.id, o.order_number, o.status, o.confirmed_by,
+             o.total_amount, o.currency, o.created_at,
              c.id AS customer_id
       FROM orders o
       JOIN orders_rels r ON r.parent_id = o.id AND r.path = 'customer'
@@ -700,6 +705,7 @@ export async function getCustomerOrders(customerEmail: string): Promise<Customer
       id:          String(r.id),
       orderNumber: r.order_number,
       status:      r.status as Order["status"],
+      confirmedBy: (r.confirmed_by as any) ?? null,
       totalAmount: parseFloat(r.total_amount),
       currency:    r.currency as Order["currency"],
       createdAt:   r.created_at.toISOString(),
