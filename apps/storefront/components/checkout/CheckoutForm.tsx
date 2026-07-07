@@ -11,6 +11,12 @@ import { formatPrice } from "@/lib/utils";
 
 type CheckoutStep = "review" | "terms" | "payment" | "processing";
 
+/** Payment method the customer picks on the payment step.
+ *  - `test`      : dev/test flow that creates the order directly
+ *  - `qlic`      : Jordan CliQ — support contacts customer via WhatsApp
+ *  - `vodafone`  : Egypt Vodafone Cash — same manual flow */
+type PaymentMethod = "test" | "qlic" | "vodafone";
+
 export function CheckoutForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -19,6 +25,8 @@ export function CheckoutForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [method, setMethod] = useState<PaymentMethod>("test");
+  const [contactPhone, setContactPhone] = useState("");
 
   const handleAcceptTerms = async () => {
     if (!termsAccepted || !session?.user?.id) return;
@@ -45,34 +53,59 @@ export function CheckoutForm() {
   const handleCreatePayment = async () => {
     if (!session?.user?.id) return;
 
+    // Client-side guard for manual methods — the server also validates
+    // but a friendly inline error avoids a network round-trip.
+    if ((method === "qlic" || method === "vodafone") && !contactPhone.trim()) {
+      setError("يرجى إدخال رقم التواصل");
+      return;
+    }
+
     setLoading(true);
     setStep("processing");
     setError(null);
 
+    const commonBody = {
+      items: items.map((i) => ({
+        productId: String(i.product.id),
+        name:      (i.product as any).nameAr ?? i.product.name?.ar ?? "",
+        quantity:  Number(i.quantity),
+        unitPrice: Number(i.product.price),
+      })),
+      totalAmount: Number(totalPrice()),
+      currency:    items[0]?.product.currency || "USD",
+    };
+
+    const endpoint = method === "test"
+      ? "/api/checkout/test-pay"
+      : "/api/checkout/manual-payment";
+
+    const body = method === "test"
+      ? commonBody
+      : {
+          ...commonBody,
+          method:       method === "qlic" ? "qlic" : "vodafone_cash",
+          contactPhone: contactPhone.trim(),
+        };
+
     try {
-      const res = await fetch("/api/checkout/test-pay", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            productId: String(i.product.id),
-            name: (i.product as any).nameAr ?? i.product.name?.ar ?? "",
-            quantity: Number(i.quantity),
-            unitPrice: Number(i.product.price),
-          })),
-          totalAmount: Number(totalPrice()),
-          currency: items[0]?.product.currency || "USD",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "فشل إنشاء الطلب");
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b.error || "فشل إنشاء الطلب");
       }
 
       const { orderId } = await res.json();
       clearCart();
-      router.push(`/checkout/success?orderId=${orderId}`);
+      // Manual methods land the customer on success with a `pending=1`
+      // flag so the page can show "we'll contact you" copy instead of
+      // "your order is being processed" phrasing.
+      const pendingParam = method === "test" ? "" : "&pending=1";
+      router.push(`/checkout/success?orderId=${orderId}${pendingParam}`);
     } catch (err: any) {
       setError(err.message || "حدث خطأ أثناء الدفع");
       setStep("payment");
@@ -264,18 +297,89 @@ export function CheckoutForm() {
       {/* Step: Payment */}
       {step === "payment" && (
         <div className="brand-card">
-          <h2 className="mb-4 text-lg font-bold text-brand-800">الدفع</h2>
-          <div className="rounded-xl border-2 border-dashed border-amber-200 bg-amber-50 p-5 text-center">
-            <p className="text-sm font-semibold text-amber-700">وضع الاختبار</p>
-            <p className="mt-1 text-xs text-amber-600">
-              سيتم إنشاء الطلب مباشرة دون مرور على بوابة الدفع
-            </p>
+          <h2 className="mb-4 text-lg font-bold text-brand-800">اختر طريقة الدفع</h2>
+
+          <div className="space-y-3">
+            {/* Test / default flow — kept behind a small dev-mode badge
+                until the gateway is wired. Selects by default. */}
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-200 p-4 transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+              <input
+                type="radio"
+                name="pay-method"
+                value="test"
+                checked={method === "test"}
+                onChange={() => setMethod("test")}
+                className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-brand-800">وضع الاختبار</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  سيتم إنشاء الطلب مباشرة دون مرور على بوابة الدفع
+                </p>
+              </div>
+            </label>
+
+            {/* Jordan CliQ — manual payment, support follows up */}
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-200 p-4 transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+              <input
+                type="radio"
+                name="pay-method"
+                value="qlic"
+                checked={method === "qlic"}
+                onChange={() => setMethod("qlic")}
+                className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-brand-800">CliQ — الأردن</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  سيتواصل معك أحد ممثلي الدعم عبر واتساب لإتمام الدفع
+                </p>
+              </div>
+            </label>
+
+            {/* Egypt Vodafone Cash — manual payment, support follows up */}
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-200 p-4 transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+              <input
+                type="radio"
+                name="pay-method"
+                value="vodafone"
+                checked={method === "vodafone"}
+                onChange={() => setMethod("vodafone")}
+                className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-brand-800">فودافون كاش — مصر</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  سيتواصل معك أحد ممثلي الدعم عبر واتساب لإتمام الدفع
+                </p>
+              </div>
+            </label>
           </div>
+
+          {/* Contact number — only shown for the manual methods. */}
+          {(method === "qlic" || method === "vodafone") && (
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-medium text-brand-800">
+                رقم التواصل (واتساب) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                dir="ltr"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="+9627XXXXXXXX"
+                className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                سيتم استخدام هذا الرقم من قبل الدعم لإرسال تعليمات الدفع
+              </p>
+            </div>
+          )}
 
           <button
             onClick={handleCreatePayment}
             disabled={loading}
-            className="brand-btn mt-6 w-full"
+            className="brand-btn mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
