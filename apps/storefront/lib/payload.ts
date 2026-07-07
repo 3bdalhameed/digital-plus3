@@ -594,14 +594,45 @@ export async function getOrder(id: string): Promise<Order | null> {
   }
 }
 
-export async function getCustomerOrders(customerEmail: string): Promise<Order[]> {
+/**
+ * Fetch the customer's orders plus enough per-item review/product info
+ * for the /orders and /orders/[id] pages to show:
+ *   - what the customer has already rated (rating + source), and
+ *   - what still needs rating.
+ *
+ * Returns an extended shape (not the plain Order type) so callers can
+ * render the richer summary. Kept in one query to avoid N+1 fetches
+ * when the customer has many orders.
+ */
+export type CustomerOrderItemSummary = {
+  productId: number;
+  productSlug: string | null;
+  productName: string;
+  quantity: number;
+  totalPrice: number;
+  reviewRating: number | null;
+  reviewSource: "customer" | "auto" | null;
+};
+export type CustomerOrderSummary = {
+  id: string;
+  orderNumber: string;
+  status: Order["status"];
+  totalAmount: number;
+  currency: Order["currency"];
+  createdAt: string;
+  items: CustomerOrderItemSummary[];
+};
+
+export async function getCustomerOrders(customerEmail: string): Promise<CustomerOrderSummary[]> {
   try {
     type OrderRow = {
       id: number; order_number: string; status: string;
       total_amount: string; currency: string; created_at: Date;
+      customer_id: number;
     };
-    const rows = await prisma.$queryRaw<OrderRow[]>(Prisma.sql`
-      SELECT o.id, o.order_number, o.status, o.total_amount, o.currency, o.created_at
+    const orderRows = await prisma.$queryRaw<OrderRow[]>(Prisma.sql`
+      SELECT o.id, o.order_number, o.status, o.total_amount, o.currency, o.created_at,
+             c.id AS customer_id
       FROM orders o
       JOIN orders_rels r ON r.parent_id = o.id AND r.path = 'customer'
       JOIN customers c ON c.id = r.customers_id
@@ -609,18 +640,107 @@ export async function getCustomerOrders(customerEmail: string): Promise<Order[]>
       ORDER BY o.created_at DESC
       LIMIT 50
     `);
+    if (orderRows.length === 0) return [];
 
-    return rows.map((r) => ({
-      id: String(r.id),
+    const orderIds = orderRows.map((r) => r.id);
+    const customerId = orderRows[0].customer_id;
+
+    // One query for every line item across these orders, joined to the
+    // matching review (if any) via the reviews unique
+    // (order, product, customer) index.
+    type ItemRow = {
+      order_id: number;
+      product_id: number;
+      product_slug: string | null;
+      product_name: string | null;
+      quantity: number;
+      total_price: string;
+      review_rating: number | null;
+      review_source: string | null;
+    };
+    const itemRows = await prisma.$queryRaw<ItemRow[]>(Prisma.sql`
+      SELECT
+        oi._parent_id  AS order_id,
+        orl.products_id AS product_id,
+        p.slug         AS product_slug,
+        p.name_ar      AS product_name,
+        oi.quantity    AS quantity,
+        oi.total_price AS total_price,
+        rev.rating     AS review_rating,
+        rev.source     AS review_source
+      FROM orders_items oi
+      JOIN orders_rels orl
+        ON orl.parent_id = oi._parent_id
+       AND orl.path      LIKE 'items.%.product'
+       AND orl.path      = 'items.' || (oi._order - 1)::text || '.product'
+      LEFT JOIN products p ON p.id = orl.products_id
+      LEFT JOIN reviews rev
+        ON rev.order_id    = oi._parent_id
+       AND rev.product_id  = orl.products_id
+       AND rev.customer_id = ${customerId}
+      WHERE oi._parent_id IN (${Prisma.join(orderIds)})
+      ORDER BY oi._parent_id DESC, oi._order ASC
+    `);
+
+    const byOrder = new Map<number, CustomerOrderItemSummary[]>();
+    for (const row of itemRows) {
+      if (!byOrder.has(row.order_id)) byOrder.set(row.order_id, []);
+      byOrder.get(row.order_id)!.push({
+        productId:   row.product_id,
+        productSlug: row.product_slug,
+        productName: row.product_name || "منتج",
+        quantity:    row.quantity,
+        totalPrice:  parseFloat(row.total_price),
+        reviewRating: row.review_rating,
+        reviewSource: (row.review_source as any) || null,
+      });
+    }
+
+    return orderRows.map((r) => ({
+      id:          String(r.id),
       orderNumber: r.order_number,
-      status: r.status as Order["status"],
+      status:      r.status as Order["status"],
       totalAmount: parseFloat(r.total_amount),
-      currency: r.currency as Order["currency"],
-      createdAt: r.created_at.toISOString(),
-    } as unknown as Order));
+      currency:    r.currency as Order["currency"],
+      createdAt:   r.created_at.toISOString(),
+      items:       byOrder.get(r.id) ?? [],
+    }));
   } catch (e) {
     console.error("[getCustomerOrders]", e);
     return [];
+  }
+}
+
+/**
+ * Fetch the current customer's reviews for a single order, keyed by
+ * productId. Used by the order detail page to show what the customer
+ * has already rated (and whether the auto-sweep did it for them).
+ */
+export async function getOrderReviewsByProduct(
+  orderId: string | number,
+  customerEmail: string
+): Promise<Map<number, { rating: number; source: "customer" | "auto"; comment: string | null }>> {
+  try {
+    type Row = { product_id: number; rating: number; source: string; comment: string | null };
+    const rows = await prisma.$queryRaw<Row[]>(Prisma.sql`
+      SELECT r.product_id, r.rating, r.source, r.comment
+        FROM reviews r
+        JOIN customers c ON c.id = r.customer_id
+       WHERE r.order_id = ${Number(orderId)}
+         AND c.email    = ${customerEmail}
+    `);
+    const map = new Map<number, { rating: number; source: "customer" | "auto"; comment: string | null }>();
+    for (const r of rows) {
+      map.set(r.product_id, {
+        rating:  r.rating,
+        source:  (r.source as any) === "auto" ? "auto" : "customer",
+        comment: r.comment,
+      });
+    }
+    return map;
+  } catch (e) {
+    console.error("[getOrderReviewsByProduct]", e);
+    return new Map();
   }
 }
 
