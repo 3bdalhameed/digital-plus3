@@ -18,6 +18,7 @@ import { EvidenceLogs } from "./collections/EvidenceLogs";
 import { SupportTickets } from "./collections/SupportTickets";
 import { Media } from "./collections/Media";
 import { Posts } from "./collections/Posts";
+import { Reviews } from "./collections/Reviews";
 import { Users } from "./collections/Users";
 
 // Globals
@@ -94,6 +95,26 @@ export default buildConfig({
     } catch (e: any) {
       payload.logger.error({ msg: "[migrate:onInit] failed", error: e?.message ?? String(e) });
     }
+    // 7-day order maintenance: hourly sweep that auto-confirms paid
+    // orders and auto-rates un-reviewed items with 5 stars once they
+    // cross the 7-day mark. Idempotent -- safe to call any time.
+    // Runs on startup and every hour after. In-process (single Coolify
+    // container) is fine for our scale; if we ever scale out we'll
+    // move this to a dedicated cron worker.
+    const runMaint = async () => {
+      try {
+        const r = await runOrderMaintenance(payload.db);
+        if (r.confirmed || r.autoReviews) {
+          payload.logger.info({ msg: "[maint] 7-day sweep", ...r });
+        }
+      } catch (e: any) {
+        payload.logger.error({ msg: "[maint] 7-day sweep failed", error: e?.message ?? String(e) });
+      }
+    };
+    // Fire once shortly after boot (so ops can watch a fresh deploy
+    // pick up any backlog), then every hour.
+    setTimeout(runMaint, 30_000).unref?.();
+    setInterval(runMaint, 60 * 60 * 1000).unref?.();
   },
 
   endpoints: [
@@ -161,6 +182,7 @@ export default buildConfig({
     Posts,
     Orders,
     Customers,
+    Reviews,
     EvidenceLogs,
     SupportTickets,
     Media,
@@ -402,5 +424,79 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
   }
 
+  // Reviews — table + FK indexes + partial unique key so a given
+  // (order, product, customer) triple can only be reviewed once.
+  await run("reviews_table", `
+    CREATE TABLE IF NOT EXISTS reviews (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      rating INTEGER NOT NULL,
+      comment TEXT,
+      source VARCHAR NOT NULL DEFAULT 'customer',
+      updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL,
+      created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL
+    )
+  `);
+  await run("reviews_product_idx", "CREATE INDEX IF NOT EXISTS reviews_product_idx ON reviews(product_id)");
+  await run("reviews_order_idx",   "CREATE INDEX IF NOT EXISTS reviews_order_idx   ON reviews(order_id)");
+  await run("reviews_customer_idx","CREATE INDEX IF NOT EXISTS reviews_customer_idx ON reviews(customer_id)");
+  await run(
+    "reviews_unique",
+    "CREATE UNIQUE INDEX IF NOT EXISTS reviews_unique_order_product_customer ON reviews(order_id, product_id, customer_id)"
+  );
+
   return results;
+}
+
+/**
+ * 7-day order maintenance.
+ *
+ * Two sweeps, both idempotent so the hourly cron never double-charges
+ * anyone or creates duplicate reviews:
+ *
+ *   1. auto-confirm:  status='paid' AND created_at older than 7 days
+ *                     → status='delivered'
+ *   2. auto-rate:     for every line item in a delivered order that's
+ *                     also older than 7 days, insert a 5-star review
+ *                     with source='auto' — but only if the customer
+ *                     hasn't already left one (the unique index
+ *                     enforces this, we also filter with NOT EXISTS
+ *                     so we skip the failed-insert cost).
+ */
+async function runOrderMaintenance(db: any): Promise<{ confirmed: number; autoReviews: number }> {
+  const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
+  if (!pool?.query) throw new Error("DB pool not found on payload.db");
+
+  const confirmRes = await pool.query(`
+    UPDATE orders
+       SET status = 'delivered',
+           updated_at = NOW()
+     WHERE status = 'paid'
+       AND created_at < NOW() - INTERVAL '7 days'
+    RETURNING id
+  `);
+  const confirmed = confirmRes.rowCount ?? 0;
+
+  const reviewRes = await pool.query(`
+    INSERT INTO reviews (product_id, order_id, customer_id, rating, source, created_at, updated_at)
+    SELECT DISTINCT oi.product_id, o.id, o.customer_id, 5, 'auto', NOW(), NOW()
+      FROM orders o
+      JOIN orders_items oi ON oi._parent_id = o.id
+     WHERE o.status = 'delivered'
+       AND o.created_at < NOW() - INTERVAL '7 days'
+       AND o.customer_id IS NOT NULL
+       AND oi.product_id IS NOT NULL
+       AND NOT EXISTS (
+             SELECT 1 FROM reviews r
+              WHERE r.order_id = o.id
+                AND r.product_id = oi.product_id
+                AND r.customer_id = o.customer_id
+           )
+    ON CONFLICT (order_id, product_id, customer_id) DO NOTHING
+  `);
+  const autoReviews = reviewRes.rowCount ?? 0;
+
+  return { confirmed, autoReviews };
 }
