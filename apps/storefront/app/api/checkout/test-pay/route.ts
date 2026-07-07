@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { extractIP, extractUserAgent } from "@/lib/evidence";
+import { verifyGuestToken } from "@/lib/otp";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
@@ -19,6 +20,11 @@ const schema = z.object({
   ),
   totalAmount: z.coerce.number().min(0),
   currency: z.string().default("USD"),
+  // Guests skip NextAuth entirely and pass the short-lived token they
+  // got from /api/auth/otp/verify. Server verifies the token here and
+  // uses the email claim as the customer identity.
+  guestToken: z.string().optional(),
+  guestName: z.string().max(120).optional(),
 });
 
 async function getOrCreateCustomer(
@@ -46,11 +52,6 @@ async function getOrCreateCustomer(
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-    }
-
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -61,7 +62,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { items, totalAmount, currency } = parsed.data;
+    const { items, totalAmount, currency, guestToken, guestName } = parsed.data;
+
+    // Two accepted identities: a real NextAuth session (registered user)
+    // OR a guest token freshly minted by /api/auth/otp/verify. Either one
+    // yields an email we can use to find / create a customer row.
+    let customerEmail: string;
+    let customerName:  string;
+    const session = await auth();
+    if (session?.user?.email) {
+      customerEmail = session.user.email;
+      customerName  = session.user.name || session.user.email;
+    } else if (guestToken) {
+      const email = await verifyGuestToken(guestToken);
+      if (!email) {
+        return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+      }
+      customerEmail = email;
+      customerName  = guestName?.trim() || email;
+    } else {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
 
     // Verify all products exist in Neon before creating the order
     const productIds = items.map((i) => i.productId);
@@ -78,15 +99,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const customerId = await getOrCreateCustomer(
-      session.user.email,
-      session.user.name || session.user.email
-    );
+    const customerId = await getOrCreateCustomer(customerEmail, customerName);
 
-    const orderNumber = `ORD-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 4)
-      .toUpperCase()}`;
+    // Draw from the same Postgres sequence Payload's onCreate hook uses so
+    // both flows produce consistent Order-XXXXX numbers. Falls back to a
+    // timestamp form if the sequence isn't there yet on this DB.
+    let orderNumber: string;
+    try {
+      const seqRes = await prismaOrders.$queryRaw<{ n: number }[]>(
+        Prisma.sql`SELECT nextval('order_number_seq') AS n`
+      );
+      orderNumber = `Order-${String(seqRes[0].n).padStart(5, "0")}`;
+    } catch {
+      orderNumber = `Order-${String(Date.now()).slice(-8)}`;
+    }
     const ip = extractIP(req);
     const ua = extractUserAgent(req);
     const now = new Date();
@@ -157,7 +183,7 @@ export async function POST(req: NextRequest) {
       Prisma.sql`
         UPDATE abandoned_carts
         SET completed_at = ${now.toISOString()}::timestamptz, updated_at = ${now.toISOString()}::timestamptz
-        WHERE user_email = ${session.user.email} AND completed_at IS NULL
+        WHERE user_email = ${customerEmail} AND completed_at IS NULL
       `
     );
 

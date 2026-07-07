@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { extractIP, extractUserAgent } from "@/lib/evidence";
+import { verifyGuestToken } from "@/lib/otp";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
@@ -56,6 +57,11 @@ const schema = z.object({
   ).min(1),
   totalAmount: z.coerce.number().min(0),
   currency:    z.string().default("USD"),
+  // Guest checkout — same mechanism as test-pay: JWT minted by
+  // /api/auth/otp/verify. Optional; the auth block below prefers a
+  // NextAuth session when both are present.
+  guestToken: z.string().optional(),
+  guestName:  z.string().max(120).optional(),
 });
 
 async function getOrCreateCustomer(email: string, name: string): Promise<number> {
@@ -99,11 +105,6 @@ function buildTicketMessage(opts: {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-    }
-
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -113,7 +114,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { method, contactPhone, items, totalAmount, currency } = parsed.data;
+    const { method, contactPhone, items, totalAmount, currency, guestToken, guestName } =
+      parsed.data;
+
+    // Session OR guest token; matches the auth block in test-pay.
+    let customerEmail: string;
+    let customerName:  string;
+    const session = await auth();
+    if (session?.user?.email) {
+      customerEmail = session.user.email;
+      customerName  = session.user.name || session.user.email;
+    } else if (guestToken) {
+      const email = await verifyGuestToken(guestToken);
+      if (!email) {
+        return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+      }
+      customerEmail = email;
+      customerName  = guestName?.trim() || email;
+    } else {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
 
     // Verify products exist (defensive — prevents FK-violation crashes
     // if the cart references a since-deleted product).
@@ -125,10 +145,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "بعض المنتجات غير موجودة" }, { status: 400 });
     }
 
-    const customerId = await getOrCreateCustomer(
-      session.user.email,
-      session.user.name || session.user.email
-    );
+    const customerId = await getOrCreateCustomer(customerEmail, customerName);
 
     // Order number generation: we'd love to use the Postgres sequence
     // but this endpoint writes SQL directly (not via Payload), so
@@ -206,7 +223,7 @@ export async function POST(req: NextRequest) {
     await prismaOrders.$executeRaw(Prisma.sql`
       UPDATE abandoned_carts
       SET completed_at = ${now}::timestamptz, updated_at = ${now}::timestamptz
-      WHERE user_email = ${session.user.email} AND completed_at IS NULL
+      WHERE user_email = ${customerEmail} AND completed_at IS NULL
     `);
 
     // Support ticket so the team sees this in /admin/collections/support-tickets.
@@ -219,8 +236,8 @@ export async function POST(req: NextRequest) {
       totalAmount,
       currency,
       orderNumber,
-      customerEmail: session.user.email,
-      customerName:  session.user.name || session.user.email,
+      customerEmail,
+      customerName,
     });
 
     const [ticket] = await prismaOrders.$queryRaw<{ id: number }[]>(Prisma.sql`

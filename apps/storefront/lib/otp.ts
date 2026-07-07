@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { SignJWT, jwtVerify } from "jose";
 
 /**
  * One-time-password (OTP) helpers for passwordless email login.
@@ -112,5 +113,58 @@ export async function sendOtpEmail(email: string, code: string): Promise<void> {
   } catch (err) {
     console.error("[otp] failed to send email", err);
     throw err;
+  }
+}
+
+/* ─── Guest-checkout tokens ──────────────────────────────────────────
+   Short-lived JWTs handed to a caller once they verify an OTP for
+   their email. Storefront checkout endpoints (test-pay, manual-payment)
+   accept EITHER a NextAuth session OR a guest token in the request body
+   -- so unauthenticated visitors can complete a purchase without being
+   forced into full registration.
+
+   Security notes:
+   - Signed with NEXTAUTH_SECRET (already required elsewhere), no
+     extra env var needed.
+   - `iss: "guest-otp"` claim so we can never confuse a guest token
+     for a NextAuth session token even though both use the same
+     secret.
+   - 30 minute expiry is enough to walk through the payment step
+     without being long enough that a leaked token creates a
+     meaningful risk window.
+   - Email is the only useful claim; the rest is metadata for audit. */
+const GUEST_TOKEN_TTL_SECONDS = 30 * 60;
+const GUEST_TOKEN_ISS = "guest-otp";
+
+function secretKey(): Uint8Array {
+  const raw = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  if (!raw) {
+    throw new Error("NEXTAUTH_SECRET is not set — guest token signing disabled");
+  }
+  return new TextEncoder().encode(raw);
+}
+
+export async function signGuestToken(email: string): Promise<string> {
+  const normalized = email.trim().toLowerCase();
+  return await new SignJWT({ email: normalized })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(GUEST_TOKEN_ISS)
+    .setIssuedAt()
+    .setExpirationTime(`${GUEST_TOKEN_TTL_SECONDS}s`)
+    .sign(secretKey());
+}
+
+/** Verifies a guest token and returns the email it vouches for, or
+ *  null if the token is invalid, expired, or has the wrong issuer. */
+export async function verifyGuestToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, secretKey(), {
+      issuer: GUEST_TOKEN_ISS,
+    });
+    const email = String(payload?.email || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) return null;
+    return email;
+  } catch {
+    return null;
   }
 }

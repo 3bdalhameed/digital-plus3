@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Shield, Loader2, CheckCircle } from "lucide-react";
+import { Shield, Loader2, CheckCircle, Mail } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { logEvidence } from "@/lib/evidence";
 import { formatPrice } from "@/lib/utils";
@@ -28,8 +28,78 @@ export function CheckoutForm() {
   const [method, setMethod] = useState<PaymentMethod>("test");
   const [contactPhone, setContactPhone] = useState("");
 
+  // Guest-checkout state. Only used when there's no NextAuth session.
+  // Once `guestToken` is set the user is treated as "verified" and can
+  // move to the payment step exactly like a logged-in user.
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestName,  setGuestName]  = useState("");
+  const [guestOtpCode,    setGuestOtpCode]  = useState("");
+  const [guestOtpSent,    setGuestOtpSent]  = useState(false);
+  const [guestToken,      setGuestToken]    = useState<string | null>(null);
+  const [guestBusy,       setGuestBusy]     = useState(false);
+
+  const isGuest    = !session?.user?.id;
+  const isVerified = !!session?.user?.id || !!guestToken;
+
+  const handleRequestOtp = async () => {
+    setError(null);
+    if (!guestEmail.trim() || !guestEmail.includes("@")) {
+      setError("يرجى إدخال بريد إلكتروني صالح");
+      return;
+    }
+    setGuestBusy(true);
+    try {
+      const res = await fetch("/api/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: guestEmail.trim() }),
+      });
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        if (b?.error === "rate_limited") {
+          setError("يرجى الانتظار دقيقة قبل إعادة الطلب");
+        } else {
+          setError("تعذر إرسال الرمز، حاول مرة أخرى");
+        }
+        return;
+      }
+      setGuestOtpSent(true);
+    } catch {
+      setError("تعذر الاتصال بالخادم");
+    } finally {
+      setGuestBusy(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError(null);
+    if (!/^\d{6}$/.test(guestOtpCode.trim())) {
+      setError("الرمز يجب أن يتكون من 6 أرقام");
+      return;
+    }
+    setGuestBusy(true);
+    try {
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: guestEmail.trim(), code: guestOtpCode.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.token) {
+        setError("الرمز غير صحيح أو منتهي");
+        return;
+      }
+      setGuestToken(data.token);
+    } catch {
+      setError("تعذر الاتصال بالخادم");
+    } finally {
+      setGuestBusy(false);
+    }
+  };
+
   const handleCreatePayment = async () => {
-    if (!session?.user?.id) return;
+    // Either a real session OR a verified guest token is required.
+    if (!isVerified) return;
 
     // Client-side guards — server re-validates, but a friendly inline
     // error avoids a round-trip.
@@ -64,7 +134,7 @@ export function CheckoutForm() {
     setStep("processing");
     setError(null);
 
-    const commonBody = {
+    const commonBody: Record<string, any> = {
       items: items.map((i) => ({
         productId: String(i.product.id),
         name:      (i.product as any).nameAr ?? i.product.name?.ar ?? "",
@@ -74,6 +144,12 @@ export function CheckoutForm() {
       totalAmount: Number(totalPrice()),
       currency:    items[0]?.product.currency || "USD",
     };
+    // Guests attach the token they got from /api/auth/otp/verify. The
+    // server checks NextAuth session first and falls through to this.
+    if (isGuest && guestToken) {
+      commonBody.guestToken = guestToken;
+      if (guestName.trim()) commonBody.guestName = guestName.trim();
+    }
 
     const endpoint = method === "test"
       ? "/api/checkout/test-pay"
@@ -122,18 +198,10 @@ export function CheckoutForm() {
     );
   }
 
-  if (status === "unauthenticated") {
-    return (
-      <div className="brand-card py-12 text-center">
-        <h2 className="text-xl font-bold text-brand-800">
-          يجب تسجيل الدخول أولاً
-        </h2>
-        <Link href="/login" className="brand-btn mt-4 inline-block">
-          تسجيل الدخول
-        </Link>
-      </div>
-    );
-  }
+  // NOTE: no more forced-registration gate for `status === "unauthenticated"`.
+  // Guest visitors continue to the review step; the inline email+OTP block
+  // below vouches for their identity so the checkout endpoints can accept
+  // the order without a NextAuth session.
 
   if (items.length === 0) {
     return (
@@ -219,9 +287,120 @@ export function CheckoutForm() {
               {formatPrice(totalPrice())}
             </span>
           </div>
+
+          {/* Guest identity block — shows only when there's no NextAuth
+              session. Two mini-steps: email input → OTP input → verified.
+              Once verified, the "متابعة" button unlocks and the guest
+              token rides along with every checkout request. */}
+          {isGuest && !guestToken && (
+            <div className="mt-6 rounded-xl border-2 border-dashed border-brand-200 bg-brand-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-brand-500" />
+                <span className="text-sm font-bold text-brand-800">
+                  متابعة كضيف — تحقق من بريدك الإلكتروني
+                </span>
+              </div>
+              <p className="mb-3 text-xs text-gray-600">
+                لست بحاجة لإنشاء حساب. أدخل بريدك الإلكتروني وسنرسل لك رمزاً
+                للتأكيد فقط.{" "}
+                <Link
+                  href="/login"
+                  className="font-bold text-brand-500 underline"
+                >
+                  لديك حساب؟
+                </Link>
+              </p>
+
+              {!guestOtpSent ? (
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    dir="ltr"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="name@domain.com"
+                    className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-2.5 text-sm text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  />
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="الاسم (اختياري)"
+                    className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-2.5 text-sm text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  />
+                  <button
+                    onClick={handleRequestOtp}
+                    disabled={guestBusy}
+                    className="brand-btn w-full disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {guestBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "إرسال رمز التحقق"
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">
+                    تم إرسال الرمز إلى{" "}
+                    <span dir="ltr" className="font-bold text-brand-700">
+                      {guestEmail}
+                    </span>
+                  </p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    dir="ltr"
+                    maxLength={6}
+                    value={guestOtpCode}
+                    onChange={(e) => setGuestOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="XXXXXX"
+                    className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-2.5 text-center text-lg font-black tracking-widest text-brand-800 placeholder:text-gray-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleVerifyOtp}
+                      disabled={guestBusy}
+                      className="brand-btn flex-1 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {guestBusy ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "تحقق"
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGuestOtpSent(false);
+                        setGuestOtpCode("");
+                      }}
+                      className="rounded-xl border-2 border-brand-200 bg-white px-4 text-sm font-bold text-brand-600 hover:bg-brand-50"
+                    >
+                      تغيير البريد
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isGuest && guestToken && (
+            <div className="mt-6 flex items-center gap-2 rounded-xl border-2 border-green-200 bg-green-50 p-4 text-sm">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-green-700">
+                تم التحقق من{" "}
+                <span dir="ltr" className="font-bold">
+                  {guestEmail}
+                </span>
+              </span>
+            </div>
+          )}
+
           <button
             onClick={() => setStep("payment")}
-            className="brand-btn mt-6 w-full"
+            disabled={!isVerified}
+            className="brand-btn mt-6 w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
             متابعة إلى الدفع
           </button>
