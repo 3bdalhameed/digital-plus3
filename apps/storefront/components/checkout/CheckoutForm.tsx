@@ -9,7 +9,7 @@ import { useCartStore } from "@/lib/store";
 import { logEvidence } from "@/lib/evidence";
 import { formatPrice } from "@/lib/utils";
 
-type CheckoutStep = "review" | "terms" | "payment" | "processing";
+type CheckoutStep = "review" | "payment" | "processing";
 
 /** Payment method the customer picks on the payment step.
  *  - `test`      : dev/test flow that creates the order directly
@@ -28,11 +28,23 @@ export function CheckoutForm() {
   const [method, setMethod] = useState<PaymentMethod>("test");
   const [contactPhone, setContactPhone] = useState("");
 
-  const handleAcceptTerms = async () => {
-    if (!termsAccepted || !session?.user?.id) return;
+  const handleCreatePayment = async () => {
+    if (!session?.user?.id) return;
 
-    setLoading(true);
-    // Fire-and-forget: evidence logging should never block checkout
+    // Client-side guards — server re-validates, but a friendly inline
+    // error avoids a round-trip.
+    if (!termsAccepted) {
+      setError("يجب الموافقة على الشروط والأحكام");
+      return;
+    }
+    if ((method === "qlic" || method === "vodafone") && !contactPhone.trim()) {
+      setError("يرجى إدخال رقم التواصل");
+      return;
+    }
+
+    // Fire-and-forget evidence log — terms acceptance now happens on
+    // the same step as payment confirmation, so log it here just
+    // before we submit the order. Never blocks checkout.
     logEvidence({
       type: "terms_acceptance",
       data: {
@@ -44,21 +56,9 @@ export function CheckoutForm() {
           price: i.product.price,
         })),
         totalAmount: totalPrice(),
+        paymentMethod: method,
       },
     }).catch(() => {});
-    setStep("payment");
-    setLoading(false);
-  };
-
-  const handleCreatePayment = async () => {
-    if (!session?.user?.id) return;
-
-    // Client-side guard for manual methods — the server also validates
-    // but a friendly inline error avoids a network round-trip.
-    if ((method === "qlic" || method === "vodafone") && !contactPhone.trim()) {
-      setError("يرجى إدخال رقم التواصل");
-      return;
-    }
 
     setLoading(true);
     setStep("processing");
@@ -148,14 +148,16 @@ export function CheckoutForm() {
 
   return (
     <div className="space-y-6">
-      {/* Progress */}
+      {/* Progress — collapsed from 3 steps to 2. Terms acceptance is
+          now inline on the payment step (checkbox above the confirm
+          button) so we no longer need a separate terms step. */}
       <div className="brand-card">
         <div className="flex items-center justify-center gap-4 text-sm">
-          {(["review", "terms", "payment"] as const).map((s, i) => (
+          {(["review", "payment"] as const).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                  step === s || (["review", "terms", "payment"].indexOf(step) > i)
+                  step === s || (["review", "payment"].indexOf(step) > i)
                     ? "bg-brand-500 text-white"
                     : "bg-brand-100 text-brand-400"
                 }`}
@@ -168,12 +170,9 @@ export function CheckoutForm() {
                 }
               >
                 {s === "review" && "مراجعة"}
-                {s === "terms" && "الشروط"}
-                {s === "payment" && "الدفع"}
+                {s === "payment" && "الدفع والتأكيد"}
               </span>
-              {i < 2 && (
-                <div className="mx-2 h-px w-8 bg-brand-200" />
-              )}
+              {i < 1 && <div className="mx-2 h-px w-8 bg-brand-200" />}
             </div>
           ))}
         </div>
@@ -221,75 +220,10 @@ export function CheckoutForm() {
             </span>
           </div>
           <button
-            onClick={() => setStep("terms")}
+            onClick={() => setStep("payment")}
             className="brand-btn mt-6 w-full"
           >
-            متابعة
-          </button>
-        </div>
-      )}
-
-      {/* Step: Terms */}
-      {step === "terms" && (
-        <div className="brand-card">
-          <div className="mb-4 flex items-center gap-3">
-            <Shield className="h-6 w-6 text-brand-500" />
-            <h2 className="text-lg font-bold text-brand-800">
-              الشروط والأحكام
-            </h2>
-          </div>
-
-          <div className="mb-6 max-h-48 overflow-y-auto rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm leading-relaxed text-gray-600">
-            <p>
-              بإتمام عملية الشراء، أنت توافق على الشروط والأحكام وسياسة الاسترداد
-              الخاصة بنا. المنتجات الرقمية يتم تسليمها إلكترونياً ولا يمكن
-              استردادها بعد التسليم والاستخدام. يرجى قراءة{" "}
-              <Link
-                href="/policies/terms"
-                target="_blank"
-                className="font-bold text-brand-500 underline"
-              >
-                الشروط والأحكام
-              </Link>{" "}
-              و{" "}
-              <Link
-                href="/policies/refund"
-                target="_blank"
-                className="font-bold text-brand-500 underline"
-              >
-                سياسة الاسترداد
-              </Link>{" "}
-              بعناية قبل المتابعة.
-            </p>
-          </div>
-
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-200 p-4 transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-1 h-5 w-5 rounded border-brand-300 text-brand-500 focus:ring-brand-500"
-            />
-            <span className="text-sm font-medium text-brand-800">
-              أوافق على{" "}
-              <span className="font-bold text-brand-600">
-                الشروط والأحكام وسياسة الاسترداد
-              </span>
-              . أفهم أن المنتجات الرقمية غير قابلة للاسترداد بعد التسليم
-              والاستخدام.
-            </span>
-          </label>
-
-          <button
-            onClick={handleAcceptTerms}
-            disabled={!termsAccepted || loading}
-            className="brand-btn mt-6 w-full disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "الموافقة والمتابعة للدفع"
-            )}
+            متابعة إلى الدفع
           </button>
         </div>
       )}
@@ -376,9 +310,46 @@ export function CheckoutForm() {
             </div>
           )}
 
+          {/* Terms acceptance — inline. Was a separate step before the
+              2-step collapse; keeping the same checkbox + phrasing +
+              evidence-log signal, just on the same surface as pay. */}
+          <div className="mt-6 rounded-xl border border-brand-100 bg-brand-50 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-brand-500" />
+              <span className="text-sm font-bold text-brand-800">الشروط والأحكام</span>
+            </div>
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 h-5 w-5 rounded border-brand-300 text-brand-500 focus:ring-brand-500"
+              />
+              <span className="text-xs leading-relaxed text-gray-600">
+                أوافق على{" "}
+                <Link
+                  href="/policies/terms"
+                  target="_blank"
+                  className="font-bold text-brand-500 underline"
+                >
+                  الشروط والأحكام
+                </Link>{" "}
+                و{" "}
+                <Link
+                  href="/policies/refund"
+                  target="_blank"
+                  className="font-bold text-brand-500 underline"
+                >
+                  سياسة الاسترداد
+                </Link>
+                . أفهم أن المنتجات الرقمية غير قابلة للاسترداد بعد التسليم والاستخدام.
+              </span>
+            </label>
+          </div>
+
           <button
             onClick={handleCreatePayment}
-            disabled={loading}
+            disabled={loading || !termsAccepted}
             className="brand-btn mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? (
