@@ -4,6 +4,7 @@ import { ArrowRight, Star } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getOrder, getOrderEvidence } from "@/lib/payload";
 import { UsageConfirmButton } from "@/components/evidence/UsageConfirmButton";
+import { ConfirmOrderButton } from "@/components/orders/ConfirmOrderButton";
 import { getOrderStatusLabel, getOrderStatusColor, formatPrice } from "@/lib/utils";
 
 export const metadata = { title: "تفاصيل الطلب" };
@@ -79,6 +80,22 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           </span>
         </div>
       </div>
+
+      {/* Manual confirm (paid → delivered). The 7-day auto-confirm sweep
+          catches this automatically if the customer never clicks. */}
+      {order.status === "paid" && (
+        <div className="brand-card border-r-4 border-brand-500">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="mb-1 text-lg font-bold text-brand-800">تأكيد الطلب</h2>
+              <p className="text-sm text-gray-500">
+                إذا استلمت المنتج، يمكنك تأكيد الطلب الآن. سيتم التأكيد تلقائياً بعد 7 أيام إذا لم تقم بذلك.
+              </p>
+            </div>
+            <ConfirmOrderButton orderId={order.id} />
+          </div>
+        </div>
+      )}
 
       {/* Digital Delivery */}
       {order.status === "delivered" && order.digitalDeliveryLog && (

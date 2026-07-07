@@ -4,12 +4,29 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma as prismaReviews } from "@/lib/prisma";
 
+/**
+ * Reviews API — POST creates a review, GET checks review status.
+ *
+ * Writes to the unified `reviews` table (source='customer'). The
+ * 7-day maintenance sweep in the CMS writes to the same table with
+ * source='auto'. Both flows share a unique index on
+ * (order_id, product_id, customer_id) so a given customer can only
+ * review each product-in-an-order once, whether manually or via
+ * the auto-sweep.
+ *
+ * `productId` is now REQUIRED — the previous endpoint let it be
+ * optional but that conflicts with the unique index (three NULLs are
+ * distinct in Postgres, letting duplicates slip through). Frontend
+ * already sends it; making it required just enforces what's
+ * already true in practice.
+ */
+
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  orderId: z.union([z.string(), z.number()]).transform(Number),
-  productId: z.union([z.string(), z.number()]).transform(Number).optional(),
-  rating: z.number().int().min(1).max(5),
+  orderId:   z.union([z.string(), z.number()]).transform(Number),
+  productId: z.union([z.string(), z.number()]).transform(Number),
+  rating:    z.number().int().min(1).max(5),
   reviewText: z.string().max(1000).optional(),
 });
 
@@ -28,7 +45,8 @@ export async function POST(req: NextRequest) {
 
     const { orderId, productId, rating, reviewText } = parsed.data;
 
-    // Verify customer owns this order
+    // Verify customer owns this order (join via orders_rels since Payload
+    // stores the customer relation there for its access-control filters).
     const customers = await prismaReviews.$queryRaw<{ id: number }[]>(
       Prisma.sql`SELECT id FROM customers WHERE email = ${session.user.email} LIMIT 1`
     );
@@ -49,21 +67,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
     }
 
-    // Prevent duplicate reviews for same order
+    // Duplicate check scoped to (order, product, customer) — matches the
+    // unique index so the client gets a friendly 409 instead of a raw
+    // Postgres constraint error.
     const existing = await prismaReviews.$queryRaw<{ id: number }[]>(
-      Prisma.sql`SELECT id FROM product_reviews WHERE order_id = ${orderId} AND customer_id = ${customerId} LIMIT 1`
+      Prisma.sql`
+        SELECT id FROM reviews
+         WHERE order_id = ${orderId}
+           AND product_id = ${productId}
+           AND customer_id = ${customerId}
+         LIMIT 1
+      `
     );
     if (existing[0]) {
-      return NextResponse.json({ error: "تم تقييم هذا الطلب مسبقاً" }, { status: 409 });
+      return NextResponse.json({ error: "تم تقييم هذا المنتج مسبقاً" }, { status: 409 });
     }
 
     const [review] = await prismaReviews.$queryRaw<{ id: number }[]>(
       Prisma.sql`
-        INSERT INTO product_reviews (order_id, customer_id, product_id, rating, review_text, is_auto)
-        VALUES (${orderId}, ${customerId}, ${productId ?? null}, ${rating}, ${reviewText ?? null}, false)
+        INSERT INTO reviews (order_id, product_id, customer_id, rating, comment, source, created_at, updated_at)
+        VALUES (${orderId}, ${productId}, ${customerId}, ${rating}, ${reviewText ?? null}, 'customer', NOW(), NOW())
+        ON CONFLICT (order_id, product_id, customer_id) DO NOTHING
         RETURNING id
       `
     );
+
+    if (!review) {
+      // Only reachable if a concurrent request slipped in between our
+      // duplicate check and the insert.
+      return NextResponse.json({ error: "تم تقييم هذا المنتج مسبقاً" }, { status: 409 });
+    }
 
     return NextResponse.json({ success: true, reviewId: review.id });
   } catch (error: any) {
@@ -72,12 +105,29 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * GET /api/reviews?orderId=…&productId=…
+ * Returns whether the caller has already reviewed a specific
+ * order+product pair. If productId is omitted we return whether ANY
+ * review exists for the order (back-compat with the older client).
+ */
 export async function GET(req: NextRequest) {
   const orderId = Number(req.nextUrl.searchParams.get("orderId"));
+  const productIdParam = req.nextUrl.searchParams.get("productId");
   if (!orderId) return NextResponse.json({ reviewed: false });
 
-  const rows = await prismaReviews.$queryRaw<{ id: number; rating: number }[]>(
-    Prisma.sql`SELECT id, rating FROM product_reviews WHERE order_id = ${orderId} LIMIT 1`
-  );
+  const productId = productIdParam ? Number(productIdParam) : null;
+  const rows = productId
+    ? await prismaReviews.$queryRaw<{ id: number; rating: number }[]>(
+        Prisma.sql`
+          SELECT id, rating FROM reviews
+           WHERE order_id = ${orderId} AND product_id = ${productId}
+           LIMIT 1
+        `
+      )
+    : await prismaReviews.$queryRaw<{ id: number; rating: number }[]>(
+        Prisma.sql`SELECT id, rating FROM reviews WHERE order_id = ${orderId} LIMIT 1`
+      );
+
   return NextResponse.json({ reviewed: !!rows[0], rating: rows[0]?.rating });
 }
