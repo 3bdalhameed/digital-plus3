@@ -18,7 +18,7 @@ import { EvidenceLogs } from "./collections/EvidenceLogs";
 import { SupportTickets } from "./collections/SupportTickets";
 import { Media } from "./collections/Media";
 import { Posts } from "./collections/Posts";
-import { Reviews } from "./collections/Reviews";
+// import { Reviews } from "./collections/Reviews"; // registration disabled -- see note below
 import { Users } from "./collections/Users";
 
 // Globals
@@ -182,7 +182,18 @@ export default buildConfig({
     Posts,
     Orders,
     Customers,
-    Reviews,
+    // Reviews collection intentionally NOT registered here even though
+    // the `reviews` table exists. Payload's Drizzle adapter expects
+    // relationship fields (product / order / customer) to live in a
+    // `reviews_rels` join table, but the sweep + storefront both use
+    // direct FK columns for performance. The mismatch 500'd every
+    // find on /api/reviews (which cascaded to /api/orders because
+    // Drizzle builds the collective schema at boot). All read/write
+    // paths for reviews are handled via raw SQL:
+    //   - CMS 7-day sweep: runOrderMaintenance() below
+    //   - Storefront: /api/reviews route + getOrderReviewsByProduct
+    // Admin surface for reviews will come back with a
+    // Payload-compatible schema (rels table + enum type) in a follow-up.
     EvidenceLogs,
     SupportTickets,
     Media,

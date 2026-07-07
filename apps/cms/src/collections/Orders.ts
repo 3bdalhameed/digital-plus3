@@ -199,15 +199,17 @@ export const Orders: CollectionConfig = {
       // -- surfaced in the OrdersList view so support can tell at a
       // glance whether the customer confirmed themselves or the sweep
       // did.
+      //
+      // NOTE: intentionally `text` instead of `select` even though we
+      // only expect three values. Payload's Drizzle adapter builds a
+      // Postgres enum schema for select fields and our migration adds
+      // a plain VARCHAR column; the resulting type mismatch 500's the
+      // whole GET /orders endpoint. Text sidesteps this. Values are
+      // still validated at the code level in every write path.
       name: "confirmedBy",
-      label: "أكّده",
-      type: "select",
-      options: [
-        { label: "العميل يدوياً",          value: "customer" },
-        { label: "تلقائي بعد 7 أيام",       value: "auto" },
-        { label: "المشرف",                  value: "admin" },
-      ],
-      admin: { position: "sidebar" },
+      label: "أكّده (customer | auto | admin)",
+      type: "text",
+      admin: { position: "sidebar", readOnly: true },
     },
     {
       type: "row",
