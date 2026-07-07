@@ -621,8 +621,12 @@ function StatsSectionBlock({ title, stats }: any) {
       }}
       dir="rtl"
     >
-      {/* Inner card FIRST (stats grid) — visually the top row per the swap
-          request. Header follows below. */}
+      {title && (
+        <div className="stats4__header">
+          <h2>{title}</h2>
+        </div>
+      )}
+
       <div className="stats4__inner">
         <div className="stats4__grid">
           {items.map((s: any, i: number) => {
@@ -645,12 +649,6 @@ function StatsSectionBlock({ title, stats }: any) {
           })}
         </div>
       </div>
-
-      {title && (
-        <div className="stats4__header stats4__header--bottom">
-          <h2>{title}</h2>
-        </div>
-      )}
     </section>
   );
 }

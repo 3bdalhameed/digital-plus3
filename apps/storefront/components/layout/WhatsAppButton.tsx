@@ -1,3 +1,7 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 /**
  * Floating WhatsApp chat button, fixed to the bottom-RIGHT of the viewport.
  *
@@ -8,6 +12,12 @@
  *
  * Uses the official WhatsApp glyph (inline SVG) rather than a generic chat
  * bubble so the brand is unmistakable at small sizes.
+ *
+ * Vertical offset is path-aware: product detail pages carry a sticky
+ * action bar (buy now / add to cart / quantity) so the button sits high
+ * to clear it. Every other route drops the button back to the usual
+ * corner distance so it doesn't feel awkwardly floating in the middle
+ * of empty page area.
  */
 
 const FALLBACK_PHONE = "+962795580312";
@@ -41,13 +51,21 @@ export function WhatsAppButton({
   phone?: string | null;
 }) {
   const href = buildWaUrl({ url, phone });
+  const pathname = usePathname() || "";
+  // Only the product detail page carries a sticky action bar. Everywhere
+  // else (home, cart, orders, blog, policies, etc.) drops back to the
+  // usual corner offset.
+  const nearActionBar = /^\/products\/[^/]+$/.test(pathname);
+  const offset = nearActionBar
+    ? "bottom-24 sm:bottom-24"
+    : "bottom-6 sm:bottom-8";
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تواصل عبر واتساب"
-      className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] transition-transform hover:scale-110 active:scale-95 sm:bottom-24 sm:right-6"
+      className={`fixed right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] transition-transform hover:scale-110 active:scale-95 sm:right-6 ${offset}`}
     >
       <WhatsAppGlyph className="h-7 w-7" />
     </a>
