@@ -248,7 +248,7 @@ const OrdersList: React.FC<{
                 <div className="pl-card__body pl-card__body--row">
                   <div className="pl-card__heading">
                     <h3 className="pl-card__name-ar pl-card__order-number" dir="ltr">
-                      {o.orderNumber || `#${o.id.slice(0, 8)}`}
+                      {o.orderNumber || `#${String(o.id).slice(0, 8)}`}
                     </h3>
                     <span className={`pl-card__status`} style={{ background: status.bg, color: status.color }}>
                       <span className="pl-card__status-dot" style={{ background: status.dot }} />
