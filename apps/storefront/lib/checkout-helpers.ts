@@ -29,48 +29,84 @@ export type CheckoutIdentity = {
 };
 
 /**
- * Resolves the caller's identity from either a NextAuth session
- * or a guest OTP token in the request body. Returns null if neither
- * is present or the guest token is invalid/expired.
+ * Discriminated result so callers can preserve the two distinct 401
+ * messages the pre-refactor code had:
+ *   - "invalid_guest" ⇒ 401 "رمز الضيف غير صالح أو منتهي"
+ *     (customer verified an OTP but their JWT has expired; UX should
+ *     reopen the OTP block)
+ *   - "anonymous"     ⇒ 401 "غير مصرح"
+ *     (no session AND no guest token at all)
+ * Collapsing both to null was a UX regression flagged in the code
+ * review — expired-token guests need a re-verify prompt, not a
+ * generic sign-in error.
+ */
+export type IdentityResult =
+  | { kind: "ok"; identity: CheckoutIdentity }
+  | { kind: "invalid_guest" }
+  | { kind: "anonymous" };
+
+/**
+ * Resolves the caller's identity from either a NextAuth session or a
+ * guest OTP token in the request body. Session email is lowercased +
+ * trimmed to match the guest OTP normalization (verifyGuestToken and
+ * abandoned_carts store lowercased addresses), so the same physical
+ * customer keys to the same customers.id whether they check out via
+ * session or guest, and so linkOrderToCustomer's abandoned_carts
+ * UPDATE matches rows created by either flow.
  */
 export async function resolveIdentity(input: {
   guestToken?: string;
   guestName?:  string;
-}): Promise<CheckoutIdentity | null> {
+}): Promise<IdentityResult> {
   const session = await auth();
   if (session?.user?.email) {
+    const email = session.user.email.trim().toLowerCase();
     return {
-      customerEmail: session.user.email,
-      customerName:  session.user.name || session.user.email,
+      kind: "ok",
+      identity: {
+        customerEmail: email,
+        customerName:  session.user.name || email,
+      },
     };
   }
   if (input.guestToken) {
     const email = await verifyGuestToken(input.guestToken);
-    if (!email) return null;
+    if (!email) return { kind: "invalid_guest" };
     return {
-      customerEmail: email,
-      customerName:  input.guestName?.trim() || email,
+      kind: "ok",
+      identity: {
+        customerEmail: email,
+        customerName:  input.guestName?.trim() || email,
+      },
     };
   }
-  return null;
+  return { kind: "anonymous" };
 }
 
 // ── Customers ─────────────────────────────────────────────────────
 
-/** Find-or-create pattern for the `customers` table, keyed by email. */
+/**
+ * Find-or-create pattern for the `customers` table, keyed by email.
+ *
+ * Single-statement INSERT ... ON CONFLICT is used (not select-then-
+ * insert) so two concurrent guest checkouts for the same email can't
+ * race between the SELECT and the INSERT and violate the unique
+ * constraint on `customers.email`.
+ *
+ * DO UPDATE SET email = EXCLUDED.email is a no-op that makes the
+ * conflict path also RETURNING the existing row's id, so the caller
+ * gets the id whether we inserted or matched.
+ */
 export async function getOrCreateCustomer(email: string, name: string): Promise<number> {
   const rows = await prismaOrders.$queryRaw<{ id: number }[]>(
-    Prisma.sql`SELECT id FROM customers WHERE email = ${email} LIMIT 1`
-  );
-  if (rows[0]?.id) return rows[0].id;
-  const created = await prismaOrders.$queryRaw<{ id: number }[]>(
     Prisma.sql`
       INSERT INTO customers (email, name, updated_at, created_at)
       VALUES (${email}, ${name || email}, NOW(), NOW())
+      ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
       RETURNING id
     `
   );
-  return created[0].id;
+  return rows[0].id;
 }
 
 // ── Order numbers ─────────────────────────────────────────────────
@@ -118,88 +154,95 @@ export type CheckoutItem = {
 };
 
 /**
- * Insert the order row + its line items + rels. Returns the new order id.
+ * Atomic write of a new order for a customer.
  *
- * `paymentReference` is optional so the test-pay endpoint (no gateway
- * reference) and the manual-payment endpoint (`manual:<method>:<phone>`)
- * both call the same helper.
+ * Wraps the full sequence — orders INSERT, orders_items INSERT, product
+ * rels, customer rels (both directions), and abandoned_carts close — in
+ * a single Prisma transaction so a mid-sequence failure rolls the whole
+ * thing back. Pre-refactor these were separate $executeRaw calls with
+ * no rollback path: a network blip between the orders INSERT and its
+ * items INSERTs used to leave a headless order row + no rels, which
+ * broke the customer's /orders page AND wasted a value from
+ * order_number_seq. Now the transaction either commits everything or
+ * nothing.
+ *
+ * A single `now` timestamp is threaded through every INSERT so all rows
+ * created by one checkout share the same created_at / completed_at
+ * value — makes audit joins and log correlation exact instead of
+ * off-by-milliseconds.
+ *
+ * `paymentReference` is optional: test-pay omits it (stored as NULL);
+ * manual-payment sets it to `manual:<method>:<phone>` for support to
+ * search on.
  */
-export async function writeOrder(input: {
-  orderNumber:      string;
-  totalAmount:      number;
-  currency:         string;
-  ip:               string;
-  userAgent:        string;
-  items:            CheckoutItem[];
+export async function createOrderForCustomer(input: {
+  orderNumber:       string;
+  totalAmount:       number;
+  currency:          string;
+  ip:                string;
+  userAgent:         string;
+  items:             CheckoutItem[];
   paymentReference?: string;
+  customerId:        number;
+  customerEmail:     string;
 }): Promise<number> {
   const now = new Date().toISOString();
-  const [order] = await prismaOrders.$queryRaw<{ id: number }[]>(
-    Prisma.sql`
-      INSERT INTO orders (
-        order_number, status, total_amount, currency,
-        payment_reference,
-        terms_accepted_at, terms_accepted_i_p, terms_accepted_user_agent,
-        updated_at, created_at
-      )
-      VALUES (
-        ${input.orderNumber},
-        'pending'::"enum_orders_status",
-        ${input.totalAmount},
-        ${input.currency}::"enum_orders_currency",
-        ${input.paymentReference ?? null},
-        ${now}::timestamptz,
-        ${input.ip},
-        ${input.userAgent},
-        ${now}::timestamptz,
-        ${now}::timestamptz
-      )
-      RETURNING id
-    `
-  );
-  const orderId = order.id;
+  return prismaOrders.$transaction(async (tx) => {
+    const [order] = await tx.$queryRaw<{ id: number }[]>(
+      Prisma.sql`
+        INSERT INTO orders (
+          order_number, status, total_amount, currency,
+          payment_reference,
+          terms_accepted_at, terms_accepted_i_p, terms_accepted_user_agent,
+          updated_at, created_at
+        )
+        VALUES (
+          ${input.orderNumber},
+          'pending'::"enum_orders_status",
+          ${input.totalAmount},
+          ${input.currency}::"enum_orders_currency",
+          ${input.paymentReference ?? null},
+          ${now}::timestamptz,
+          ${input.ip},
+          ${input.userAgent},
+          ${now}::timestamptz,
+          ${now}::timestamptz
+        )
+        RETURNING id
+      `
+    );
+    const orderId = order.id;
 
-  for (let i = 0; i < input.items.length; i++) {
-    const item = input.items[i];
-    const itemId = crypto.randomBytes(12).toString("hex");
-    const totalPrice = item.unitPrice * item.quantity;
-    await prismaOrders.$executeRaw(Prisma.sql`
-      INSERT INTO orders_items (_order, _parent_id, id, quantity, unit_price, total_price)
-      VALUES (${i + 1}, ${orderId}, ${itemId}, ${item.quantity}, ${item.unitPrice}, ${totalPrice})
+    for (let i = 0; i < input.items.length; i++) {
+      const item = input.items[i];
+      const itemId = crypto.randomBytes(12).toString("hex");
+      const totalPrice = item.unitPrice * item.quantity;
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO orders_items (_order, _parent_id, id, quantity, unit_price, total_price)
+        VALUES (${i + 1}, ${orderId}, ${itemId}, ${item.quantity}, ${item.unitPrice}, ${totalPrice})
+      `);
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO orders_rels (parent_id, path, products_id)
+        VALUES (${orderId}, ${`items.${i}.product`}, ${item.productId})
+      `);
+    }
+
+    await tx.$executeRaw(Prisma.sql`
+      INSERT INTO orders_rels (parent_id, path, customers_id)
+      VALUES (${orderId}, 'customer', ${input.customerId})
     `);
-    await prismaOrders.$executeRaw(Prisma.sql`
-      INSERT INTO orders_rels (parent_id, path, products_id)
-      VALUES (${orderId}, ${`items.${i}.product`}, ${item.productId})
+    await tx.$executeRaw(Prisma.sql`
+      INSERT INTO customers_rels (parent_id, path, orders_id)
+      VALUES (${input.customerId}, 'orders', ${orderId})
     `);
-  }
+    await tx.$executeRaw(Prisma.sql`
+      UPDATE abandoned_carts
+      SET completed_at = ${now}::timestamptz, updated_at = ${now}::timestamptz
+      WHERE user_email = ${input.customerEmail} AND completed_at IS NULL
+    `);
 
-  return orderId;
-}
-
-/**
- * Wire the customer to the newly-created order (both directions —
- * orders_rels for admin filters, customers_rels for the customer's
- * order-history query) and close their abandoned cart if any.
- */
-export async function linkOrderToCustomer(input: {
-  orderId:      number;
-  customerId:   number;
-  customerEmail: string;
-}): Promise<void> {
-  const now = new Date().toISOString();
-  await prismaOrders.$executeRaw(Prisma.sql`
-    INSERT INTO orders_rels (parent_id, path, customers_id)
-    VALUES (${input.orderId}, 'customer', ${input.customerId})
-  `);
-  await prismaOrders.$executeRaw(Prisma.sql`
-    INSERT INTO customers_rels (parent_id, path, orders_id)
-    VALUES (${input.customerId}, 'orders', ${input.orderId})
-  `);
-  await prismaOrders.$executeRaw(Prisma.sql`
-    UPDATE abandoned_carts
-    SET completed_at = ${now}::timestamptz, updated_at = ${now}::timestamptz
-    WHERE user_email = ${input.customerEmail} AND completed_at IS NULL
-  `);
+    return orderId;
+  });
 }
 
 // ── Request helpers (re-exported for endpoint convenience) ────────

@@ -87,11 +87,18 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             const productId = Number(item.product?.id ?? item.product);
             const review = Number.isFinite(productId) ? (reviewsByProduct as any).get(productId) : null;
             const delivered = order.status === "delivered";
-            const productName = item.product?.name?.ar || item.product?.nameAr || "منتج";
+            // Two names here on purpose: `displayName` has the Arabic
+            // "منتج" fallback so the item title row is never blank, but
+            // `ratingName` stays undefined when no real name exists so
+            // RateProductButton's subtitle line hides itself instead
+            // of showing the meaningless placeholder in the modal.
+            const rawName = item.product?.name?.ar || item.product?.nameAr;
+            const displayName = rawName || "منتج";
+            const ratingName  = rawName || undefined;
             return (
               <div key={i} className="flex flex-col gap-2 rounded-xl bg-brand-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-bold text-brand-800">{productName}</p>
+                  <p className="text-sm font-bold text-brand-800">{displayName}</p>
                   <p className="text-xs text-gray-500">الكمية: {item.quantity}</p>
                   {review && (
                     <div className="mt-2 flex items-center gap-2">
@@ -119,7 +126,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                     <RateProductButton
                       orderId={order.id}
                       productId={productId}
-                      productName={productName}
+                      productName={ratingName}
                       size="md"
                     />
                   )}

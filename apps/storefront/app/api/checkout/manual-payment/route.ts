@@ -8,8 +8,7 @@ import {
   getOrCreateCustomer,
   mintOrderNumber,
   findMissingProductIds,
-  writeOrder,
-  linkOrderToCustomer,
+  createOrderForCustomer,
   extractIP,
   extractUserAgent,
 } from "@/lib/checkout-helpers";
@@ -128,10 +127,14 @@ export async function POST(req: NextRequest) {
     const { method, contactPhone, items, totalAmount, currency, guestToken, guestName } =
       parsed.data;
 
-    const identity = await resolveIdentity({ guestToken, guestName });
-    if (!identity) {
+    const identityResult = await resolveIdentity({ guestToken, guestName });
+    if (identityResult.kind === "invalid_guest") {
+      return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+    }
+    if (identityResult.kind === "anonymous") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
+    const identity = identityResult.identity;
 
     const missing = await findMissingProductIds(items.map((i) => i.productId));
     if (missing.length > 0) {
@@ -142,24 +145,20 @@ export async function POST(req: NextRequest) {
     const orderNumber = await mintOrderNumber();
     const paymentRef  = `manual:${PAYMENT_METHODS[method].slug}:${contactPhone}`;
 
-    const orderId = await writeOrder({
+    const orderId = await createOrderForCustomer({
       orderNumber,
       totalAmount,
       currency,
-      ip:              extractIP(req),
-      userAgent:       extractUserAgent(req),
+      ip:               extractIP(req),
+      userAgent:        extractUserAgent(req),
       paymentReference: paymentRef,
+      customerId,
+      customerEmail:    identity.customerEmail,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,
         unitPrice: i.unitPrice,
       })),
-    });
-
-    await linkOrderToCustomer({
-      orderId,
-      customerId,
-      customerEmail: identity.customerEmail,
     });
 
     const ticketId = await openSupportTicket({
@@ -187,7 +186,9 @@ export async function POST(req: NextRequest) {
       method,
     });
   } catch (error: any) {
-    console.error("[manual-payment] failed:", error?.message);
+    // Log the full error surface — message alone hides which INSERT
+    // inside the transaction failed on constraint violations.
+    console.error("[manual-payment] failed:", error?.message, error?.stack, error?.code, error?.meta);
     return NextResponse.json(
       { error: "فشل إنشاء الطلب، يرجى المحاولة مرة أخرى" },
       { status: 500 }

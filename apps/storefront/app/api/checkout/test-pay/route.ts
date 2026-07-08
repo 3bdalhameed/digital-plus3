@@ -5,8 +5,7 @@ import {
   getOrCreateCustomer,
   mintOrderNumber,
   findMissingProductIds,
-  writeOrder,
-  linkOrderToCustomer,
+  createOrderForCustomer,
   extractIP,
   extractUserAgent,
 } from "@/lib/checkout-helpers";
@@ -48,10 +47,14 @@ export async function POST(req: NextRequest) {
     }
     const { items, totalAmount, currency, guestToken, guestName } = parsed.data;
 
-    const identity = await resolveIdentity({ guestToken, guestName });
-    if (!identity) {
+    const identityResult = await resolveIdentity({ guestToken, guestName });
+    if (identityResult.kind === "invalid_guest") {
+      return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+    }
+    if (identityResult.kind === "anonymous") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
+    const identity = identityResult.identity;
 
     const missing = await findMissingProductIds(items.map((i) => i.productId));
     if (missing.length > 0) {
@@ -62,29 +65,28 @@ export async function POST(req: NextRequest) {
     const customerId  = await getOrCreateCustomer(identity.customerEmail, identity.customerName);
     const orderNumber = await mintOrderNumber();
 
-    const orderId = await writeOrder({
+    const orderId = await createOrderForCustomer({
       orderNumber,
       totalAmount,
       currency,
-      ip:        extractIP(req),
-      userAgent: extractUserAgent(req),
-      items:     items.map((i) => ({
+      ip:            extractIP(req),
+      userAgent:     extractUserAgent(req),
+      customerId,
+      customerEmail: identity.customerEmail,
+      items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,
         unitPrice: i.unitPrice,
       })),
     });
 
-    await linkOrderToCustomer({
-      orderId,
-      customerId,
-      customerEmail: identity.customerEmail,
-    });
-
     console.log(`[test-pay] ${orderNumber} (id=${orderId}) created for customer ${customerId}`);
     return NextResponse.json({ orderId: String(orderId), orderNumber });
   } catch (error: any) {
-    console.error("[test-pay] failed:", error?.message);
+    // Log the full error (stack, Prisma code, meta) — message alone
+    // isn't enough to diagnose which INSERT inside the transaction
+    // failed under a constraint violation.
+    console.error("[test-pay] failed:", error?.message, error?.stack, error?.code, error?.meta);
     return NextResponse.json(
       { error: "فشل إنشاء الطلب، يرجى المحاولة مرة أخرى" },
       { status: 500 }
