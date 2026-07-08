@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ChevronDown, ChevronUp, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import type { HomePageSection } from "@my-store/types";

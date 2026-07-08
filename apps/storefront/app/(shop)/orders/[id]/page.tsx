@@ -84,16 +84,14 @@ export default async function OrderDetailPage({ params }: { params: { id: string
         <h2 className="mb-4 text-lg font-bold text-brand-800">المنتجات</h2>
         <div className="space-y-3">
           {order.items?.map((item: any, i: number) => {
-            const slug = item.product?.slug;
             const productId = Number(item.product?.id ?? item.product);
             const review = Number.isFinite(productId) ? (reviewsByProduct as any).get(productId) : null;
             const delivered = order.status === "delivered";
+            const productName = item.product?.name?.ar || item.product?.nameAr || "منتج";
             return (
               <div key={i} className="flex flex-col gap-2 rounded-xl bg-brand-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-bold text-brand-800">
-                    {item.product?.name?.ar || item.product?.nameAr || "منتج"}
-                  </p>
+                  <p className="text-sm font-bold text-brand-800">{productName}</p>
                   <p className="text-xs text-gray-500">الكمية: {item.quantity}</p>
                   {review && (
                     <div className="mt-2 flex items-center gap-2">
@@ -121,7 +119,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                     <RateProductButton
                       orderId={order.id}
                       productId={productId}
-                      productName={item.product?.name?.ar || item.product?.nameAr}
+                      productName={productName}
                       size="md"
                     />
                   )}
