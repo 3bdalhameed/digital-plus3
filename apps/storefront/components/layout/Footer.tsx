@@ -232,12 +232,12 @@ export async function Footer() {
         <div className="my-10 h-px w-full bg-white/20" />
 
         {/* ─── Payment methods row: label pinned to the RIGHT (RTL start),
-             chips fill the row to the left. `justify-start` + dir="rtl"
-             puts the label first visually on the right; the inner chip
-             flex takes the remaining space. */}
-        <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-3" dir="rtl">
+             chips CENTERED in the remaining space. Wrapping label in a
+             flex row with justify-end + flex-1 on the chip container
+             keeps the label anchored while the chips center themselves. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3" dir="rtl">
           <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-1 flex-wrap items-center justify-center gap-1.5">
             {paymentMethods.map((p, i) => (
               <span
                 key={`${p.name}-${i}`}
