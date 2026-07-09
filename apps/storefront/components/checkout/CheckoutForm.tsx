@@ -172,6 +172,20 @@ export function CheckoutForm() {
 
       if (!res.ok) {
         const b = await res.json().catch(() => ({}));
+        // Server sends a machine-readable `code` on 401 so we can
+        // route the user to the right recovery UX instead of just
+        // flashing a generic error banner. `invalid_guest` = OTP JWT
+        // expired mid-checkout, so clear it and reopen the OTP block
+        // on the review step. `anonymous` (no session, no token at
+        // all) falls through to the generic error toast.
+        if (res.status === 401 && b?.code === "invalid_guest") {
+          setGuestToken(null);
+          setGuestOtpCode("");
+          setGuestOtpSent(false);
+          setError(b.error || "رمز الضيف غير صالح أو منتهي");
+          setStep("review");
+          return;
+        }
         throw new Error(b.error || "فشل إنشاء الطلب");
       }
 

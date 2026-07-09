@@ -241,6 +241,66 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmed_by VARCHAR"
   );
 
+  // ── Email case-normalization (one-time; idempotent) ───────────────
+  // Every write path in the storefront was inconsistent about the case
+  // of session-sourced emails vs guest-OTP emails, so customers.email
+  // and abandoned_carts.user_email can hold mixed-case rows today AND
+  // lowercased duplicates from the recent checkout flow. Fix in three
+  // steps:
+  //   1. Merge case-different duplicate customers rows: repoint every
+  //      rel from the mixed-case row to the lowercased one, then drop
+  //      the mixed-case row.
+  //   2. Lowercase whatever's left in customers.email.
+  //   3. Lowercase abandoned_carts.user_email.
+  // Each step guards on WHERE email <> lower(email) so re-runs are
+  // no-ops. Safe to leave in runMigrations permanently.
+  await run("customers_merge_case_dups", `
+    WITH dups AS (
+      SELECT lower(email) AS canonical,
+             MIN(id)      AS keep_id,
+             array_agg(id) AS all_ids
+        FROM customers
+       WHERE email <> lower(email)
+          OR lower(email) IN (SELECT lower(email) FROM customers GROUP BY lower(email) HAVING count(*) > 1)
+       GROUP BY lower(email)
+      HAVING count(*) > 1
+    ),
+    repoint_orders AS (
+      UPDATE orders_rels SET customers_id = d.keep_id
+        FROM dups d
+       WHERE orders_rels.customers_id = ANY(d.all_ids)
+         AND orders_rels.customers_id <> d.keep_id
+      RETURNING 1
+    ),
+    repoint_customers_rels AS (
+      UPDATE customers_rels SET parent_id = d.keep_id
+        FROM dups d
+       WHERE customers_rels.parent_id = ANY(d.all_ids)
+         AND customers_rels.parent_id <> d.keep_id
+      RETURNING 1
+    )
+    DELETE FROM customers c
+     USING dups d
+     WHERE c.id = ANY(d.all_ids)
+       AND c.id <> d.keep_id
+  `);
+  await run("customers_lowercase_email", `
+    UPDATE customers
+       SET email = lower(email)
+     WHERE email <> lower(email)
+  `);
+  await run("abandoned_carts_lowercase_email", `
+    UPDATE abandoned_carts
+       SET user_email = lower(user_email)
+     WHERE user_email <> lower(user_email)
+  `);
+  // Belt-and-suspenders: enforce the canonical form at the schema
+  // level so future writes can't reintroduce case dups.
+  await run(
+    "customers_lower_email_unique_idx",
+    "CREATE UNIQUE INDEX IF NOT EXISTS customers_lower_email_unique ON customers (lower(email))"
+  );
+
   // Products
   await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
   // Featured Products block — title icon upload

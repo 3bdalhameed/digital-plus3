@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma as prismaReviews } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 /**
  * Reviews API — POST creates a review, GET checks review status.
@@ -33,7 +34,8 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    const sessionEmail = normalizeEmail(session?.user?.email);
+    if (!sessionEmail) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Verify customer owns this order (join via orders_rels since Payload
     // stores the customer relation there for its access-control filters).
     const customers = await prismaReviews.$queryRaw<{ id: number }[]>(
-      Prisma.sql`SELECT id FROM customers WHERE email = ${session.user.email} LIMIT 1`
+      Prisma.sql`SELECT id FROM customers WHERE email = ${sessionEmail} LIMIT 1`
     );
     if (!customers[0]?.id) {
       return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });

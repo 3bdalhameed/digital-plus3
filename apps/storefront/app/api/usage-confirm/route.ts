@@ -4,6 +4,7 @@ import { extractIP, extractUserAgent } from "@/lib/evidence";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma as prismaUsage } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,8 @@ const usageSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    const sessionEmail = normalizeEmail(session?.user?.email);
+    if (!sessionEmail) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
@@ -28,9 +30,9 @@ export async function POST(req: NextRequest) {
 
     const { orderId, productId, sessionId } = parsed.data;
 
-    // Look up customer in Neon by session email
+    // Look up customer in Neon by canonical email
     const customers = await prismaUsage.$queryRaw<{ id: number }[]>(
-      Prisma.sql`SELECT id FROM customers WHERE email = ${session.user.email} LIMIT 1`
+      Prisma.sql`SELECT id FROM customers WHERE email = ${sessionEmail} LIMIT 1`
     );
     if (!customers[0]?.id) {
       return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });

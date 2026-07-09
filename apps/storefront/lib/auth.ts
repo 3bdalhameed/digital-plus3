@@ -5,8 +5,16 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyOtp } from "@/lib/otp";
+import { normalizeEmail } from "@/lib/normalize-email";
 
-async function syncPayloadCustomer(email: string, name: string): Promise<string | null> {
+async function syncPayloadCustomer(rawEmail: string, rawName: string): Promise<string | null> {
+  // Every write to customers.email in this repo goes through the
+  // canonical form so a session with mixed-case Google email can't
+  // create a duplicate of the lowercased row later inserted by
+  // getOrCreateCustomer at checkout.
+  const email = normalizeEmail(rawEmail);
+  if (!email) return null;
+  const name = rawName?.trim() || email;
   try {
     const apiUrl = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
     const secret = process.env.PAYLOAD_INTERNAL_SECRET || "";
@@ -25,7 +33,7 @@ async function syncPayloadCustomer(email: string, name: string): Promise<string 
     const created = await fetch(`${apiUrl}/customers`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ email, name: name || email }),
+      body: JSON.stringify({ email, name }),
     });
     const createdData = await created.json();
     return createdData?.doc?.id != null ? String(createdData.doc.id) : null;

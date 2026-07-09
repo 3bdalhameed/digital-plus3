@@ -4,6 +4,8 @@ import { extractIP, extractUserAgent } from "@/lib/evidence";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma as prismaEvidence } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
+import { getOrCreateCustomer } from "@/lib/checkout-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +32,11 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    const sessionEmail = normalizeEmail(session?.user?.email);
+    if (!sessionEmail) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
+    const sessionName = session?.user?.name?.trim() || sessionEmail;
 
     const body = await req.json();
     const parsed = schema.safeParse(body);
@@ -45,23 +49,10 @@ export async function POST(req: NextRequest) {
 
     const { type, orderId, sessionId, device, browser, data } = parsed.data;
 
-    // Look up (or create) customer in Neon by session email
-    const existing = await prismaEvidence.$queryRaw<{ id: number }[]>(
-      Prisma.sql`SELECT id FROM customers WHERE email = ${session.user.email} LIMIT 1`
-    );
-    let customerId: number;
-    if (existing[0]?.id) {
-      customerId = existing[0].id;
-    } else {
-      const created = await prismaEvidence.$queryRaw<{ id: number }[]>(
-        Prisma.sql`
-          INSERT INTO customers (email, name, updated_at, created_at)
-          VALUES (${session.user.email}, ${session.user.name || session.user.email}, NOW(), NOW())
-          RETURNING id
-        `
-      );
-      customerId = created[0].id;
-    }
+    // Share the getOrCreateCustomer helper so every write path keys
+    // customers.email by the same canonical form and any race between
+    // two evidence writes for a new customer resolves via ON CONFLICT.
+    const customerId = await getOrCreateCustomer(sessionEmail, sessionName);
 
     const ipAddress = extractIP(req);
     const userAgent = extractUserAgent(req);

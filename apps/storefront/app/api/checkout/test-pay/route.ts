@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   resolveIdentity,
-  getOrCreateCustomer,
   mintOrderNumber,
   findMissingProductIds,
   createOrderForCustomer,
@@ -16,6 +15,10 @@ import {
  * Development/testing flow that skips the payment gateway and
  * creates the order directly. Accepts either a NextAuth session
  * or a guest OTP token as identity.
+ *
+ * 401 response body carries a machine-readable `code` field
+ * ("invalid_guest" | "anonymous") the client branches on to route
+ * the user back to the OTP re-verify block or the sign-in prompt.
  */
 export const dynamic = "force-dynamic";
 
@@ -49,10 +52,16 @@ export async function POST(req: NextRequest) {
 
     const identityResult = await resolveIdentity({ guestToken, guestName });
     if (identityResult.kind === "invalid_guest") {
-      return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+      return NextResponse.json(
+        { error: "رمز الضيف غير صالح أو منتهي", code: "invalid_guest" },
+        { status: 401 }
+      );
     }
     if (identityResult.kind === "anonymous") {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+      return NextResponse.json(
+        { error: "غير مصرح", code: "anonymous" },
+        { status: 401 }
+      );
     }
     const identity = identityResult.identity;
 
@@ -62,17 +71,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "بعض المنتجات غير موجودة" }, { status: 400 });
     }
 
-    const customerId  = await getOrCreateCustomer(identity.customerEmail, identity.customerName);
     const orderNumber = await mintOrderNumber();
 
-    const orderId = await createOrderForCustomer({
+    const { orderId, customerId } = await createOrderForCustomer({
       orderNumber,
       totalAmount,
       currency,
       ip:            extractIP(req),
       userAgent:     extractUserAgent(req),
-      customerId,
       customerEmail: identity.customerEmail,
+      customerName:  identity.customerName,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,
@@ -83,9 +91,6 @@ export async function POST(req: NextRequest) {
     console.log(`[test-pay] ${orderNumber} (id=${orderId}) created for customer ${customerId}`);
     return NextResponse.json({ orderId: String(orderId), orderNumber });
   } catch (error: any) {
-    // Log the full error (stack, Prisma code, meta) — message alone
-    // isn't enough to diagnose which INSERT inside the transaction
-    // failed under a constraint violation.
     console.error("[test-pay] failed:", error?.message, error?.stack, error?.code, error?.meta);
     return NextResponse.json(
       { error: "فشل إنشاء الطلب، يرجى المحاولة مرة أخرى" },

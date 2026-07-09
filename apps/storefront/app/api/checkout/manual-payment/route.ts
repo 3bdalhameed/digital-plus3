@@ -5,7 +5,6 @@ import crypto from "crypto";
 import { prisma as prismaOrders } from "@/lib/prisma";
 import {
   resolveIdentity,
-  getOrCreateCustomer,
   mintOrderNumber,
   findMissingProductIds,
   createOrderForCustomer,
@@ -129,10 +128,16 @@ export async function POST(req: NextRequest) {
 
     const identityResult = await resolveIdentity({ guestToken, guestName });
     if (identityResult.kind === "invalid_guest") {
-      return NextResponse.json({ error: "رمز الضيف غير صالح أو منتهي" }, { status: 401 });
+      return NextResponse.json(
+        { error: "رمز الضيف غير صالح أو منتهي", code: "invalid_guest" },
+        { status: 401 }
+      );
     }
     if (identityResult.kind === "anonymous") {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+      return NextResponse.json(
+        { error: "غير مصرح", code: "anonymous" },
+        { status: 401 }
+      );
     }
     const identity = identityResult.identity;
 
@@ -141,19 +146,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "بعض المنتجات غير موجودة" }, { status: 400 });
     }
 
-    const customerId  = await getOrCreateCustomer(identity.customerEmail, identity.customerName);
     const orderNumber = await mintOrderNumber();
     const paymentRef  = `manual:${PAYMENT_METHODS[method].slug}:${contactPhone}`;
 
-    const orderId = await createOrderForCustomer({
+    const { orderId, customerId } = await createOrderForCustomer({
       orderNumber,
       totalAmount,
       currency,
       ip:               extractIP(req),
       userAgent:        extractUserAgent(req),
       paymentReference: paymentRef,
-      customerId,
       customerEmail:    identity.customerEmail,
+      customerName:     identity.customerName,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,

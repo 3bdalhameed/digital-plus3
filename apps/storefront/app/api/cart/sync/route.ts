@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,10 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
-      // Silently OK for guests — we don't track guest carts
+    const email = normalizeEmail(session?.user?.email);
+    if (!email) {
+      // Silently OK for guests (or whitespace-only session emails)
+      // — we don't track guest carts.
       return NextResponse.json({ ok: true });
     }
 
@@ -24,8 +27,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ ok: true });
 
     const { items, action } = parsed.data;
-    const email = session.user.email;
-    const name = session.user.name || email;
+    const name = session?.user?.name?.trim() || email;
     const now = new Date().toISOString();
 
     if (action === "complete") {

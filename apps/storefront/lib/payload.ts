@@ -1,6 +1,7 @@
 import { draftMode } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { normalizeEmail } from "@/lib/normalize-email";
 import type {
   Product,
   Category,
@@ -628,6 +629,11 @@ export type CustomerOrderSummary = {
 
 export async function getCustomerOrders(customerEmail: string): Promise<CustomerOrderSummary[]> {
   try {
+    // Callers pass session.user.email verbatim; normalize before the
+    // query so mixed-case sessions match the lowercased rows every
+    // write path now produces.
+    const email = normalizeEmail(customerEmail);
+    if (!email) return [];
     type OrderRow = {
       id: number; order_number: string; status: string;
       confirmed_by: string | null;
@@ -641,7 +647,7 @@ export async function getCustomerOrders(customerEmail: string): Promise<Customer
       FROM orders o
       JOIN orders_rels r ON r.parent_id = o.id AND r.path = 'customer'
       JOIN customers c ON c.id = r.customers_id
-      WHERE c.email = ${customerEmail}
+      WHERE c.email = ${email}
       ORDER BY o.created_at DESC
       LIMIT 50
     `);
@@ -727,13 +733,15 @@ export async function getOrderReviewsByProduct(
   customerEmail: string
 ): Promise<Map<number, { rating: number; source: "customer" | "auto"; comment: string | null }>> {
   try {
+    const email = normalizeEmail(customerEmail);
+    if (!email) return new Map();
     type Row = { product_id: number; rating: number; source: string; comment: string | null };
     const rows = await prisma.$queryRaw<Row[]>(Prisma.sql`
       SELECT r.product_id, r.rating, r.source, r.comment
         FROM reviews r
         JOIN customers c ON c.id = r.customer_id
        WHERE r.order_id = ${Number(orderId)}
-         AND c.email    = ${customerEmail}
+         AND c.email    = ${email}
     `);
     const map = new Map<number, { rating: number; source: "customer" | "auto"; comment: string | null }>();
     for (const r of rows) {

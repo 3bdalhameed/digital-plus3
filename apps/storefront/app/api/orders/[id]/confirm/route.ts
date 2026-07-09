@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getOrder } from "@/lib/payload";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 /**
  * POST /api/orders/:id/confirm
@@ -26,7 +27,8 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    const sessionEmail = normalizeEmail(session?.user?.email);
+    if (!sessionEmail) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
@@ -36,8 +38,10 @@ export async function POST(
     }
 
     // Ownership check: order.customer.email must match session email.
-    const orderEmail = (order as any)?.customer?.email;
-    if (!orderEmail || orderEmail !== session.user.email) {
+    // Both sides normalized so mixed-case doesn't lock a customer out
+    // of confirming their own order.
+    const orderEmail = normalizeEmail((order as any)?.customer?.email);
+    if (!orderEmail || orderEmail !== sessionEmail) {
       return NextResponse.json({ error: "لا يمكنك تعديل هذا الطلب" }, { status: 403 });
     }
 
