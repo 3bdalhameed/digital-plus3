@@ -303,6 +303,7 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
 
   // Products
   await run("badge_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS badge varchar DEFAULT 'none'");
+  await run("in_stock_col", "ALTER TABLE products ADD COLUMN IF NOT EXISTS in_stock boolean DEFAULT true NOT NULL");
   // Featured Products block — title icon upload
   await run(
     "fp_title_icon",

@@ -220,6 +220,16 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      name: "inStock",
+      label: "متوفر في المخزون | In Stock",
+      type: "checkbox",
+      defaultValue: true,
+      admin: {
+        position: "sidebar",
+        description: "عند إلغاء التفعيل يظهر زر «Out of stock» بدلاً من «أضف إلى السلة» ولا يمكن للعميل إضافة المنتج للسلة",
+      },
+    },
+    {
       name: "status",
       label: "الحالة | Status",
       type: "select",

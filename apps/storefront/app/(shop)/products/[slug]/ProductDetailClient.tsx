@@ -51,12 +51,20 @@ export function ProductDetailClient({ product, productName }: Props) {
 
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
   const purchaseCount = product.totalSales ?? product.purchaseCount ?? 0;
+  // Default to in-stock so pre-migration rows (inStock === undefined)
+  // don't accidentally show "Out of stock". Only an explicit `false`
+  // flips the button.
+  const inStock = product.inStock !== false;
   const rating = product.rating ?? 5;
   const reviewCount = product.reviewCount ?? 4;
   const deliveryFields: any[] = product.deliveryFields || [];
   const relatedProducts: any[] = product.relatedProducts || [];
 
   const handleAdd = () => {
+    // Belt-and-suspenders: the sticky-bar buttons are already
+    // disabled when inStock=false, but a stale client render or a
+    // race with an admin toggle could still fire this — refuse.
+    if (product.inStock === false) return;
     const errors: string[] = [];
     for (let idx = 0; idx < deliveryFields.length; idx++) {
       const field = deliveryFields[idx];
@@ -485,13 +493,20 @@ export function ProductDetailClient({ product, productName }: Props) {
         {/* Mobile floating pill */}
         <div className="mx-3 mb-3 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] shadow-[0_10px_30px_rgba(91,33,182,0.35)] sm:hidden">
           <div className="flex items-center justify-between gap-2 px-2 py-2" dir="rtl">
-            {/* Add to cart pill (start side = right in RTL) */}
+            {/* Add to cart pill — flips to "Out of stock" (LTR) when
+                inStock=false. Disabled state uses cursor-not-allowed +
+                muted text so it reads as a status, not a button. */}
             <button
-              onClick={handleAdd}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-black text-[#5B21B6] shadow-sm transition-all active:scale-95"
+              onClick={inStock ? handleAdd : undefined}
+              disabled={!inStock}
+              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
             >
-              <ShoppingCart className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.5} />
-              <span>أضف إلى السلة</span>
+              <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
+              {inStock ? (
+                <span>أضف إلى السلة</span>
+              ) : (
+                <span dir="ltr">Out of stock</span>
+              )}
             </button>
 
             {/* Quantity pill inline with the buttons on mobile */}
@@ -535,18 +550,24 @@ export function ProductDetailClient({ product, productName }: Props) {
                 quantity claims the right. */}
             <div className="order-2 flex items-center gap-3 rounded-2xl border border-white/40 bg-transparent p-2">
               <button
-                onClick={handleAdd}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
+                onClick={inStock ? handleAdd : undefined}
+                disabled={!inStock}
+                className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
               >
-                <Zap className="h-4 w-4 text-orange-500" strokeWidth={2.5} fill="currentColor" />
+                <Zap className={`h-4 w-4 ${inStock ? "text-orange-500" : "text-[#9ca3af]"}`} strokeWidth={2.5} fill="currentColor" />
                 <span>اشتري الآن</span>
               </button>
               <button
-                onClick={handleAdd}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black text-[#5B21B6] shadow-sm transition-all hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95"
+                onClick={inStock ? handleAdd : undefined}
+                disabled={!inStock}
+                className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
               >
-                <ShoppingCart className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.5} />
-                <span>أضف إلى السلة</span>
+                <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
+                {inStock ? (
+                  <span>أضف إلى السلة</span>
+                ) : (
+                  <span dir="ltr">Out of stock</span>
+                )}
               </button>
             </div>
 
