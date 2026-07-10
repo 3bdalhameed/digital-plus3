@@ -5,7 +5,8 @@ import { draftMode } from "next/headers";
 import type { Metadata } from "next";
 import { getPostBySlug, getPosts } from "@/lib/payload";
 
-export const revalidate = 60;
+// Blog posts rarely change after publish — 1 hour ISR.
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,

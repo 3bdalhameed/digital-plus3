@@ -10,7 +10,9 @@ import {
 } from "@/lib/payload";
 import { ProductCard } from "@/components/product/ProductCard";
 
-export const revalidate = 60;
+// Category/subcategory listing — 3 min. Reordering + new products
+// surface on the next window.
+export const revalidate = 180;
 
 /**
  * Unified "collection" page handling BOTH categories AND subcategories.

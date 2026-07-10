@@ -3,7 +3,9 @@ import { getProductBySlug, getRelatedProducts } from "@/lib/payload";
 import { ProductDetailClient } from "./ProductDetailClient";
 import { RelatedProducts } from "./RelatedProducts";
 
-export const revalidate = 60;
+// Product detail — 5 min ISR. Stock/price change less than once a
+// minute; admin toggles surface on the next revalidate window.
+export const revalidate = 300;
 
 function productName(product: any): string {
   return product.nameAr ?? product.name?.ar ?? product.nameEn ?? product.name?.en ?? "";

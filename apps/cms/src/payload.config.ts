@@ -115,6 +115,29 @@ export default buildConfig({
     // pick up any backlog), then every hour.
     setTimeout(runMaint, 30_000).unref?.();
     setInterval(runMaint, 60 * 60 * 1000).unref?.();
+
+    // Keep-alive ping: a cheap SELECT 1 every 4 minutes so Neon
+    // Free doesn't sleep its endpoint (idle threshold is 5 min).
+    // First cold query after Neon sleeps costs ~1-2s while it
+    // spins the compute back up -- exactly the "slow first load"
+    // experience we're trying to kill. Interval is unref'd so it
+    // doesn't block graceful shutdown, and the query is bounded so
+    // a hung connection can't stall the loop.
+    const keepAlive = async () => {
+      const pool =
+        payload.db?.pool ??
+        payload.db?.drizzle?.session?.client ??
+        payload.db?.client;
+      if (!pool?.query) return;
+      try {
+        await pool.query("SELECT 1");
+      } catch (e: any) {
+        // Don't log every blip -- but do surface anything that
+        // suggests the pool itself is unhealthy.
+        payload.logger.warn({ msg: "[keep-alive] ping failed", error: e?.message });
+      }
+    };
+    setInterval(keepAlive, 4 * 60 * 1000).unref?.();
   },
 
   endpoints: [

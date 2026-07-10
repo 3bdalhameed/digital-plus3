@@ -3,7 +3,8 @@ import { ProductCard } from "@/components/product/ProductCard";
 import Link from "next/link";
 
 export const metadata = { title: "المنتجات" };
-export const revalidate = 60;
+// 3 min — listing changes when new products publish; not price-sensitive.
+export const revalidate = 180;
 
 interface Props {
   searchParams: {

@@ -1,7 +1,7 @@
 import { getPolicies } from "@/lib/payload";
 
 export const metadata = { title: "الشروط والأحكام" };
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export default async function TermsPage() {
   const policies = await getPolicies().catch(() => null);
