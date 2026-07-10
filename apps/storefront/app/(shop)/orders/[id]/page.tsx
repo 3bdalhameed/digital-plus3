@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowRight, Star, Clock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getOrder, getOrderEvidence, getOrderReviewsByProduct } from "@/lib/payload";

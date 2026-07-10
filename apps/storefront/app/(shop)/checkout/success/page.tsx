@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { CheckCircle } from "lucide-react";
 
 export const metadata = { title: "تم الطلب بنجاح" };

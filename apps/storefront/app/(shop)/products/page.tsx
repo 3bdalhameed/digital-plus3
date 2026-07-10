@@ -1,6 +1,6 @@
 import { getProducts, getCategories } from "@/lib/payload";
 import { ProductCard } from "@/components/product/ProductCard";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 
 export const metadata = { title: "المنتجات" };
 // 3 min — listing changes when new products publish; not price-sensitive.

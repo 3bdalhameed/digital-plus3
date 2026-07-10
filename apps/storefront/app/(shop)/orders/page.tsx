@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getCustomerOrders } from "@/lib/payload";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { redirect } from "next/navigation";
 import { Star, Clock, CheckCircle2, Package } from "lucide-react";
 import { RateProductButton } from "@/components/orders/RateProductButton";

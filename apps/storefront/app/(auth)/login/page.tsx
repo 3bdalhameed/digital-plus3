@@ -2,7 +2,7 @@
 
 import { useState, Suspense, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Mail, Lock, RefreshCw, KeyRound } from "lucide-react";
 

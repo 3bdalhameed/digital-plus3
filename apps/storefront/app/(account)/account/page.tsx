@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import Image from "next/image";
 import { User, ShoppingBag, MessageCircle } from "lucide-react";
 import { getSettings } from "@/lib/payload";

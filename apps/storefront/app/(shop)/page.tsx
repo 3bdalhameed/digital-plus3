@@ -1,6 +1,6 @@
 import { getHomePage } from "@/lib/payload";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowLeft, Zap, Shield, Headphones, Star } from "lucide-react";
 import { draftMode } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
