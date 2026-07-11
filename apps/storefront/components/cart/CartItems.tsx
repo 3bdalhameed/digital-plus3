@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "@/components/ui/link";
 import { Trash2, Plus, Minus, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
 import type { DeliveryField } from "@my-store/types";
 
@@ -16,6 +17,11 @@ function getMissingRequired(fields: DeliveryField[], info: Record<string, string
 export function CartItems() {
   const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, clearCart } =
     useCartStore();
+  // Same visitor-picked currency the home/product pages use, so the
+  // cart doesn't suddenly flip back to USD after being shown SAR/JOD/AED
+  // everywhere else. Line-item, subtotal, and cart total all reformat
+  // via `formatPrice(amt, "USD", userCurrency, rates)`.
+  const { currency: userCurrency, rates } = useLocaleStore();
 
   if (items.length === 0) {
     return (
@@ -71,7 +77,7 @@ export function CartItems() {
                   {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                 </Link>
                 <p className="mt-1 text-sm font-semibold text-brand-600">
-                  {formatPrice(item.product.price, item.product.currency)}
+                  {formatPrice(item.product.price, item.product.currency, userCurrency, rates)}
                 </p>
                 {/* Filled delivery info summary */}
                 {item.deliveryInfo && deliveryFields.length > 0 && !hasUnfilled && (
@@ -113,7 +119,7 @@ export function CartItems() {
               {/* Subtotal */}
               <div className="min-w-[5rem] text-left">
                 <span className="text-sm font-bold text-brand-600">
-                  {formatPrice(item.product.price * item.quantity, item.product.currency)}
+                  {formatPrice(item.product.price * item.quantity, item.product.currency, userCurrency, rates)}
                 </span>
               </div>
 
@@ -215,7 +221,7 @@ export function CartItems() {
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-brand-800">المجموع</span>
           <span className="text-2xl font-extrabold text-brand-600">
-            {formatPrice(totalPrice())}
+            {formatPrice(totalPrice(), "USD", userCurrency, rates)}
           </span>
         </div>
         {!canCheckout && (

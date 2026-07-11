@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "@/components/ui/link";
 import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
 import { lexicalToHtml } from "@/lib/lexical";
 import type { Product } from "@my-store/types";
@@ -16,6 +17,13 @@ interface Props {
 
 export function ProductDetailClient({ product, productName }: Props) {
   const addItem = useCartStore((s) => s.addItem);
+  // Read the visitor's chosen display currency (auto-detected from
+  // their country by /api/geo, or manually picked via the header
+  // switcher). ProductCard already does this on the home + listing
+  // pages; the detail page was rendering in the product's base
+  // currency verbatim, so a JO visitor with SAR selected still saw
+  // USD prices here.
+  const { currency: userCurrency, rates } = useLocaleStore();
   const [tab, setTab] = useState<"desc" | "reviews">("desc");
   const [qty, setQty] = useState(1);
 
@@ -150,11 +158,11 @@ export function ProductDetailClient({ product, productName }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-black text-[#7C3AED]">
-                {formatPrice(product.price, product.currency)}
+                {formatPrice(product.price, product.currency, userCurrency, rates)}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-[#9ca3af] line-through">
-                  {formatPrice(product.comparePrice, product.currency)}
+                  {formatPrice(product.comparePrice, product.currency, userCurrency, rates)}
                 </span>
               )}
             </div>
@@ -476,7 +484,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                   {related.nameAr || related.name?.ar || ""}
                 </p>
                 <p className="mt-1 text-sm font-extrabold text-[#7C3AED]">
-                  {formatPrice(related.price, related.currency)}
+                  {formatPrice(related.price, related.currency, userCurrency, rates)}
                 </p>
               </Link>
             ))}

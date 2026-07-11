@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "@/components/ui/link";
 import { Shield, Loader2, CheckCircle, Mail } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useLocaleStore } from "@/lib/locale-store";
 import { logEvidence } from "@/lib/evidence";
 import { formatPrice } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function CheckoutForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { items, totalPrice, clearCart } = useCartStore();
+  const { currency: userCurrency, rates } = useLocaleStore();
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -289,7 +291,9 @@ export function CheckoutForm() {
                 <span className="text-sm font-bold text-brand-600">
                   {formatPrice(
                     item.product.price * item.quantity,
-                    item.product.currency
+                    item.product.currency,
+                    userCurrency,
+                    rates
                   )}
                 </span>
               </div>
@@ -298,7 +302,7 @@ export function CheckoutForm() {
           <div className="mt-4 flex items-center justify-between border-t border-brand-100 pt-4">
             <span className="text-lg font-bold text-brand-800">المجموع</span>
             <span className="text-xl font-extrabold text-brand-600">
-              {formatPrice(totalPrice())}
+              {formatPrice(totalPrice(), "USD", userCurrency, rates)}
             </span>
           </div>
 
@@ -548,7 +552,7 @@ export function CheckoutForm() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              `تأكيد الطلب — ${formatPrice(totalPrice())}`
+              `تأكيد الطلب — ${formatPrice(totalPrice(), "USD", userCurrency, rates)}`
             )}
           </button>
         </div>
