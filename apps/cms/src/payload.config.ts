@@ -337,6 +337,29 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "fp_show_more_subcategory",
     "ALTER TABLE home_page_blocks_featured_products ADD COLUMN IF NOT EXISTS show_more_subcategory_id integer REFERENCES subcategories(id) ON DELETE SET NULL"
   );
+
+  // Bilingual section titles — optional English variant on every homepage
+  // block that has a `title` field. Storefront prefers title_en when the
+  // visitor toggles the language switcher to EN. Payload maps `titleEn` →
+  // column `title_en`. Idempotent; safe to re-run on every boot.
+  for (const table of [
+    "home_page_blocks_hero_banner",
+    "home_page_blocks_featured_products",
+    "home_page_blocks_category_grid",
+    "home_page_blocks_category_banners",
+    "home_page_blocks_category_row",
+    "home_page_blocks_image_with_text",
+    "home_page_blocks_feature_blocks",
+    "home_page_blocks_stats_section",
+    "home_page_blocks_testimonials",
+    "home_page_blocks_faq_section",
+    "home_page_blocks_newsletter",
+  ]) {
+    await run(
+      `${table}_title_en`,
+      `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS title_en VARCHAR`
+    );
+  }
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:
   //   Cannot read properties of undefined (reading
