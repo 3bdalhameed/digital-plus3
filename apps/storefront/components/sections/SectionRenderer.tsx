@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditCard, Hourglass } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
+import { useLocaleStore } from "@/lib/locale-store";
 import type { HomePageSection } from "@my-store/types";
 
 // ── Horizontal product carousel ─────────────────────────────────
@@ -105,14 +106,15 @@ export function SectionRenderer({ section }: { section: HomePageSection }) {
 /* ═══════════════════════════════════════
    1. HERO BANNER
 ═══════════════════════════════════════ */
-function HeroBannerSection({ title, subtitle, cta, backgroundImage }: any) {
+function HeroBannerSection({ title, titleEn, subtitle, cta, backgroundImage }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   return (
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-10 py-20 text-white md:py-28">
       {backgroundImage?.url && (
         <Image src={backgroundImage.url} alt="" fill className="object-cover opacity-20" />
       )}
       <div className="relative z-10 text-center">
-        <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight md:text-6xl">{title}</h1>
+        <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight md:text-6xl">{displayTitle}</h1>
         {subtitle && <p className="mx-auto mt-5 max-w-xl text-xl text-white/80">{subtitle}</p>}
         {cta?.label && (
           <Link href={cta.link} className="mt-10 inline-block rounded-xl bg-white px-10 py-4 text-base font-bold text-[#7C3AED] shadow-lg transition-all hover:bg-[#f5f3ff] hover:shadow-xl">
@@ -186,7 +188,18 @@ const colsClass: Record<string, string> = {
   "6": "grid-cols-2 md:grid-cols-4 lg:grid-cols-6",
 };
 
-function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMoreSubcategory }: any) {
+// Shared helper: pick the English title when the visitor picked EN and a
+// non-empty English title exists, otherwise fall back to the Arabic one.
+// Kept as a hook (not a plain function) because it must subscribe to the
+// Zustand store so title switches when the visitor toggles the language.
+function useBilingualTitle(title?: string, titleEn?: string): string | undefined {
+  const lang = useLocaleStore((s) => s.lang);
+  return lang === "en" && titleEn ? titleEn : title;
+}
+
+function FeaturedProductsSection({ title, titleEn, subtitle, products, titleIcon, showMoreSubcategory }: any) {
+  const lang = useLocaleStore((s) => s.lang);
+  const displayTitle = useBilingualTitle(title, titleEn);
   // Editors can upload a custom title icon (PNG with transparent bg works best)
   // per block. Falls back to the Sparkles vector when nothing is uploaded.
   const iconUrl = titleIcon?.url as string | undefined;
@@ -211,14 +224,14 @@ function FeaturedProductsSection({ title, subtitle, products, titleIcon, showMor
   );
   return (
     <section>
-      {title && (
+      {displayTitle && (
         <div
           className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[#702dff] to-[#a77fff] px-3 py-1.5 text-white shadow-[0_10px_25px_rgba(112,45,255,0.35)] ring-1 ring-white/10 sm:px-4 sm:py-2"
-          dir="rtl"
+          dir={lang === "en" ? "ltr" : "rtl"}
         >
           {chip}
           <h2 className="flex flex-1 items-center justify-center gap-2 text-sm font-black sm:text-base md:text-xl">
-            <span>{title}</span>
+            <span>{displayTitle}</span>
           </h2>
           {chip}
         </div>
@@ -292,11 +305,12 @@ function showMoreHref(products: any[] | undefined, explicitSubcategory?: any): s
 /* ═══════════════════════════════════════
    4. CATEGORY GRID
 ═══════════════════════════════════════ */
-function CategoryGridSection({ title, categories, columns }: any) {
+function CategoryGridSection({ title, titleEn, categories, columns }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   const cols = colsClass[columns ?? "4"] ?? colsClass["4"];
   return (
     <section>
-      <div className="section-title">{title}</div>
+      <div className="section-title">{displayTitle}</div>
       <div className={`grid gap-6 sm:gap-8 ${cols}`}>
         {categories?.map((cat: any) => (
           <Link key={cat.id} href={`/collections/${cat.slug}`} className="cat-card group">
@@ -389,7 +403,8 @@ function SeamlessMarquee({
 /* ═══════════════════════════════════════
    5. CATEGORY BANNERS — seamless marquee
 ═══════════════════════════════════════ */
-function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, speed = 25, pauseOnHover }: any) {
+function CategoryBannersSection({ title, titleEn, banners, cardWidth, cardAspectRatio, speed = 25, pauseOnHover }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   // Only three tiers in the CMS now: small / big / very big.
   // xs + xl entries stay for back-compat with any block saved before the
   // field was simplified -- they map to the nearest new tier.
@@ -424,7 +439,7 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
 
   return (
     <section className="py-2 sm:py-2">
-      {title && <div className="section-title">{title}</div>}
+      {displayTitle && <div className="section-title">{displayTitle}</div>}
       {/* Tight 8px gap -- reference designs sit the cards almost against
           each other so the marquee reads as a single band of artwork. */}
       <SeamlessMarquee
@@ -444,7 +459,8 @@ function CategoryBannersSection({ title, banners, cardWidth, cardAspectRatio, sp
 /* ═══════════════════════════════════════
    6. CATEGORY ROW — seamless marquee
 ═══════════════════════════════════════ */
-function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }: any) {
+function CategoryRowSection({ title, titleEn, items, iconSize, speed = 25, pauseOnHover }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   // Sized to match the larger category cards above. Each tier still maps
   // to the same CMS option name (sm/md/lg) so editors don't need to re-pick.
   const szMap: Record<string, number> = { sm: 140, md: 200, lg: 260 };
@@ -473,7 +489,7 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
 
   return (
     <section className="py-2 sm:py-3">
-      {title && <div className="section-title">{title}</div>}
+      {displayTitle && <div className="section-title">{displayTitle}</div>}
       <SeamlessMarquee itemWidth={szNum} mobileItemWidth={mNum} speed={Number(speed) || 25} pauseOnHover={pauseOnHover !== false} reverse>
         {cards}
       </SeamlessMarquee>
@@ -484,16 +500,17 @@ function CategoryRowSection({ title, items, iconSize, speed = 25, pauseOnHover }
 /* ═══════════════════════════════════════
    7. IMAGE WITH TEXT
 ═══════════════════════════════════════ */
-function ImageWithTextSection({ image, title, text, ctaLabel, ctaLink, imagePosition }: any) {
+function ImageWithTextSection({ image, title, titleEn, text, ctaLabel, ctaLink, imagePosition }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   const isRight = imagePosition !== "left";
   return (
     <section className={`flex flex-col gap-8 md:flex-row md:items-center ${isRight ? "" : "md:flex-row-reverse"}`}>
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl md:w-1/2">
-        {image?.url && <Image src={image.url} alt={title} fill className="object-cover" />}
+        {image?.url && <Image src={image.url} alt={displayTitle ?? ""} fill className="object-cover" />}
         {!image?.url && <div className="flex h-full items-center justify-center bg-[#EDE9FE] text-6xl">🖼️</div>}
       </div>
       <div className="flex flex-1 flex-col gap-4 text-right">
-        <h2 className="text-2xl font-black text-[#1e1b4b] md:text-3xl">{title}</h2>
+        <h2 className="text-2xl font-black text-[#1e1b4b] md:text-3xl">{displayTitle}</h2>
         {text && <p className="text-sm leading-relaxed text-[#6b7280]">{text}</p>}
         {ctaLabel && ctaLink && (
           <Link href={ctaLink} className="brand-btn self-end px-8 py-3">
@@ -513,17 +530,18 @@ function ImageWithTextSection({ image, title, text, ctaLabel, ctaLink, imagePosi
 // "trust / support / payment / fast delivery" rhythm of the source design.
 const FEATURE_FALLBACK_ICONS = [ShieldCheck, UserIcon, CreditCard, Hourglass];
 
-function FeatureBlocksSection({ title, items }: any) {
+function FeatureBlocksSection({ title, titleEn, items }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   // Markup mirrors the original Shopify "أيقونات مع نص (4 مميزات)" section:
   // .about__wrapper > .wrapper > .outer__about > .grid__ > .el__ × N.
   // Each .el__ stacks: h6 (heading) → .icons_para (round icon chip) → p (sub).
   // Styles live in storefront/styles/globals.css under the same class names.
   return (
     <section dir="rtl">
-      {title && (
+      {displayTitle && (
         <div className="mb-4 flex justify-center">
           <span className="inline-flex items-center gap-2 rounded-lg bg-[#EDE9FE] px-4 py-1.5 text-base font-black text-[#7C3AED] sm:text-lg">
-            {title}
+            {displayTitle}
           </span>
         </div>
       )}
@@ -559,7 +577,8 @@ function FeatureBlocksSection({ title, items }: any) {
 /* ═══════════════════════════════════════
    9. STATS SECTION
 ═══════════════════════════════════════ */
-function StatsSectionBlock({ title, stats }: any) {
+function StatsSectionBlock({ title, titleEn, stats }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   const items = stats || [];
   // Parse each stat value once so we know what to animate and what to
   // preserve as static prefix/suffix text. "150+" → {target:150, suffix:"+"}.
@@ -621,9 +640,9 @@ function StatsSectionBlock({ title, stats }: any) {
       }}
       dir="rtl"
     >
-      {title && (
+      {displayTitle && (
         <div className="stats4__header">
-          <h2>{title}</h2>
+          <h2>{displayTitle}</h2>
         </div>
       )}
 
@@ -671,7 +690,8 @@ function parseStatValue(raw: string): { target: number; prefix: string; suffix: 
 /* ═══════════════════════════════════════
    10. TESTIMONIALS
 ═══════════════════════════════════════ */
-function TestimonialsSection({ title, items }: any) {
+function TestimonialsSection({ title, titleEn, items }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
   // Markup mirrors the original Shopify "آراء العملاء (بطاقات)" block:
   // .tst-section > .tst-container > .tst-heading + .tst-grid > .tst-card × N.
   // Each .tst-card has .tst-stars (5 SVGs, filled vs outlined per rating),
@@ -681,7 +701,7 @@ function TestimonialsSection({ title, items }: any) {
   return (
     <section className="tst-section" dir="rtl">
       <div className="tst-container">
-        {title && <h2 className="tst-heading">{title || "آراء العملاء"}</h2>}
+        {displayTitle && <h2 className="tst-heading">{displayTitle}</h2>}
 
         <div
           className="tst-grid tst-cols-4 [&::-webkit-scrollbar]:hidden"
@@ -725,14 +745,16 @@ function TestimonialsSection({ title, items }: any) {
 /* ═══════════════════════════════════════
    11. FAQ
 ═══════════════════════════════════════ */
-function FAQSectionBlock({ title, items }: any) {
+function FAQSectionBlock({ title, titleEn, items }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
+  const lang = useLocaleStore((s) => s.lang);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // Markup mirrors the original Shopify section: <h2 class="faq__title"> +
   // .faq__wrapper > .wrapper > .outer__faq > .elem__faq (.head__ / .content__).
   // Styles live in storefront/app/globals.css under the same class names.
   return (
-    <section dir="rtl">
-      <h2 className="faq__title">{title || "الأسئلة الشائعة"} 💬</h2>
+    <section dir={lang === "en" ? "ltr" : "rtl"}>
+      <h2 className="faq__title">{displayTitle || (lang === "en" ? "FAQ" : "الأسئلة الشائعة")} 💬</h2>
 
       <div className="faq__wrapper">
         <div className="wrapper">
@@ -780,12 +802,14 @@ function FAQSectionBlock({ title, items }: any) {
 /* ═══════════════════════════════════════
    12. NEWSLETTER
 ═══════════════════════════════════════ */
-function NewsletterSection({ title, subtitle, placeholder, buttonLabel }: any) {
+function NewsletterSection({ title, titleEn, subtitle, placeholder, buttonLabel }: any) {
+  const displayTitle = useBilingualTitle(title, titleEn);
+  const lang = useLocaleStore((s) => s.lang);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   return (
     <section className="overflow-hidden rounded-2xl bg-[#EDE9FE] px-10 py-16 text-center">
-      <h2 className="text-3xl font-black text-[#1e1b4b]">{title || "اشترك في نشرتنا"}</h2>
+      <h2 className="text-3xl font-black text-[#1e1b4b]">{displayTitle || (lang === "en" ? "Subscribe to our newsletter" : "اشترك في نشرتنا")}</h2>
       {subtitle && <p className="mx-auto mt-3 max-w-lg text-base text-[#6b7280]">{subtitle}</p>}
       {sent ? (
         <p className="mt-6 text-sm font-bold text-[#7C3AED]">✓ تم الاشتراك بنجاح!</p>

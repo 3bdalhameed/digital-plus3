@@ -41,6 +41,20 @@ const layoutFields: Field[] = [
   { name: "enabled", label: "مفعل", type: "checkbox", defaultValue: true },
 ];
 
+// Optional English title for any section header. Storefront prefers this
+// when the visitor picks "EN" in the language switcher; falls back to the
+// Arabic `title` when this is empty. Kept optional so existing blocks
+// keep working without editor changes.
+const titleEnField: Field = {
+  name: "titleEn",
+  label: "العنوان (إنجليزي)",
+  type: "text",
+  admin: {
+    description:
+      "يظهر عند اختيار الزائر EN. إذا تُرك فارغاً يظهر العنوان العربي.",
+  },
+};
+
 export const HomePage: GlobalConfig = {
   slug: "home-page",
   label: "الصفحة الرئيسية",
@@ -64,7 +78,8 @@ export const HomePage: GlobalConfig = {
           slug: "heroBanner",
           labels: { singular: "بانر رئيسي", plural: "بانرات رئيسية" },
           fields: [
-            { name: "title",    label: "العنوان",        type: "text", required: true },
+            { name: "title",    label: "العنوان (عربي)",        type: "text", required: true },
+            titleEnField,
             { name: "subtitle", label: "العنوان الفرعي", type: "text" },
             {
               name: "cta", label: "زر الإجراء", type: "group",
@@ -117,7 +132,8 @@ export const HomePage: GlobalConfig = {
           slug: "featuredProducts",
           labels: { singular: "منتجات مميزة", plural: "منتجات مميزة" },
           fields: [
-            { name: "title",    label: "العنوان", type: "text", required: true },
+            { name: "title",    label: "العنوان (عربي)", type: "text", required: true },
+            titleEnField,
             { name: "subtitle", label: "وصف",     type: "text" },
             {
               name: "titleIcon",
@@ -164,7 +180,8 @@ export const HomePage: GlobalConfig = {
           slug: "categoryGrid",
           labels: { singular: "شبكة التصنيفات", plural: "شبكات التصنيفات" },
           fields: [
-            { name: "title", label: "العنوان", type: "text", required: true },
+            { name: "title", label: "العنوان (عربي)", type: "text", required: true },
+            titleEnField,
             {
               name: "columns", label: "عدد الأعمدة", type: "select", defaultValue: "4",
               options: [
@@ -187,7 +204,8 @@ export const HomePage: GlobalConfig = {
           slug: "categoryBanners",
           labels: { singular: "بنرات الفئات", plural: "بنرات الفئات" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             // Only three sizes. Enum values (sm/md/lg) are kept the same so
             // no DB migration is needed -- only the labels + storefront
             // width mapping change.
@@ -236,7 +254,8 @@ export const HomePage: GlobalConfig = {
           slug: "categoryRow",
           labels: { singular: "سطر فئات سحب", plural: "أسطر فئات" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             {
               name: "iconSize", label: "حجم الأيقونة", type: "select", defaultValue: "md",
               options: [
@@ -279,7 +298,8 @@ export const HomePage: GlobalConfig = {
           labels: { singular: "صورة مع نص", plural: "صور مع نص" },
           fields: [
             { name: "image",    label: "الصورة",    type: "upload", relationTo: "media", required: true },
-            { name: "title",    label: "العنوان",   type: "text",   required: true },
+            { name: "title",    label: "العنوان (عربي)",   type: "text",   required: true },
+            titleEnField,
             { name: "text",     label: "النص",      type: "textarea" },
             { name: "ctaLabel", label: "نص الزر",   type: "text" },
             { name: "ctaLink",  label: "رابط الزر", type: "text" },
@@ -307,7 +327,8 @@ export const HomePage: GlobalConfig = {
           slug: "featureBlocks",
           labels: { singular: "مميزات المتجر", plural: "مميزات" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             {
               name: "columns", label: "عدد الأعمدة", type: "select", defaultValue: "4",
               options: [
@@ -335,7 +356,8 @@ export const HomePage: GlobalConfig = {
           slug: "statsSection",
           labels: { singular: "قسم الإحصائيات", plural: "إحصائيات" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             {
               name: "stats", label: "الإحصائيات", type: "array",
               labels: { singular: "إحصائية", plural: "الإحصائيات" },
@@ -355,7 +377,8 @@ export const HomePage: GlobalConfig = {
           slug: "testimonials",
           labels: { singular: "آراء العملاء", plural: "آراء العملاء" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             {
               name: "columns", label: "عدد الأعمدة", type: "select", defaultValue: "3",
               options: [
@@ -384,7 +407,8 @@ export const HomePage: GlobalConfig = {
           slug: "faqSection",
           labels: { singular: "أسئلة وأجوبة", plural: "أسئلة وأجوبة" },
           fields: [
-            { name: "title", label: "العنوان", type: "text" },
+            { name: "title", label: "العنوان (عربي)", type: "text" },
+            titleEnField,
             {
               name: "items", label: "الأسئلة", type: "array",
               labels: { singular: "سؤال", plural: "الأسئلة" },
@@ -403,7 +427,8 @@ export const HomePage: GlobalConfig = {
           slug: "newsletter",
           labels: { singular: "النشرة الإخبارية", plural: "نشرات إخبارية" },
           fields: [
-            { name: "title",       label: "العنوان",             type: "text" },
+            { name: "title",       label: "العنوان (عربي)",             type: "text" },
+            titleEnField,
             { name: "subtitle",    label: "الوصف",               type: "text" },
             { name: "placeholder", label: "placeholder الحقل",   type: "text", defaultValue: "أدخل بريدك الإلكتروني" },
             { name: "buttonLabel", label: "نص الزر",             type: "text", defaultValue: "اشترك الآن" },
