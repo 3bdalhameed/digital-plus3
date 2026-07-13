@@ -247,7 +247,7 @@ export async function createOrderForCustomer(input: {
         INSERT INTO orders (
           order_number, status, total_amount, currency,
           payment_reference,
-          discount_code, discount_amount,
+          "discountCode", "discountAmount",
           terms_accepted_at, terms_accepted_i_p, terms_accepted_user_agent,
           updated_at, created_at
         )
@@ -326,15 +326,15 @@ export async function createOrderForCustomer(input: {
 type DiscountRow = {
   id: number;
   code: string;
-  discount_type: "percentage" | "fixed_amount";
-  discount_value: string; // NUMERIC returns as string via prisma
+  discountType: "percentage" | "fixed_amount";
+  discountValue: string; // NUMERIC returns as string via prisma
   active: boolean;
-  starts_at: Date | null;
-  expires_at: Date | null;
-  min_order_amount: string | null;
-  max_uses: number | null;
-  current_uses: number;
-  applies_to: "all" | "categories" | "products";
+  startsAt: Date | null;
+  expiresAt: Date | null;
+  minOrderAmount: string | null;
+  maxUses: number | null;
+  currentUses: number;
+  appliesTo: "all" | "categories" | "products";
 };
 
 /**
@@ -362,9 +362,9 @@ async function applyDiscountInTx(
   // Row-level lock so two concurrent checkouts can't both slip in
   // when the cap has one slot left.
   const rows = await tx.$queryRaw<DiscountRow[]>(Prisma.sql`
-    SELECT id, code, discount_type, discount_value, active,
-           starts_at, expires_at, min_order_amount,
-           max_uses, current_uses, applies_to
+    SELECT id, code, "discountType", "discountValue", active,
+           "startsAt", "expiresAt", "minOrderAmount",
+           "maxUses", "currentUses", "appliesTo"
       FROM discount_codes
      WHERE upper(code) = ${rawCode}
      LIMIT 1
@@ -374,19 +374,19 @@ async function applyDiscountInTx(
   if (!doc || !doc.active) return { code: null, amount: 0 };
 
   const now = Date.now();
-  if (doc.starts_at && doc.starts_at.getTime() > now) return { code: null, amount: 0 };
-  if (doc.expires_at && doc.expires_at.getTime() < now) return { code: null, amount: 0 };
-  if (typeof doc.max_uses === "number" && doc.max_uses > 0 && doc.current_uses >= doc.max_uses) {
+  if (doc.startsAt && doc.startsAt.getTime() > now) return { code: null, amount: 0 };
+  if (doc.expiresAt && doc.expiresAt.getTime() < now) return { code: null, amount: 0 };
+  if (typeof doc.maxUses === "number" && doc.maxUses > 0 && doc.currentUses >= doc.maxUses) {
     return { code: null, amount: 0 };
   }
-  const minOrder = doc.min_order_amount != null ? Number(doc.min_order_amount) : 0;
+  const minOrder = doc.minOrderAmount != null ? Number(doc.minOrderAmount) : 0;
   if (minOrder > 0 && input.subtotal < minOrder) return { code: null, amount: 0 };
 
-  // Compute the eligible subtotal. `applies_to === 'all'` is the fast
+  // Compute the eligible subtotal. `appliesTo === 'all'` is the fast
   // path; the two scoped modes need a rels-join to find which items
   // (by category or by product id) count toward the discount.
   let eligible = input.subtotal;
-  if (doc.applies_to === "categories" || doc.applies_to === "products") {
+  if (doc.appliesTo === "categories" || doc.appliesTo === "products") {
     const rels = await tx.$queryRaw<{ categories_id: number | null; products_id: number | null }[]>(Prisma.sql`
       SELECT categories_id, products_id
         FROM discount_codes_rels
@@ -405,7 +405,7 @@ async function applyDiscountInTx(
     eligible = 0;
     for (const it of input.items) {
       const pid = Number(it.productId);
-      const match = doc.applies_to === "products"
+      const match = doc.appliesTo === "products"
         ? prodIds.has(pid)
         : (productCatMap.get(pid) != null && catIds.has(productCatMap.get(pid)!));
       if (match) eligible += Number(it.unitPrice) * Number(it.quantity);
@@ -413,16 +413,16 @@ async function applyDiscountInTx(
     if (eligible <= 0) return { code: null, amount: 0 };
   }
 
-  const rawAmount = doc.discount_type === "percentage"
-    ? (eligible * Number(doc.discount_value)) / 100
-    : Number(doc.discount_value);
+  const rawAmount = doc.discountType === "percentage"
+    ? (eligible * Number(doc.discountValue)) / 100
+    : Number(doc.discountValue);
   const amount = Math.min(Math.max(0, Math.round(rawAmount * 100) / 100), eligible);
   if (amount <= 0) return { code: null, amount: 0 };
 
   await tx.$executeRaw(Prisma.sql`
     UPDATE discount_codes
-       SET current_uses = current_uses + 1,
-           updated_at   = NOW()
+       SET "currentUses" = "currentUses" + 1,
+           "updatedAt"   = NOW()
      WHERE id = ${doc.id}
   `);
 

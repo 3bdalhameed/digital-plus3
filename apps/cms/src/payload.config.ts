@@ -368,20 +368,34 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   // collections/DiscountCodes.ts here so the collection can be read
   // and written on first boot.
   //
-  // IMPORTANT — enum types for the two select fields (`discountType`
-  // and `appliesTo`). Payload's Drizzle adapter builds queries that
-  // cast values to `enum_<table>_<field>` types; a plain VARCHAR
-  // column 500's every write. Mirrors the convention already in
-  // orders (`enum_orders_status`, `enum_orders_currency`).
-  await run("discount_codes_enum_type", `
+  // IMPORTANT — Payload's Drizzle adapter issues INSERTs with quoted,
+  // case-sensitive camelCase identifiers (e.g. `"discountType"`, not
+  // `discount_type`). Older collections in this repo get away with
+  // snake_case columns because their write paths only UPDATE changed
+  // fields, but a fresh collection's CREATE INSERTs every field at
+  // once, exposing the mismatch and 500ing the whole write. Every
+  // column below matches the exact camelCase Payload uses, including
+  // the enum type names.
+  //
+  // Also drop any leftover snake_case table + enums from the earlier
+  // broken migrations so this re-runs cleanly on already-attempted
+  // boxes. Safe: no successful writes ever landed (all previous POSTs
+  // 500'd on the mismatch).
+  await run("discount_codes_drop_legacy", `
+    DROP TABLE IF EXISTS discount_codes_rels CASCADE;
+    DROP TABLE IF EXISTS discount_codes CASCADE;
+    DROP TYPE  IF EXISTS "enum_discount_codes_discount_type" CASCADE;
+    DROP TYPE  IF EXISTS "enum_discount_codes_applies_to"    CASCADE;
+  `);
+  await run("discount_codes_enum_discountType", `
     DO $$ BEGIN
-      CREATE TYPE "enum_discount_codes_discount_type" AS ENUM ('percentage', 'fixed_amount');
+      CREATE TYPE "enum_discount_codes_discountType" AS ENUM ('percentage', 'fixed_amount');
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$;
   `);
-  await run("discount_codes_enum_applies_to", `
+  await run("discount_codes_enum_appliesTo", `
     DO $$ BEGIN
-      CREATE TYPE "enum_discount_codes_applies_to" AS ENUM ('all', 'categories', 'products');
+      CREATE TYPE "enum_discount_codes_appliesTo" AS ENUM ('all', 'categories', 'products');
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$;
   `);
@@ -390,42 +404,19 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
       id SERIAL PRIMARY KEY,
       code VARCHAR NOT NULL UNIQUE,
       description VARCHAR,
-      discount_type "enum_discount_codes_discount_type" NOT NULL DEFAULT 'percentage',
-      discount_value NUMERIC NOT NULL DEFAULT 0,
+      "discountType" "enum_discount_codes_discountType" NOT NULL DEFAULT 'percentage',
+      "discountValue" NUMERIC NOT NULL DEFAULT 0,
       active BOOLEAN NOT NULL DEFAULT TRUE,
-      starts_at TIMESTAMP WITH TIME ZONE,
-      expires_at TIMESTAMP WITH TIME ZONE,
-      min_order_amount NUMERIC,
-      max_uses INTEGER,
-      current_uses INTEGER NOT NULL DEFAULT 0,
-      max_uses_per_customer INTEGER,
-      applies_to "enum_discount_codes_applies_to" NOT NULL DEFAULT 'all',
-      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      "startsAt" TIMESTAMP WITH TIME ZONE,
+      "expiresAt" TIMESTAMP WITH TIME ZONE,
+      "minOrderAmount" NUMERIC,
+      "maxUses" INTEGER,
+      "currentUses" INTEGER NOT NULL DEFAULT 0,
+      "maxUsesPerCustomer" INTEGER,
+      "appliesTo" "enum_discount_codes_appliesTo" NOT NULL DEFAULT 'all',
+      "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
     )
-  `);
-  // If the table already exists from the initial (broken) VARCHAR-based
-  // migration, convert the columns in-place. Idempotent: alter is a
-  // no-op once the column type already matches.
-  await run("discount_codes_alter_discount_type", `
-    DO $$ BEGIN
-      ALTER TABLE discount_codes
-        ALTER COLUMN discount_type DROP DEFAULT,
-        ALTER COLUMN discount_type TYPE "enum_discount_codes_discount_type"
-          USING discount_type::"enum_discount_codes_discount_type",
-        ALTER COLUMN discount_type SET DEFAULT 'percentage';
-    EXCEPTION WHEN others THEN NULL;
-    END $$;
-  `);
-  await run("discount_codes_alter_applies_to", `
-    DO $$ BEGIN
-      ALTER TABLE discount_codes
-        ALTER COLUMN applies_to DROP DEFAULT,
-        ALTER COLUMN applies_to TYPE "enum_discount_codes_applies_to"
-          USING applies_to::"enum_discount_codes_applies_to",
-        ALTER COLUMN applies_to SET DEFAULT 'all';
-    EXCEPTION WHEN others THEN NULL;
-    END $$;
   `);
   await run(
     "discount_codes_code_upper_idx",
@@ -454,13 +445,16 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   // Orders: capture which discount code (if any) applied to an order and
   // the absolute amount subtracted. Kept as text + numeric rather than a
   // relationship so historical orders survive if the code is deleted.
+  // Column names are camelCase for the same Payload+Drizzle reason
+  // documented above -- admin saves through Drizzle would INSERT
+  // "discountCode" quoted, not discount_code.
   await run(
-    "orders_discount_code_col",
-    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code VARCHAR"
+    "orders_discountCode_col",
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS "discountCode" VARCHAR`
   );
   await run(
-    "orders_discount_amount_col",
-    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC"
+    "orders_discountAmount_col",
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS "discountAmount" NUMERIC`
   );
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:
