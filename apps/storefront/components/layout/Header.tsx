@@ -387,11 +387,43 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 }
 
 /* Stylized "D+" logo mark — used when no CMS logo is uploaded */
+/**
+ * Default brand mark shown when no logo is uploaded in the CMS Site
+ * Settings. Renders the Arabic + English wordmark next to the "+" icon
+ * so the header reads as a real logo instead of a placeholder shape.
+ * If SiteSettings.logo.url gets set the Image branch in Header takes
+ * over and this component is unused.
+ */
 function LogoMark() {
   return (
-    <svg viewBox="0 0 24 24" className="h-12 w-12 text-white sm:h-14 sm:w-14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-    </svg>
+    <div className="flex items-center gap-2 sm:gap-3" dir="rtl">
+      <div className="flex flex-col text-white leading-tight">
+        <span className="text-base font-black sm:text-xl">ديجيتال بلس</span>
+        <span
+          className="text-[9px] font-bold tracking-[0.15em] text-white/85 sm:text-[10px]"
+          dir="ltr"
+        >
+          DIGITAL PLUS
+        </span>
+      </div>
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/40 backdrop-blur sm:h-11 sm:w-11"
+        aria-hidden
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-6 w-6 text-white sm:h-7 sm:w-7"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+    </div>
   );
 }
