@@ -367,12 +367,30 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   // create the table on its own; we mirror the field shape from
   // collections/DiscountCodes.ts here so the collection can be read
   // and written on first boot.
+  //
+  // IMPORTANT — enum types for the two select fields (`discountType`
+  // and `appliesTo`). Payload's Drizzle adapter builds queries that
+  // cast values to `enum_<table>_<field>` types; a plain VARCHAR
+  // column 500's every write. Mirrors the convention already in
+  // orders (`enum_orders_status`, `enum_orders_currency`).
+  await run("discount_codes_enum_type", `
+    DO $$ BEGIN
+      CREATE TYPE "enum_discount_codes_discount_type" AS ENUM ('percentage', 'fixed_amount');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
+  await run("discount_codes_enum_applies_to", `
+    DO $$ BEGIN
+      CREATE TYPE "enum_discount_codes_applies_to" AS ENUM ('all', 'categories', 'products');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
   await run("discount_codes_table", `
     CREATE TABLE IF NOT EXISTS discount_codes (
       id SERIAL PRIMARY KEY,
       code VARCHAR NOT NULL UNIQUE,
       description VARCHAR,
-      discount_type VARCHAR NOT NULL DEFAULT 'percentage',
+      discount_type "enum_discount_codes_discount_type" NOT NULL DEFAULT 'percentage',
       discount_value NUMERIC NOT NULL DEFAULT 0,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       starts_at TIMESTAMP WITH TIME ZONE,
@@ -381,10 +399,33 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
       max_uses INTEGER,
       current_uses INTEGER NOT NULL DEFAULT 0,
       max_uses_per_customer INTEGER,
-      applies_to VARCHAR NOT NULL DEFAULT 'all',
+      applies_to "enum_discount_codes_applies_to" NOT NULL DEFAULT 'all',
       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
     )
+  `);
+  // If the table already exists from the initial (broken) VARCHAR-based
+  // migration, convert the columns in-place. Idempotent: alter is a
+  // no-op once the column type already matches.
+  await run("discount_codes_alter_discount_type", `
+    DO $$ BEGIN
+      ALTER TABLE discount_codes
+        ALTER COLUMN discount_type DROP DEFAULT,
+        ALTER COLUMN discount_type TYPE "enum_discount_codes_discount_type"
+          USING discount_type::"enum_discount_codes_discount_type",
+        ALTER COLUMN discount_type SET DEFAULT 'percentage';
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+  await run("discount_codes_alter_applies_to", `
+    DO $$ BEGIN
+      ALTER TABLE discount_codes
+        ALTER COLUMN applies_to DROP DEFAULT,
+        ALTER COLUMN applies_to TYPE "enum_discount_codes_applies_to"
+          USING applies_to::"enum_discount_codes_applies_to",
+        ALTER COLUMN applies_to SET DEFAULT 'all';
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
   `);
   await run(
     "discount_codes_code_upper_idx",
