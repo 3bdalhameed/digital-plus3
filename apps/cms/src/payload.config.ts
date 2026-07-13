@@ -386,7 +386,19 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     DROP TABLE IF EXISTS discount_codes CASCADE;
     DROP TYPE  IF EXISTS "enum_discount_codes_discount_type" CASCADE;
     DROP TYPE  IF EXISTS "enum_discount_codes_applies_to"    CASCADE;
+    DROP TYPE  IF EXISTS "enum_discount_codes_discountType"  CASCADE;
+    DROP TYPE  IF EXISTS "enum_discount_codes_appliesTo"     CASCADE;
   `);
+  // Payload's Drizzle adapter here uses MIXED column naming:
+  //   - enum-typed columns keep the JS field name literally → camelCase
+  //     ("discountType", "appliesTo"), matching enum type name
+  //     "enum_discount_codes_<field>"
+  //   - every other column is converted to snake_case
+  //     (discount_value, min_order_amount, current_uses, etc.)
+  // This isn't a Payload option we can flip -- it's how the adapter's
+  // schema builder happens to handle pgEnum vs regular column names.
+  // Column list below is what the previous 500's tell us Drizzle is
+  // actually querying for on INSERT.
   await run("discount_codes_enum_discountType", `
     DO $$ BEGIN
       CREATE TYPE "enum_discount_codes_discountType" AS ENUM ('percentage', 'fixed_amount');
@@ -405,17 +417,17 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
       code VARCHAR NOT NULL UNIQUE,
       description VARCHAR,
       "discountType" "enum_discount_codes_discountType" NOT NULL DEFAULT 'percentage',
-      "discountValue" NUMERIC NOT NULL DEFAULT 0,
+      discount_value NUMERIC NOT NULL DEFAULT 0,
       active BOOLEAN NOT NULL DEFAULT TRUE,
-      "startsAt" TIMESTAMP WITH TIME ZONE,
-      "expiresAt" TIMESTAMP WITH TIME ZONE,
-      "minOrderAmount" NUMERIC,
-      "maxUses" INTEGER,
-      "currentUses" INTEGER NOT NULL DEFAULT 0,
-      "maxUsesPerCustomer" INTEGER,
+      starts_at TIMESTAMP WITH TIME ZONE,
+      expires_at TIMESTAMP WITH TIME ZONE,
+      min_order_amount NUMERIC,
+      max_uses INTEGER,
+      current_uses INTEGER NOT NULL DEFAULT 0,
+      max_uses_per_customer INTEGER,
       "appliesTo" "enum_discount_codes_appliesTo" NOT NULL DEFAULT 'all',
-      "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-      "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
     )
   `);
   await run(
@@ -445,16 +457,28 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   // Orders: capture which discount code (if any) applied to an order and
   // the absolute amount subtracted. Kept as text + numeric rather than a
   // relationship so historical orders survive if the code is deleted.
-  // Column names are camelCase for the same Payload+Drizzle reason
-  // documented above -- admin saves through Drizzle would INSERT
-  // "discountCode" quoted, not discount_code.
+  // snake_case for the same reason every other regular orders column
+  // is snake_case -- these fields aren't enum-typed so Drizzle
+  // converts the JS names (discountCode, discountAmount) to
+  // discount_code, discount_amount at query time.
+  //
+  // Drop any camelCase-named columns from the previous broken
+  // migration attempt before adding the correct snake_case version.
   await run(
-    "orders_discountCode_col",
-    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS "discountCode" VARCHAR`
+    "orders_discountCode_drop_legacy",
+    `ALTER TABLE orders DROP COLUMN IF EXISTS "discountCode"`
   );
   await run(
-    "orders_discountAmount_col",
-    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS "discountAmount" NUMERIC`
+    "orders_discountAmount_drop_legacy",
+    `ALTER TABLE orders DROP COLUMN IF EXISTS "discountAmount"`
+  );
+  await run(
+    "orders_discount_code_col",
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code VARCHAR`
+  );
+  await run(
+    "orders_discount_amount_col",
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC`
   );
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:
