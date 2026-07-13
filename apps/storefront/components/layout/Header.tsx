@@ -29,9 +29,26 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const totalItems = useCartStore((s) => s.totalItems());
-  const wishlistCount = useWishlistStore((s) => s.items.length);
-  const { lang, currency, setLang, setCurrency, fetchRates, detectCurrency } = useLocaleStore();
+  // Hydration guard. Zustand's `persist` middleware reads from
+  // localStorage AFTER the initial React render, so if we render the
+  // cart badge / lang / currency straight from the store we get a
+  // hydration mismatch: server produced HTML with defaults, client
+  // wants to render persisted values → React error #418 → the whole
+  // root re-renders (#423) causing a visible header flash including
+  // the logo. Defer store-derived UI to the first useEffect tick so
+  // the SSR HTML and the first client render always agree.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const rawTotalItems = useCartStore((s) => s.totalItems());
+  const rawWishlistCount = useWishlistStore((s) => s.items.length);
+  const localeStore = useLocaleStore();
+
+  const totalItems = mounted ? rawTotalItems : 0;
+  const wishlistCount = mounted ? rawWishlistCount : 0;
+  const lang = mounted ? localeStore.lang : "ar";
+  const currency = mounted ? localeStore.currency : "USD";
+  const { setLang, setCurrency, fetchRates, detectCurrency } = localeStore;
 
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
