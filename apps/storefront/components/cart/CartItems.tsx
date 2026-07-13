@@ -6,6 +6,7 @@ import { Trash2, Plus, Minus, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
+import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
 import type { DeliveryField } from "@my-store/types";
 
 function getMissingRequired(fields: DeliveryField[], info: Record<string, string> | undefined): string[] {
@@ -15,7 +16,7 @@ function getMissingRequired(fields: DeliveryField[], info: Record<string, string
 }
 
 export function CartItems() {
-  const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, clearCart } =
+  const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } =
     useCartStore();
   // Same visitor-picked currency the home/product pages use, so the
   // cart doesn't suddenly flip back to USD after being shown SAR/JOD/AED
@@ -217,11 +218,28 @@ export function CartItems() {
       })}
 
       {/* Summary */}
-      <div className="brand-card">
+      <div className="brand-card space-y-3">
+        <DiscountCodeInput />
+        {appliedDiscount && (
+          <div className="flex items-center justify-between text-sm text-gray-600" dir="rtl">
+            <span>المجموع الفرعي</span>
+            <span style={{ fontFeatureSettings: '"tnum"' }}>
+              {formatPrice(totalPrice(), "USD", userCurrency, rates)}
+            </span>
+          </div>
+        )}
+        {appliedDiscount && (
+          <div className="flex items-center justify-between text-sm text-green-600" dir="rtl">
+            <span>خصم ({appliedDiscount.code})</span>
+            <span style={{ fontFeatureSettings: '"tnum"' }}>
+              −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-brand-800">المجموع</span>
-          <span className="text-2xl font-extrabold text-brand-600">
-            {formatPrice(totalPrice(), "USD", userCurrency, rates)}
+          <span className="text-2xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
+            {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
           </span>
         </div>
         {!canCheckout && (

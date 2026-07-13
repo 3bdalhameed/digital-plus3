@@ -234,6 +234,17 @@ export const Orders: CollectionConfig = {
         },
       ],
     },
+    // Discount snapshot — text + numeric (not a relationship) so the
+    // order stays intact if the code is later deleted or its rules
+    // change. `discountAmount` is already subtracted from `totalAmount`;
+    // it's stored for admin visibility and reporting.
+    {
+      type: "row",
+      fields: [
+        { name: "discountCode",   label: "كود الخصم",     type: "text",   admin: { readOnly: true } },
+        { name: "discountAmount", label: "قيمة الخصم",   type: "number", admin: { readOnly: true } },
+      ],
+    },
     {
       type: "collapsible",
       label: "بيانات الدفع",

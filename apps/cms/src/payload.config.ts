@@ -20,6 +20,7 @@ import { Media } from "./collections/Media";
 import { Posts } from "./collections/Posts";
 // import { Reviews } from "./collections/Reviews"; // registration disabled -- see note below
 import { Users } from "./collections/Users";
+import { DiscountCodes } from "./collections/DiscountCodes";
 
 // Globals
 import { HomePage } from "./globals/HomePage";
@@ -221,6 +222,7 @@ export default buildConfig({
     SupportTickets,
     Media,
     Users,
+    DiscountCodes,
   ],
 
   globals: [HomePage, Settings, NavbarConfig, FooterConfig, PoliciesContent],
@@ -360,6 +362,65 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
       `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS title_en VARCHAR`
     );
   }
+
+  // Discount codes — new collection. push:false means Payload won't
+  // create the table on its own; we mirror the field shape from
+  // collections/DiscountCodes.ts here so the collection can be read
+  // and written on first boot.
+  await run("discount_codes_table", `
+    CREATE TABLE IF NOT EXISTS discount_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR NOT NULL UNIQUE,
+      description VARCHAR,
+      discount_type VARCHAR NOT NULL DEFAULT 'percentage',
+      discount_value NUMERIC NOT NULL DEFAULT 0,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      starts_at TIMESTAMP WITH TIME ZONE,
+      expires_at TIMESTAMP WITH TIME ZONE,
+      min_order_amount NUMERIC,
+      max_uses INTEGER,
+      current_uses INTEGER NOT NULL DEFAULT 0,
+      max_uses_per_customer INTEGER,
+      applies_to VARCHAR NOT NULL DEFAULT 'all',
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `);
+  await run(
+    "discount_codes_code_upper_idx",
+    "CREATE UNIQUE INDEX IF NOT EXISTS discount_codes_code_upper_idx ON discount_codes (upper(code))"
+  );
+  // Rels table for allowedCategories / allowedProducts hasMany fields.
+  await run("discount_codes_rels_table", `
+    CREATE TABLE IF NOT EXISTS discount_codes_rels (
+      id SERIAL PRIMARY KEY,
+      "order" INTEGER,
+      parent_id INTEGER NOT NULL REFERENCES discount_codes(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      categories_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+      products_id INTEGER REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+  await run(
+    "discount_codes_rels_parent_idx",
+    "CREATE INDEX IF NOT EXISTS discount_codes_rels_parent_idx ON discount_codes_rels(parent_id)"
+  );
+  await run(
+    "discount_codes_rels_path_idx",
+    "CREATE INDEX IF NOT EXISTS discount_codes_rels_path_idx ON discount_codes_rels(path)"
+  );
+
+  // Orders: capture which discount code (if any) applied to an order and
+  // the absolute amount subtracted. Kept as text + numeric rather than a
+  // relationship so historical orders survive if the code is deleted.
+  await run(
+    "orders_discount_code_col",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code VARCHAR"
+  );
+  await run(
+    "orders_discount_amount_col",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC"
+  );
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:
   //   Cannot read properties of undefined (reading

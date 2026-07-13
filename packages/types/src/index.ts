@@ -490,13 +490,47 @@ export interface CartItem {
   deliveryInfo?: Record<string, string>;
 }
 
+export type DiscountType = "percentage" | "fixed_amount";
+export type DiscountAppliesTo = "all" | "categories" | "products";
+
+export interface DiscountCode {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: DiscountType;
+  discountValue: number;
+  active: boolean;
+  startsAt?: string;
+  expiresAt?: string;
+  minOrderAmount?: number;
+  maxUses?: number;
+  currentUses: number;
+  maxUsesPerCustomer?: number;
+  appliesTo: DiscountAppliesTo;
+  allowedCategories?: (string | Category)[];
+  allowedProducts?: (string | Product)[];
+}
+
+/** Shape stored in the cart store once a code has been validated. */
+export interface AppliedDiscount {
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  /** Absolute amount in cart currency, already resolved for the current items */
+  amount: number;
+}
+
 export interface CartState {
   items: CartItem[];
+  appliedDiscount: AppliedDiscount | null;
   addItem: (product: Product, deliveryInfo?: Record<string, string>) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   updateDeliveryInfo: (productId: string, deliveryInfo: Record<string, string>) => void;
   clearCart: () => void;
+  applyDiscount: (d: AppliedDiscount) => void;
+  clearDiscount: () => void;
   totalItems: () => number;
   totalPrice: () => number;
+  totalAfterDiscount: () => number;
 }

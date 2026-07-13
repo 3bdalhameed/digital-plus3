@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { logEvidence } from "@/lib/evidence";
 import { formatPrice } from "@/lib/utils";
+import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
 
 type CheckoutStep = "review" | "payment" | "processing";
 
@@ -21,7 +22,7 @@ type PaymentMethod = "test" | "qlic" | "vodafone";
 export function CheckoutForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { items, totalPrice, clearCart } = useCartStore();
+  const { items, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } = useCartStore();
   const { currency: userCurrency, rates } = useLocaleStore();
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -143,9 +144,15 @@ export function CheckoutForm() {
         quantity:  Number(i.quantity),
         unitPrice: Number(i.product.price),
       })),
-      totalAmount: Number(totalPrice()),
+      totalAmount: Number(totalAfterDiscount()),
       currency:    items[0]?.product.currency || "USD",
     };
+    // Attach discount snapshot so the order history preserves what was
+    // applied, and the server can re-validate + increment the counter.
+    if (appliedDiscount) {
+      commonBody.discountCode   = appliedDiscount.code;
+      commonBody.discountAmount = Number(appliedDiscount.amount);
+    }
     // Guests attach the token they got from /api/auth/otp/verify. The
     // server checks NextAuth session first and falls through to this.
     if (isGuest && guestToken) {
@@ -299,11 +306,30 @@ export function CheckoutForm() {
               </div>
             ))}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-brand-100 pt-4">
-            <span className="text-lg font-bold text-brand-800">المجموع</span>
-            <span className="text-xl font-extrabold text-brand-600">
-              {formatPrice(totalPrice(), "USD", userCurrency, rates)}
-            </span>
+          <div className="mt-4 border-t border-brand-100 pt-4 space-y-3">
+            <DiscountCodeInput customerEmail={session?.user?.email || guestEmail || undefined} />
+            {appliedDiscount && (
+              <>
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>المجموع الفرعي</span>
+                  <span style={{ fontFeatureSettings: '"tnum"' }}>
+                    {formatPrice(totalPrice(), "USD", userCurrency, rates)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>خصم ({appliedDiscount.code})</span>
+                  <span style={{ fontFeatureSettings: '"tnum"' }}>
+                    −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-brand-800">المجموع</span>
+              <span className="text-xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
+                {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
+              </span>
+            </div>
           </div>
 
           {/* Guest identity block — shows only when there's no NextAuth
@@ -552,7 +578,7 @@ export function CheckoutForm() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              `تأكيد الطلب — ${formatPrice(totalPrice(), "USD", userCurrency, rates)}`
+              `تأكيد الطلب — ${formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}`
             )}
           </button>
         </div>

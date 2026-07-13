@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Product, CartItem, CartState } from "@my-store/types";
+import type { Product, CartItem, CartState, AppliedDiscount } from "@my-store/types";
 
 // Debounced server sync so we don't hit the API on every keystroke
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -30,6 +30,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      appliedDiscount: null,
 
       addItem: (product: Product, deliveryInfo?: Record<string, string>) => {
         const items = get().items;
@@ -77,9 +78,15 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        // Clearing the cart also drops any applied discount -- an empty
+        // cart can't carry a code, and re-applying against a fresh cart
+        // avoids a stale amount that was calculated against old items.
+        set({ items: [], appliedDiscount: null });
         syncCartToServer([], "complete");
       },
+
+      applyDiscount: (d: AppliedDiscount) => set({ appliedDiscount: d }),
+      clearDiscount: () => set({ appliedDiscount: null }),
 
       totalItems: () =>
         get().items.reduce((sum, item) => sum + item.quantity, 0),
@@ -89,6 +96,18 @@ export const useCartStore = create<CartState>()(
           (sum, item) => sum + item.product.price * item.quantity,
           0
         ),
+
+      totalAfterDiscount: () => {
+        const total = get().items.reduce(
+          (sum, item) => sum + item.product.price * item.quantity,
+          0
+        );
+        const d = get().appliedDiscount;
+        if (!d) return total;
+        // Guard against a stored discount that's larger than the current
+        // cart (items removed after applying) -- never go below 0.
+        return Math.max(0, total - d.amount);
+      },
     }),
     {
       name: "cart-storage",
