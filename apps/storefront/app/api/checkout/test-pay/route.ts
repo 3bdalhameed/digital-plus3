@@ -31,10 +31,12 @@ const schema = z.object({
       unitPrice: z.coerce.number().min(0),
     })
   ).min(1),
-  totalAmount: z.coerce.number().min(0),
-  currency:    z.string().default("USD"),
-  guestToken:  z.string().optional(),
-  guestName:   z.string().max(120).optional(),
+  totalAmount:    z.coerce.number().min(0),
+  currency:       z.string().default("USD"),
+  guestToken:     z.string().optional(),
+  guestName:      z.string().max(120).optional(),
+  discountCode:   z.string().max(64).optional(),
+  discountAmount: z.coerce.number().min(0).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -48,7 +50,11 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { items, totalAmount, currency, guestToken, guestName } = parsed.data;
+    const { items, currency, guestToken, guestName, discountCode } = parsed.data;
+    // Server recomputes the subtotal from the line items -- the client's
+    // totalAmount is ignored so a tampered `discountAmount: 999999`
+    // request can't undercharge.
+    const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
 
     const identityResult = await resolveIdentity({ guestToken, guestName });
     if (identityResult.kind === "invalid_guest") {
@@ -75,12 +81,13 @@ export async function POST(req: NextRequest) {
 
     const { orderId, customerId } = await createOrderForCustomer({
       orderNumber,
-      totalAmount,
+      subtotalAmount: subtotal,
       currency,
       ip:            extractIP(req),
       userAgent:     extractUserAgent(req),
       customerEmail: identity.customerEmail,
       customerName:  identity.customerName,
+      discountCode,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,

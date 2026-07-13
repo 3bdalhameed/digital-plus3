@@ -45,10 +45,12 @@ const schema = z.object({
       unitPrice: z.coerce.number().min(0),
     })
   ).min(1),
-  totalAmount: z.coerce.number().min(0),
-  currency:    z.string().default("USD"),
-  guestToken:  z.string().optional(),
-  guestName:   z.string().max(120).optional(),
+  totalAmount:    z.coerce.number().min(0),
+  currency:       z.string().default("USD"),
+  guestToken:     z.string().optional(),
+  guestName:      z.string().max(120).optional(),
+  discountCode:   z.string().max(64).optional(),
+  discountAmount: z.coerce.number().min(0).optional(),
 });
 
 /** Build the admin-authored message seeded into the support ticket. */
@@ -123,8 +125,11 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { method, contactPhone, items, totalAmount, currency, guestToken, guestName } =
+    const { method, contactPhone, items, currency, guestToken, guestName, discountCode } =
       parsed.data;
+    // Server recomputes the subtotal from line items so a tampered
+    // client discountAmount can't undercharge.
+    const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
 
     const identityResult = await resolveIdentity({ guestToken, guestName });
     if (identityResult.kind === "invalid_guest") {
@@ -149,15 +154,16 @@ export async function POST(req: NextRequest) {
     const orderNumber = await mintOrderNumber();
     const paymentRef  = `manual:${PAYMENT_METHODS[method].slug}:${contactPhone}`;
 
-    const { orderId, customerId } = await createOrderForCustomer({
+    const { orderId, customerId, totalAmount: finalTotal } = await createOrderForCustomer({
       orderNumber,
-      totalAmount,
+      subtotalAmount:   subtotal,
       currency,
       ip:               extractIP(req),
       userAgent:        extractUserAgent(req),
       paymentReference: paymentRef,
       customerEmail:    identity.customerEmail,
       customerName:     identity.customerName,
+      discountCode,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,
@@ -171,7 +177,7 @@ export async function POST(req: NextRequest) {
       messageText: buildTicketMessage({
         method,
         contactPhone,
-        totalAmount,
+        totalAmount: finalTotal,
         currency,
         orderNumber,
         customerEmail: identity.customerEmail,

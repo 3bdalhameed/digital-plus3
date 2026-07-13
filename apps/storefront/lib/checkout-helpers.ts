@@ -204,7 +204,10 @@ export type CheckoutItem = {
  */
 export async function createOrderForCustomer(input: {
   orderNumber:       string;
-  totalAmount:       number;
+  /** Subtotal BEFORE discount. The tx recomputes the discount and the
+   *  final amount is derived server-side; the client's totalAmount is
+   *  ignored so a tampered request can't undercharge. */
+  subtotalAmount:    number;
   currency:          string;
   ip:                string;
   userAgent:         string;
@@ -212,7 +215,12 @@ export async function createOrderForCustomer(input: {
   paymentReference?: string;
   customerEmail:     string;
   customerName:      string;
-}): Promise<{ orderId: number; customerId: number }> {
+  /** Optional discount code submitted by the client. Re-validated and
+   *  the counter is incremented atomically inside the tx. Invalid or
+   *  expired codes are treated as "no discount" (the order still goes
+   *  through) so a stale client cache doesn't 500 the whole checkout. */
+  discountCode?:     string;
+}): Promise<{ orderId: number; customerId: number; totalAmount: number; discountAmount: number; discountCode: string | null }> {
   const now = new Date().toISOString();
   return prismaOrders.$transaction(async (tx) => {
     // Customer upsert inside the tx so a failed order write rolls
@@ -224,20 +232,33 @@ export async function createOrderForCustomer(input: {
       tx,
     );
 
+    // Server-side discount re-validation. Runs INSIDE the transaction
+     // so the counter increment and the order insert either both happen
+     // or neither -- protects the maxUses cap from race conditions.
+    const discountResult = await applyDiscountInTx(tx, {
+      code:     input.discountCode,
+      subtotal: input.subtotalAmount,
+      items:    input.items,
+    });
+    const finalTotal = Math.max(0, input.subtotalAmount - discountResult.amount);
+
     const [order] = await tx.$queryRaw<{ id: number }[]>(
       Prisma.sql`
         INSERT INTO orders (
           order_number, status, total_amount, currency,
           payment_reference,
+          discount_code, discount_amount,
           terms_accepted_at, terms_accepted_i_p, terms_accepted_user_agent,
           updated_at, created_at
         )
         VALUES (
           ${input.orderNumber},
           'pending'::"enum_orders_status",
-          ${input.totalAmount},
+          ${finalTotal},
           ${input.currency}::"enum_orders_currency",
           ${input.paymentReference ?? null},
+          ${discountResult.code ?? null},
+          ${discountResult.amount || null},
           ${now}::timestamptz,
           ${input.ip},
           ${input.userAgent},
@@ -290,8 +311,122 @@ export async function createOrderForCustomer(input: {
       WHERE user_email = ${input.customerEmail} AND completed_at IS NULL
     `);
 
-    return { orderId, customerId };
+    return {
+      orderId,
+      customerId,
+      totalAmount:    finalTotal,
+      discountAmount: discountResult.amount,
+      discountCode:   discountResult.code,
+    };
   });
+}
+
+// ── Discount codes ────────────────────────────────────────────────
+
+type DiscountRow = {
+  id: number;
+  code: string;
+  discount_type: "percentage" | "fixed_amount";
+  discount_value: string; // NUMERIC returns as string via prisma
+  active: boolean;
+  starts_at: Date | null;
+  expires_at: Date | null;
+  min_order_amount: string | null;
+  max_uses: number | null;
+  current_uses: number;
+  applies_to: "all" | "categories" | "products";
+};
+
+/**
+ * Look up the code (case-insensitive via the upper() index), re-check
+ * every rule, atomically bump current_uses, and return the amount to
+ * subtract. Invalid/expired codes return { code: null, amount: 0 } so
+ * the checkout still completes without a bogus discount instead of
+ * blowing up the whole transaction.
+ *
+ * `appliesTo === "all"` short-circuits the per-item eligibility check
+ * because the vast majority of codes are global; scoped codes fall
+ * through to a rels join.
+ */
+async function applyDiscountInTx(
+  tx: Prisma.TransactionClient,
+  input: {
+    code?:     string;
+    subtotal:  number;
+    items:     CheckoutItem[];
+  }
+): Promise<{ code: string | null; amount: number }> {
+  const rawCode = (input.code ?? "").trim().toUpperCase();
+  if (!rawCode) return { code: null, amount: 0 };
+
+  // Row-level lock so two concurrent checkouts can't both slip in
+  // when the cap has one slot left.
+  const rows = await tx.$queryRaw<DiscountRow[]>(Prisma.sql`
+    SELECT id, code, discount_type, discount_value, active,
+           starts_at, expires_at, min_order_amount,
+           max_uses, current_uses, applies_to
+      FROM discount_codes
+     WHERE upper(code) = ${rawCode}
+     LIMIT 1
+     FOR UPDATE
+  `);
+  const doc = rows[0];
+  if (!doc || !doc.active) return { code: null, amount: 0 };
+
+  const now = Date.now();
+  if (doc.starts_at && doc.starts_at.getTime() > now) return { code: null, amount: 0 };
+  if (doc.expires_at && doc.expires_at.getTime() < now) return { code: null, amount: 0 };
+  if (typeof doc.max_uses === "number" && doc.max_uses > 0 && doc.current_uses >= doc.max_uses) {
+    return { code: null, amount: 0 };
+  }
+  const minOrder = doc.min_order_amount != null ? Number(doc.min_order_amount) : 0;
+  if (minOrder > 0 && input.subtotal < minOrder) return { code: null, amount: 0 };
+
+  // Compute the eligible subtotal. `applies_to === 'all'` is the fast
+  // path; the two scoped modes need a rels-join to find which items
+  // (by category or by product id) count toward the discount.
+  let eligible = input.subtotal;
+  if (doc.applies_to === "categories" || doc.applies_to === "products") {
+    const rels = await tx.$queryRaw<{ categories_id: number | null; products_id: number | null }[]>(Prisma.sql`
+      SELECT categories_id, products_id
+        FROM discount_codes_rels
+       WHERE parent_id = ${doc.id}
+    `);
+    const catIds  = new Set(rels.map(r => r.categories_id).filter((x): x is number => x != null));
+    const prodIds = new Set(rels.map(r => r.products_id).filter((x): x is number => x != null));
+
+    // Fetch category ids for the items in one shot.
+    const itemProductIds = input.items.map(i => Number(i.productId));
+    const productCats = await tx.$queryRaw<{ id: number; category_id: number | null }[]>(Prisma.sql`
+      SELECT id, category_id FROM products WHERE id IN (${Prisma.join(itemProductIds)})
+    `);
+    const productCatMap = new Map(productCats.map(p => [p.id, p.category_id]));
+
+    eligible = 0;
+    for (const it of input.items) {
+      const pid = Number(it.productId);
+      const match = doc.applies_to === "products"
+        ? prodIds.has(pid)
+        : (productCatMap.get(pid) != null && catIds.has(productCatMap.get(pid)!));
+      if (match) eligible += Number(it.unitPrice) * Number(it.quantity);
+    }
+    if (eligible <= 0) return { code: null, amount: 0 };
+  }
+
+  const rawAmount = doc.discount_type === "percentage"
+    ? (eligible * Number(doc.discount_value)) / 100
+    : Number(doc.discount_value);
+  const amount = Math.min(Math.max(0, Math.round(rawAmount * 100) / 100), eligible);
+  if (amount <= 0) return { code: null, amount: 0 };
+
+  await tx.$executeRaw(Prisma.sql`
+    UPDATE discount_codes
+       SET current_uses = current_uses + 1,
+           updated_at   = NOW()
+     WHERE id = ${doc.id}
+  `);
+
+  return { code: doc.code, amount };
 }
 
 // ── Request helpers (re-exported for endpoint convenience) ────────
