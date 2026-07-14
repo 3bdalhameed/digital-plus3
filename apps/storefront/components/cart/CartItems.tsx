@@ -7,6 +7,7 @@ import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
 import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
+import { useT } from "@/lib/i18n";
 import type { DeliveryField } from "@my-store/types";
 
 function getMissingRequired(fields: DeliveryField[], info: Record<string, string> | undefined): string[] {
@@ -18,6 +19,7 @@ function getMissingRequired(fields: DeliveryField[], info: Record<string, string
 export function CartItems() {
   const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } =
     useCartStore();
+  const { t, dir } = useT();
   // Same visitor-picked currency the home/product pages use, so the
   // cart doesn't suddenly flip back to USD after being shown SAR/JOD/AED
   // everywhere else. Line-item, subtotal, and cart total all reformat
@@ -26,14 +28,14 @@ export function CartItems() {
 
   if (items.length === 0) {
     return (
-      <div className="brand-card py-16 text-center">
+      <div className="brand-card py-16 text-center" dir={dir}>
         <span className="text-6xl">🛒</span>
         <h2 className="mt-4 text-xl font-bold text-brand-800">
-          سلة التسوق فارغة
+          {t("cartEmpty")}
         </h2>
-        <p className="mt-2 text-gray-500">ابدأ بإضافة منتجات إلى سلتك</p>
+        <p className="mt-2 text-gray-500">{t("cartEmptyHint")}</p>
         <Link href="/products" className="brand-btn mt-6 inline-block">
-          تصفح المنتجات
+          {t("browseProducts")}
         </Link>
       </div>
     );
@@ -222,7 +224,7 @@ export function CartItems() {
         <DiscountCodeInput />
         {appliedDiscount && (
           <div className="flex items-center justify-between text-sm text-gray-600" dir="rtl">
-            <span>المجموع الفرعي</span>
+            <span>{t("subtotal")}</span>
             <span style={{ fontFeatureSettings: '"tnum"' }}>
               {formatPrice(totalPrice(), "USD", userCurrency, rates)}
             </span>
@@ -237,7 +239,7 @@ export function CartItems() {
           </div>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-brand-800">المجموع</span>
+          <span className="text-lg font-bold text-brand-800">{t("total")}</span>
           <span className="text-2xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
             {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
           </span>
@@ -251,18 +253,18 @@ export function CartItems() {
         <div className="mt-4 flex gap-3">
           {canCheckout ? (
             <Link href="/checkout" className="brand-btn flex-1 text-center">
-              إتمام الشراء
+              {t("checkout")}
             </Link>
           ) : (
             <button
               disabled
               className="brand-btn flex-1 cursor-not-allowed text-center opacity-50"
             >
-              إتمام الشراء
+              {t("checkout")}
             </button>
           )}
           <button onClick={clearCart} className="brand-btn-outline px-4 text-sm">
-            إفراغ السلة
+            {t("emptyCart")}
           </button>
         </div>
       </div>

@@ -5,26 +5,70 @@ import { signIn } from "next-auth/react";
 import Link from "@/components/ui/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Mail, Lock, RefreshCw, KeyRound } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
-function StatusNotices() {
+// All user-facing copy for this page. Kept as a plain object rather
+// than nested in useT() because there are ~30 strings and centralizing
+// them here is easier to scan than sprinkling ternaries.
+function loginCopy(isEn: boolean) {
+  return {
+    verified:      isEn ? "✓ Your email is confirmed, you can sign in now" : "✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن",
+    registered:    isEn ? "📧 Account created! Check your email to confirm your account before signing in" : "📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك قبل تسجيل الدخول",
+    linkExpired:   isEn ? "⚠️ Verification link expired. Sign in and we'll send you a new one" : "⚠️ انتهت صلاحية رابط التحقق. سجّل الدخول وسنرسل لك رابطاً جديداً",
+    invalidCreds:  isEn ? "Incorrect email or password" : "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    rateLimited:   isEn ? "You requested a code recently. Please wait a moment before trying again" : "لقد طلبت رمزاً مؤخراً. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى",
+    sendFailed:    isEn ? "Couldn't send the code. Check your connection and try again" : "تعذّر إرسال الرمز. تحقق من اتصالك بالإنترنت وحاول مرة أخرى",
+    otpInvalid:    isEn ? "Code is incorrect or expired" : "الرمز غير صحيح أو منتهي الصلاحية",
+    heading:       isEn ? "Sign in" : "تسجيل الدخول",
+    welcomeBack:   isEn ? "Welcome back" : "مرحباً بعودتك",
+    tabPassword:   isEn ? "Password" : "كلمة المرور",
+    tabOtp:        isEn ? "Verification code" : "رمز التحقق",
+    unverifiedTitle: isEn ? "📧 Your email isn't verified yet" : "📧 بريدك الإلكتروني غير مؤكد بعد",
+    unverifiedBody:  isEn ? "You need to confirm your email before signing in. Check your inbox and spam folder." : "يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول. تحقق من صندوق الوارد والبريد المزعج.",
+    resendSent:    isEn ? "✓ A new verification link has been sent to your email" : "✓ تم إرسال رابط تحقق جديد إلى بريدك",
+    resendLink:    isEn ? "Resend verification link" : "أعد إرسال رابط التحقق",
+    emailLabel:    isEn ? "Email" : "البريد الإلكتروني",
+    passwordLabel: isEn ? "Password" : "كلمة المرور",
+    signInBtn:     isEn ? "Sign in" : "تسجيل الدخول",
+    otpHint:       isEn ? "We'll send a 6-digit code to your email. No password needed." : "سنرسل لك رمزاً مؤلفاً من ٦ أرقام إلى بريدك الإلكتروني. لا حاجة لكلمة مرور.",
+    sendCode:      isEn ? "Send code" : "إرسال الرمز",
+    otpSentPrefix: isEn ? "📧 We sent a 6-digit code to " : "📧 أرسلنا رمزاً مؤلفاً من ٦ أرقام إلى ",
+    otpSentSuffix: isEn ? "." : ".",
+    otpCheckInbox: isEn ? "Check your inbox (spam folder too, sometimes)." : "تفقّد صندوق الوارد (وملف الرسائل غير المرغوب فيها أحياناً).",
+    otpCodeLabel:  isEn ? "Verification code" : "رمز التحقق",
+    confirmSignIn: isEn ? "Confirm sign in" : "تأكيد الدخول",
+    changeEmail:   isEn ? "← Change email" : "← تغيير البريد",
+    resendCodeCd:  (secs: number) => isEn ? `Resend code (${secs})` : `أعد إرسال الرمز (${secs})`,
+    resendCode:    isEn ? "Resend code" : "أعد إرسال الرمز",
+    or:            isEn ? "or" : "أو",
+    signInGoogle:  isEn ? "Sign in with Google" : "الدخول بحساب Google",
+    noAccount:     isEn ? "Don't have an account?" : "ليس لديك حساب؟",
+    createAccount: isEn ? "Create account" : "إنشاء حساب",
+  };
+}
+
+function StatusNotices({ M }: { M: ReturnType<typeof loginCopy> }) {
   const params = useSearchParams();
   const justRegistered = params.get("registered") === "true";
   const justVerified = params.get("verified") === "true";
   const linkExpired = params.get("error") === "link-expired";
 
   if (justVerified) {
-    return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن</div>;
+    return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">{M.verified}</div>;
   }
   if (justRegistered) {
-    return <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك قبل تسجيل الدخول</div>;
+    return <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">{M.registered}</div>;
   }
   if (linkExpired) {
-    return <div className="mb-4 rounded-xl bg-orange-50 p-3 text-sm text-orange-700">⚠️ انتهت صلاحية رابط التحقق. سجّل الدخول وسنرسل لك رابطاً جديداً</div>;
+    return <div className="mb-4 rounded-xl bg-orange-50 p-3 text-sm text-orange-700">{M.linkExpired}</div>;
   }
   return null;
 }
 
 export default function LoginPage() {
+  const { isEn, dir } = useT();
+  const M = loginCopy(isEn);
+
   /* ─── Method tabs ─── */
   const [method, setMethod] = useState<"password" | "otp">("password");
 
@@ -81,14 +125,14 @@ export default function LoginPage() {
       return;
     }
     if (status !== "ok") {
-      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      setError(M.invalidCreds);
       setPwLoading(false);
       return;
     }
 
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      setError(M.invalidCreds);
       setPwLoading(false);
     } else {
       window.location.href = "/";
@@ -119,14 +163,14 @@ export default function LoginPage() {
         body: JSON.stringify({ email }),
       });
       if (res.status === 429) {
-        setError("لقد طلبت رمزاً مؤخراً. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى");
+        setError(M.rateLimited);
         setOtpLoading(false);
         return;
       }
       setOtpStep("code");
       setOtpResendCooldown(60);
     } catch {
-      setError("تعذّر إرسال الرمز. تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+      setError(M.sendFailed);
     } finally {
       setOtpLoading(false);
     }
@@ -140,7 +184,7 @@ export default function LoginPage() {
     setError("");
     const result = await signIn("otp", { email, code: otpCode, redirect: false });
     if (result?.error) {
-      setError("الرمز غير صحيح أو منتهي الصلاحية");
+      setError(M.otpInvalid);
       setOtpLoading(false);
       setOtpCode("");
     } else {
@@ -162,15 +206,15 @@ export default function LoginPage() {
 
   /* ─── Render ─── */
   return (
-    <div className="w-full">
+    <div className="w-full" dir={dir}>
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-black text-brand-800">تسجيل الدخول</h1>
-        <p className="mt-1 text-sm text-gray-500">مرحباً بعودتك</p>
+        <h1 className="text-2xl font-black text-brand-800">{M.heading}</h1>
+        <p className="mt-1 text-sm text-gray-500">{M.welcomeBack}</p>
       </div>
 
       <div className="brand-card">
         <Suspense>
-          <StatusNotices />
+          <StatusNotices M={M} />
         </Suspense>
 
         {/* ── Method tab switcher ── */}
@@ -185,7 +229,7 @@ export default function LoginPage() {
             }`}
           >
             <Lock className="h-4 w-4" />
-            كلمة المرور
+            {M.tabPassword}
           </button>
           <button
             type="button"
@@ -197,7 +241,7 @@ export default function LoginPage() {
             }`}
           >
             <KeyRound className="h-4 w-4" />
-            رمز التحقق
+            {M.tabOtp}
           </button>
         </div>
 
@@ -211,12 +255,12 @@ export default function LoginPage() {
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             {unverified && (
               <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-bold">📧 بريدك الإلكتروني غير مؤكد بعد</p>
+                <p className="font-bold">{M.unverifiedTitle}</p>
                 <p className="mt-1 text-xs text-amber-700">
-                  يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول. تحقق من صندوق الوارد والبريد المزعج.
+                  {M.unverifiedBody}
                 </p>
                 {resendSent ? (
-                  <p className="mt-2 text-xs font-bold text-green-700">✓ تم إرسال رابط تحقق جديد إلى بريدك</p>
+                  <p className="mt-2 text-xs font-bold text-green-700">{M.resendSent}</p>
                 ) : (
                   <button
                     type="button"
@@ -225,14 +269,14 @@ export default function LoginPage() {
                     className="mt-2 flex items-center gap-1.5 text-xs font-bold text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
                   >
                     {resendLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    أعد إرسال رابط التحقق
+                    {M.resendLink}
                   </button>
                 )}
               </div>
             )}
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">البريد الإلكتروني</label>
+              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.emailLabel}</label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -248,7 +292,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">كلمة المرور</label>
+              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.passwordLabel}</label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -264,7 +308,7 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" disabled={pwLoading} className="brand-btn w-full py-3 disabled:opacity-50">
-              {pwLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "تسجيل الدخول"}
+              {pwLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.signInBtn}
             </button>
           </form>
         )}
@@ -273,11 +317,11 @@ export default function LoginPage() {
         {method === "otp" && otpStep === "email" && (
           <form onSubmit={handleOtpRequest} className="space-y-4">
             <p className="rounded-xl bg-brand-50 p-3 text-xs leading-relaxed text-brand-700">
-              سنرسل لك رمزاً مؤلفاً من ٦ أرقام إلى بريدك الإلكتروني. لا حاجة لكلمة مرور.
+              {M.otpHint}
             </p>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">البريد الإلكتروني</label>
+              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.emailLabel}</label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -293,7 +337,7 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" disabled={otpLoading || !email} className="brand-btn w-full py-3 disabled:opacity-50">
-              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال الرمز"}
+              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.sendCode}
             </button>
           </form>
         )}
@@ -301,12 +345,12 @@ export default function LoginPage() {
         {method === "otp" && otpStep === "code" && (
           <form onSubmit={handleOtpVerify} className="space-y-4">
             <div className="rounded-xl bg-green-50 p-3 text-xs leading-relaxed text-green-700">
-              📧 أرسلنا رمزاً مؤلفاً من ٦ أرقام إلى <span dir="ltr" className="font-bold">{email}</span>.
-              <br />تفقّد صندوق الوارد (وملف الرسائل غير المرغوب فيها أحياناً).
+              {M.otpSentPrefix}<span dir="ltr" className="font-bold">{email}</span>{M.otpSentSuffix}
+              <br />{M.otpCheckInbox}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">رمز التحقق</label>
+              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.otpCodeLabel}</label>
               <input
                 ref={codeInputRef}
                 type="text"
@@ -328,7 +372,7 @@ export default function LoginPage() {
               disabled={otpLoading || otpCode.length !== 6}
               className="brand-btn w-full py-3 disabled:opacity-50"
             >
-              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "تأكيد الدخول"}
+              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.confirmSignIn}
             </button>
 
             <div className="flex items-center justify-between text-xs">
@@ -337,7 +381,7 @@ export default function LoginPage() {
                 onClick={() => { setOtpStep("email"); setOtpCode(""); setError(""); }}
                 className="text-brand-500 underline hover:text-brand-700"
               >
-                ← تغيير البريد
+                {M.changeEmail}
               </button>
               <button
                 type="button"
@@ -345,9 +389,7 @@ export default function LoginPage() {
                 disabled={otpResendCooldown > 0}
                 className="text-brand-500 underline hover:text-brand-700 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
               >
-                {otpResendCooldown > 0
-                  ? `أعد إرسال الرمز (${otpResendCooldown})`
-                  : "أعد إرسال الرمز"}
+                {otpResendCooldown > 0 ? M.resendCodeCd(otpResendCooldown) : M.resendCode}
               </button>
             </div>
           </form>
@@ -356,19 +398,19 @@ export default function LoginPage() {
         {/* ── Google OAuth (always available) ── */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-brand-100" /></div>
-          <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">أو</span></div>
+          <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">{M.or}</span></div>
         </div>
 
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
           className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand-100 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
         >
-          الدخول بحساب Google
+          {M.signInGoogle}
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          ليس لديك حساب؟{" "}
-          <Link href="/register" className="font-bold text-brand-500 hover:underline">إنشاء حساب</Link>
+          {M.noAccount}{" "}
+          <Link href="/register" className="font-bold text-brand-500 hover:underline">{M.createAccount}</Link>
         </p>
       </div>
     </div>
