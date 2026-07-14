@@ -363,6 +363,32 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     );
   }
 
+  // Bilingual item-level fields on the four blocks whose ITEMS the
+  // customer actually reads (feature cards, stats, testimonials, FAQ).
+  // Table names follow Payload's array-subfield convention:
+  //   home_page_blocks_<block_slug>_<array_field>
+  // Column names are snake_case (regular text/textarea fields), just
+  // like the existing item columns (name, text, question, answer).
+  const itemEnCols: Array<[string, string]> = [
+    // featureBlocks.items: title/description
+    ["home_page_blocks_feature_blocks_items", "title_en VARCHAR"],
+    ["home_page_blocks_feature_blocks_items", "description_en VARCHAR"],
+    // statsSection.stats: label
+    ["home_page_blocks_stats_section_stats", "label_en VARCHAR"],
+    // testimonials.items: text
+    ["home_page_blocks_testimonials_items", "text_en VARCHAR"],
+    // faqSection.items: question + answer
+    ["home_page_blocks_faq_section_items", "question_en VARCHAR"],
+    ["home_page_blocks_faq_section_items", "answer_en VARCHAR"],
+  ];
+  for (const [table, colDef] of itemEnCols) {
+    const colName = colDef.split(" ")[0];
+    await run(
+      `${table}_${colName}`,
+      `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${colDef}`
+    );
+  }
+
   // Discount codes — new collection. push:false means Payload won't
   // create the table on its own; we mirror the field shape from
   // collections/DiscountCodes.ts here so the collection can be read

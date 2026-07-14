@@ -532,12 +532,11 @@ const FEATURE_FALLBACK_ICONS = [ShieldCheck, UserIcon, CreditCard, Hourglass];
 
 function FeatureBlocksSection({ title, titleEn, items }: any) {
   const displayTitle = useBilingualTitle(title, titleEn);
-  // Markup mirrors the original Shopify "أيقونات مع نص (4 مميزات)" section:
-  // .about__wrapper > .wrapper > .outer__about > .grid__ > .el__ × N.
-  // Each .el__ stacks: h6 (heading) → .icons_para (round icon chip) → p (sub).
-  // Styles live in storefront/styles/globals.css under the same class names.
+  const lang = useLocaleStore((s) => s.lang);
+  const pickField = (f: any, base: string) =>
+    lang === "en" && f[`${base}En`] ? f[`${base}En`] : f[base];
   return (
-    <section dir="rtl">
+    <section dir={lang === "en" ? "ltr" : "rtl"}>
       {displayTitle && (
         <div className="mb-4 flex justify-center">
           <span className="inline-flex items-center gap-2 rounded-lg bg-[#EDE9FE] px-4 py-1.5 text-base font-black text-[#7C3AED] sm:text-lg">
@@ -554,7 +553,7 @@ function FeatureBlocksSection({ title, titleEn, items }: any) {
                 const Fallback = FEATURE_FALLBACK_ICONS[i % FEATURE_FALLBACK_ICONS.length];
                 return (
                   <div key={i} className="el__">
-                    <h6>{f.title}</h6>
+                    <h6>{pickField(f, "title")}</h6>
                     <span className="icons_para icons_para_with_background">
                       {f.icon?.url ? (
                         <Image src={f.icon.url} alt="" width={42} height={42} className="object-contain" />
@@ -562,7 +561,7 @@ function FeatureBlocksSection({ title, titleEn, items }: any) {
                         <Fallback className="h-8 w-8" strokeWidth={2} />
                       )}
                     </span>
-                    <p>{f.description}</p>
+                    <p>{pickField(f, "description")}</p>
                   </div>
                 );
               })}
@@ -579,6 +578,7 @@ function FeatureBlocksSection({ title, titleEn, items }: any) {
 ═══════════════════════════════════════ */
 function StatsSectionBlock({ title, titleEn, stats }: any) {
   const displayTitle = useBilingualTitle(title, titleEn);
+  const lang = useLocaleStore((s) => s.lang);
   const items = stats || [];
   // Parse each stat value once so we know what to animate and what to
   // preserve as static prefix/suffix text. "150+" → {target:150, suffix:"+"}.
@@ -662,7 +662,7 @@ function StatsSectionBlock({ title, titleEn, stats }: any) {
                   <span>{counts[i].toLocaleString("en-US")}</span>
                   {suffix}
                 </div>
-                <div className="stat4__label">{s.label}</div>
+                <div className="stat4__label">{lang === "en" && s.labelEn ? s.labelEn : s.label}</div>
               </div>
             );
           })}
@@ -692,14 +692,10 @@ function parseStatValue(raw: string): { target: number; prefix: string; suffix: 
 ═══════════════════════════════════════ */
 function TestimonialsSection({ title, titleEn, items }: any) {
   const displayTitle = useBilingualTitle(title, titleEn);
-  // Markup mirrors the original Shopify "آراء العملاء (بطاقات)" block:
-  // .tst-section > .tst-container > .tst-heading + .tst-grid > .tst-card × N.
-  // Each .tst-card has .tst-stars (5 SVGs, filled vs outlined per rating),
-  // .tst-quote, and .tst-meta with .tst-name and .tst-date. We keep the
-  // scroll-snap slider behavior (1 on mobile, 4 on lg+) requested
-  // separately by piping .tst-grid through overflow-x + snap utilities.
+  const lang = useLocaleStore((s) => s.lang);
+  const isEn = lang === "en";
   return (
-    <section className="tst-section" dir="rtl">
+    <section className="tst-section" dir={isEn ? "ltr" : "rtl"}>
       <div className="tst-container">
         {displayTitle && <h2 className="tst-heading">{displayTitle}</h2>}
 
@@ -709,9 +705,10 @@ function TestimonialsSection({ title, titleEn, items }: any) {
         >
           {items?.map((t: any, i: number) => {
             const rating = Math.max(0, Math.min(5, Number(t.rating ?? 5)));
+            const quoteText = isEn && t.textEn ? t.textEn : t.text;
             return (
               <article key={i} className="tst-card">
-                <div className="tst-stars" aria-label={`${rating} من 5`}>
+                <div className="tst-stars" aria-label={isEn ? `${rating} of 5` : `${rating} من 5`}>
                   {Array.from({ length: 5 }).map((_, si) => (
                     <svg
                       key={si}
@@ -727,7 +724,7 @@ function TestimonialsSection({ title, titleEn, items }: any) {
                   ))}
                 </div>
 
-                {t.text && <p className="tst-quote">&ldquo;{t.text}&rdquo;</p>}
+                {quoteText && <p className="tst-quote">&ldquo;{quoteText}&rdquo;</p>}
 
                 <div className="tst-meta">
                   {t.name && <strong className="tst-name">{t.name}</strong>}
@@ -769,7 +766,7 @@ function FAQSectionBlock({ title, titleEn, items }: any) {
                     onClick={() => setOpenIndex(isOpen ? null : i)}
                     aria-expanded={isOpen}
                   >
-                    <p>{faq.question}</p>
+                    <p>{lang === "en" && faq.questionEn ? faq.questionEn : faq.question}</p>
                     <span aria-hidden>
                       <svg
                         id="Iconly_Bold_Arrow_-_Up_2"
@@ -786,7 +783,7 @@ function FAQSectionBlock({ title, titleEn, items }: any) {
                   </button>
                   {isOpen && (
                     <div className="content__">
-                      <p>{faq.answer}</p>
+                      <p>{lang === "en" && faq.answerEn ? faq.answerEn : faq.answer}</p>
                     </div>
                   )}
                 </div>
