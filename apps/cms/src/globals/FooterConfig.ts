@@ -18,20 +18,35 @@ export const FooterConfig: GlobalConfig = {
     // ── Brand column (right-most in RTL) ──────────────────────
     {
       name: "brandDescription",
-      label: "وصف العلامة التجارية (يظهر تحت الشعار)",
+      label: "وصف العلامة التجارية (عربي)",
       type: "textarea",
       admin: {
         description:
           "النص الطويل الذي يظهر بجانب شعار المتجر في التذييل. إذا تركته فارغاً يظهر النص الافتراضي.",
       },
     },
+    {
+      name: "brandDescriptionEn",
+      label: "Brand description (English)",
+      type: "textarea",
+      admin: {
+        description:
+          "The English variant shown when a visitor picks EN in the header. Leave empty to use the hardcoded English fallback.",
+      },
+    },
 
     // ── Important Links column ────────────────────────────────
     {
       name: "importantLinksTitle",
-      label: "عنوان عمود «روابط مهمة»",
+      label: "عنوان عمود «روابط مهمة» (عربي)",
       type: "text",
       admin: { description: "افتراضي: «روابط مهمة»" },
+    },
+    {
+      name: "importantLinksTitleEn",
+      label: "Important Links title (English)",
+      type: "text",
+      admin: { description: "Default: “Important Links”" },
     },
     {
       name: "importantLinks",
@@ -39,8 +54,9 @@ export const FooterConfig: GlobalConfig = {
       labels: { singular: "رابط", plural: "روابط" },
       type: "array",
       fields: [
-        { name: "label", label: "النص", type: "text", required: true },
-        { name: "href",  label: "الرابط", type: "text", required: true },
+        { name: "label",   label: "النص (عربي)",    type: "text", required: true },
+        { name: "labelEn", label: "Label (English)", type: "text" },
+        { name: "href",    label: "الرابط",          type: "text", required: true },
       ],
     },
 
@@ -55,17 +71,24 @@ export const FooterConfig: GlobalConfig = {
           "العمود الثاني في التذييل. يظهر بدون عنوان فوقه ليطابق التصميم الأصلي.",
       },
       fields: [
-        { name: "label", label: "النص", type: "text", required: true },
-        { name: "href",  label: "الرابط", type: "text", required: true },
+        { name: "label",   label: "النص (عربي)",    type: "text", required: true },
+        { name: "labelEn", label: "Label (English)", type: "text" },
+        { name: "href",    label: "الرابط",          type: "text", required: true },
       ],
     },
 
     // ── Contact column (left-most in RTL) ────────────────────
     {
       name: "contactTitle",
-      label: "عنوان عمود «تواصل معنا»",
+      label: "عنوان عمود «تواصل معنا» (عربي)",
       type: "text",
       admin: { description: "افتراضي: «تواصل معنا»" },
+    },
+    {
+      name: "contactTitleEn",
+      label: "Contact column title (English)",
+      type: "text",
+      admin: { description: "Default: “Contact Us”" },
     },
     {
       name: "phone",
@@ -89,9 +112,15 @@ export const FooterConfig: GlobalConfig = {
     // ── Payment row ───────────────────────────────────────────
     {
       name: "paymentTitle",
-      label: "عنوان صف طرق الدفع",
+      label: "عنوان صف طرق الدفع (عربي)",
       type: "text",
       admin: { description: "افتراضي: «طرق الدفع»" },
+    },
+    {
+      name: "paymentTitleEn",
+      label: "Payment row title (English)",
+      type: "text",
+      admin: { description: "Default: “Payment Methods”" },
     },
     {
       name: "paymentMethods",
@@ -136,12 +165,22 @@ export const FooterConfig: GlobalConfig = {
     // ── Copyright line at the bottom ──────────────────────────
     {
       name: "copyrightText",
-      label: "نص حقوق النشر (الجزء السفلي)",
+      label: "نص حقوق النشر (عربي)",
       type: "text",
       admin: {
         description:
           "نص السطر الأخير في التذييل. استخدم {year} ليتم استبداله بالسنة الحالية تلقائياً. " +
           "افتراضي: «© Digital Plus | جميع الحقوق محفوظة | Copyright {year}»",
+      },
+    },
+    {
+      name: "copyrightTextEn",
+      label: "Copyright text (English)",
+      type: "text",
+      admin: {
+        description:
+          "Shown to visitors who picked EN. Use {year} to auto-substitute the current year. " +
+          "Example: “© Digital Plus | All rights reserved | Copyright {year}”",
       },
     },
 

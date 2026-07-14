@@ -72,16 +72,29 @@ export interface FooterViewProps {
   logoUrl: string | null;
   storeName: string;
   brandDescription: string;
+  /** Optional English variant from the CMS. When present, this takes
+   *  priority over the hardcoded English fallback for EN visitors. */
+  brandDescriptionEn?: string | null;
   importantLinksTitle: string;
+  importantLinksTitleEn?: string | null;
   importantLinks: FooterLinkRow[];
+  /** Optional EN version of the same links, sourced from labelEn on
+   *  each CMS row. Null when the whole CMS list is empty (we then use
+   *  the hardcoded T_EN.importantLinks) or when the editor hasn't
+   *  filled any labelEn (Arabic labels are used). */
+  importantLinksEn?: FooterLinkRow[] | null;
   policyLinks: FooterLinkRow[];
+  policyLinksEn?: FooterLinkRow[] | null;
   contactTitle: string;
+  contactTitleEn?: string | null;
   phone: string;
   email: string;
   contactFormUrl: string;
   paymentTitle: string;
+  paymentTitleEn?: string | null;
   paymentMethods: PaymentChip[];
   copyrightText: string;
+  copyrightTextEn?: string | null;
   /** True when the props above are the hardcoded Arabic defaults (no
    *  CMS overrides) — lets the client swap in the English hardcoded
    *  strings when the visitor picks EN. When any prop was set via CMS,
@@ -112,18 +125,37 @@ export function FooterView(props: FooterViewProps) {
   const useEn = mounted && lang === "en";
   const t = useEn ? T_EN : T_AR;
 
+  // For each field the priority is:
+  //   1. CMS EN value (if editor filled it and visitor picked EN)
+  //   2. CMS AR value (if editor filled the AR field — regardless of lang)
+  //   3. Hardcoded EN fallback (visitor picked EN and no CMS value at all)
+  //   4. Hardcoded AR fallback (Arabic visitors, empty CMS)
   const brandDescription =
-    props.defaults.brandDescription ? t.brandDescription : props.brandDescription;
+    useEn && props.brandDescriptionEn ? props.brandDescriptionEn
+    : props.defaults.brandDescription ? t.brandDescription
+    : props.brandDescription;
   const importantLinksTitle =
-    props.defaults.importantLinksTitle ? t.importantLinksTitle : props.importantLinksTitle;
+    useEn && props.importantLinksTitleEn ? props.importantLinksTitleEn
+    : props.defaults.importantLinksTitle ? t.importantLinksTitle
+    : props.importantLinksTitle;
   const contactTitle =
-    props.defaults.contactTitle ? t.contactTitle : props.contactTitle;
+    useEn && props.contactTitleEn ? props.contactTitleEn
+    : props.defaults.contactTitle ? t.contactTitle
+    : props.contactTitle;
   const paymentTitle =
-    props.defaults.paymentTitle ? t.paymentTitle : props.paymentTitle;
+    useEn && props.paymentTitleEn ? props.paymentTitleEn
+    : props.defaults.paymentTitle ? t.paymentTitle
+    : props.paymentTitle;
   const importantLinks =
-    props.defaults.importantLinks ? t.importantLinks : props.importantLinks;
+    useEn && props.importantLinksEn ? props.importantLinksEn
+    : props.defaults.importantLinks ? t.importantLinks
+    : props.importantLinks;
   const policyLinks =
-    props.defaults.policyLinks ? t.policyLinks : props.policyLinks;
+    useEn && props.policyLinksEn ? props.policyLinksEn
+    : props.defaults.policyLinks ? t.policyLinks
+    : props.policyLinks;
+  const copyrightText =
+    useEn && props.copyrightTextEn ? props.copyrightTextEn : props.copyrightText;
 
   return (
     <footer
@@ -253,7 +285,7 @@ export function FooterView(props: FooterViewProps) {
 
         {/* ─── Copyright ─────────────────────────────────────── */}
         <div className="mt-6 text-center text-base text-white/80" dir={useEn ? "ltr" : "rtl"}>
-          {props.copyrightText}
+          {copyrightText}
         </div>
       </div>
     </footer>

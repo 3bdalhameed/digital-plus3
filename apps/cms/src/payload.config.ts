@@ -645,6 +645,28 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "footer_config_rels_media_id_idx",
     "CREATE INDEX IF NOT EXISTS footer_config_rels_media_id_idx ON footer_config_rels(media_id)"
   );
+  // Footer global — English variants for every editable text field.
+  // Match snake_case naming per the Drizzle convention we discovered
+  // for regular (non-enum) text columns.
+  for (const col of [
+    "brand_description_en TEXT",
+    "important_links_title_en VARCHAR",
+    "contact_title_en VARCHAR",
+    "payment_title_en VARCHAR",
+    "copyright_text_en VARCHAR",
+  ]) {
+    const [name] = col.split(" ");
+    await run(`footer_${name}`, `ALTER TABLE footer_config ADD COLUMN IF NOT EXISTS ${col}`);
+  }
+  // Link labelEn on both importantLinks and policyLinks item tables.
+  await run(
+    "footer_important_links_label_en",
+    "ALTER TABLE footer_config_important_links ADD COLUMN IF NOT EXISTS label_en VARCHAR"
+  );
+  await run(
+    "footer_policy_links_label_en",
+    "ALTER TABLE footer_config_policy_links ADD COLUMN IF NOT EXISTS label_en VARCHAR"
+  );
   // Category Banners block — cardWidth enum needs xs + xl added; the enum
   // was created earlier with only sm/md/lg, but the CMS field offers all 5.
   // ALTER TYPE ADD VALUE IF NOT EXISTS is idempotent and safe.
