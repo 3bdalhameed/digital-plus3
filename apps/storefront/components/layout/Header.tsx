@@ -11,14 +11,54 @@ import { useSession, signOut } from "next-auth/react";
 import type { SiteSettings, NavbarConfig, NavLink } from "@my-store/types";
 
 const DEFAULT_NAV: NavLink[] = [
-  { labelAr: "الرئيسية", href: "/" },
-  { labelAr: "المنتجات", href: "/products" },
-  { labelAr: "من نحن", href: "/about" },
-  { labelAr: "الدعم", href: "/support" },
+  { labelAr: "الرئيسية", labelEn: "Home",     href: "/" },
+  { labelAr: "المنتجات", labelEn: "Products", href: "/products" },
+  { labelAr: "من نحن",   labelEn: "About",    href: "/about" },
+  { labelAr: "الدعم",    labelEn: "Support",  href: "/support" },
 ];
 
 const DEFAULT_NAME_AR = "ديجيتال بلس";
 const DEFAULT_NAME_EN = "DIGITAL PLUS";
+
+// Every UI string that isn't editor-configurable lives here so the
+// header renders in the visitor's picked language without dozens of
+// inline ternaries. Keys are the concept, not the Arabic text -- makes
+// grepping trivial. If we ever add another locale, just add a third
+// column here and switch `lang` above.
+const t = {
+  ar: {
+    promoBar:       "مفاجأة حلوة إلك! استعمل كود الخصم:",
+    searchAria:     "بحث",
+    searchPlaceholder: "أبحث عن...",
+    openMenu:       "فتح القائمة",
+    closeMenu:      "إغلاق القائمة",
+    accountFallback:"حسابي",
+    signIn:         "تسجيل الدخول",
+    signOut:        "تسجيل الخروج",
+    wishlistAria:   "المفضلة",
+    cartAria:       "السلة",
+    langLabelAr:    "عربي",
+    langLabelEn:    "English",
+    langShortAr:    "ع",
+    langShortEn:    "EN",
+  },
+  en: {
+    promoBar:       "Sweet surprise for you! Use discount code:",
+    searchAria:     "Search",
+    searchPlaceholder: "Search for...",
+    openMenu:       "Open menu",
+    closeMenu:      "Close menu",
+    accountFallback:"My account",
+    signIn:         "Sign in",
+    signOut:        "Sign out",
+    wishlistAria:   "Wishlist",
+    cartAria:       "Cart",
+    langLabelAr:    "عربي",
+    langLabelEn:    "English",
+    langShortAr:    "ع",
+    langShortEn:    "EN",
+  },
+} as const;
 
 interface HeaderProps {
   settings?: SiteSettings | null;
@@ -49,6 +89,16 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const lang = mounted ? localeStore.lang : "ar";
   const currency = mounted ? localeStore.currency : "USD";
   const { setLang, setCurrency, fetchRates, detectCurrency } = localeStore;
+
+  // UI copy in the visitor's picked language. Falls back to Arabic
+  // during the SSR + first-CSR pass so the hydration guard above
+  // continues to hold (server and first render both use `t.ar`).
+  const s = t[lang];
+
+  // Nav link label helper. Editors can leave labelEn empty and the UI
+  // still renders correctly -- we fall back to the Arabic label.
+  const navLabel = (link: NavLink) =>
+    lang === "en" && link.labelEn ? link.labelEn : link.labelAr;
 
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
@@ -108,7 +158,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                     <ChevronDown
                       className={`h-4 w-4 text-[#7C3AED] transition-transform ${openDropdown === link.href ? "rotate-180" : ""}`}
                     />
-                    {link.labelAr}
+                    {navLabel(link)}
                   </button>
                   {openDropdown === link.href && (
                     <ul className="mb-2 flex flex-col gap-1 pr-4">
@@ -119,7 +169,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                             onClick={() => setDrawerOpen(false)}
                             className="block py-2 text-sm font-medium text-gray-500 hover:text-[#7C3AED]"
                           >
-                            {child.labelAr}
+                            {navLabel(child)}
                           </Link>
                         </li>
                       ))}
@@ -132,7 +182,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                   onClick={() => setDrawerOpen(false)}
                   className="block py-3 text-base font-semibold text-gray-800 hover:text-[#7C3AED]"
                 >
-                  {link.labelAr}
+                  {navLabel(link)}
                 </Link>
               )}
             </div>
@@ -151,7 +201,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                     lang === l ? "bg-[#7C3AED] text-white" : "text-gray-500 hover:text-[#7C3AED]"
                   }`}
                 >
-                  {l === "ar" ? "عربي" : "English"}
+                  {l === "ar" ? s.langLabelAr : s.langLabelEn}
                 </button>
               ))}
             </div>
@@ -170,17 +220,17 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             <>
               <Link href="/account" onClick={() => setDrawerOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white">
                 <User className="h-4 w-4" />
-                {session.user.name?.split(" ")[0] ?? "حسابي"}
+                {session.user.name?.split(" ")[0] ?? s.accountFallback}
               </Link>
               <button onClick={() => signOut({ callbackUrl: "/" })} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600">
                 <LogOut className="h-4 w-4" />
-                تسجيل الخروج
+                {s.signOut}
               </button>
             </>
           ) : (
             <Link href="/login" onClick={() => setDrawerOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-bold text-white">
               <User className="h-4 w-4" />
-              تسجيل الدخول
+              {s.signIn}
             </Link>
           )}
         </div>
@@ -192,7 +242,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
         {/* ── Announcement bar — soft lavender ── */}
         <div className="flex items-center justify-center gap-2 bg-[#EDE9FE] py-2 px-4 text-xs font-semibold text-[#5B21B6]">
           <span>✨</span>
-          <span>مفاجأة حلوة إلك! استعمل كود الخصم:</span>
+          <span>{s.promoBar}</span>
           <span className="font-black tracking-wider">PLUS</span>
         </div>
 
@@ -216,14 +266,14 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
-                aria-label="بحث"
+                aria-label={s.searchAria}
               >
                 <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
               <input
                 type="text"
                 name="q"
-                placeholder="أبحث عن..."
+                placeholder={s.searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
@@ -239,7 +289,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 lg:hidden"
-                aria-label="فتح القائمة"
+                aria-label={s.openMenu}
               >
                 <Menu className="h-6 w-6" />
               </button>
@@ -249,15 +299,15 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 <div className="hidden items-center gap-1.5 sm:flex">
                   <Link href="/account" className="flex items-center gap-1.5 rounded-xl border-2 border-white/80 px-3 py-1.5 text-sm font-bold text-white transition hover:bg-white/10">
                     <User className="h-4 w-4" />
-                    {session.user.name?.split(" ")[0] ?? "حسابي"}
+                    {session.user.name?.split(" ")[0] ?? s.accountFallback}
                   </Link>
-                  <button onClick={() => signOut({ callbackUrl: "/" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label="تسجيل الخروج">
+                  <button onClick={() => signOut({ callbackUrl: "/" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label={s.signOut}>
                     <LogOut className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <Link href="/login" className="hidden items-center gap-1.5 rounded-xl border-2 border-white/80 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/10 sm:flex">
-                  تسجيل الدخول
+                <Link href="/login" aria-label={s.signIn} className="hidden items-center gap-1.5 rounded-xl border-2 border-white/80 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/10 sm:flex">
+                  {s.signIn}
                 </Link>
               )}
 
@@ -291,7 +341,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               <Link
                 href="/wishlist"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
-                aria-label="المفضلة"
+                aria-label={s.wishlistAria}
               >
                 <Heart className="h-5 w-5" strokeWidth={2} />
                 {wishlistCount > 0 && (
@@ -305,7 +355,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               <Link
                 href="/cart"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10"
-                aria-label="السلة"
+                aria-label={s.cartAria}
               >
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} />
                 {totalItems > 0 && (
@@ -329,14 +379,14 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
-                aria-label="بحث"
+                aria-label={s.searchAria}
               >
                 <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
               <input
                 type="text"
                 name="q"
-                placeholder="أبحث عن..."
+                placeholder={s.searchPlaceholder}
                 className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
               />
             </div>
@@ -352,7 +402,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                   {link.children?.length ? (
                     <>
                       <button className="flex items-center gap-1 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:text-[#7C3AED]">
-                        {link.labelAr}
+                        {navLabel(link)}
                         <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
                       </button>
                       <div className="invisible absolute right-0 top-full z-20 min-w-[180px] rounded-2xl border border-gray-100 bg-white py-2 shadow-xl opacity-0 transition-all group-hover:visible group-hover:opacity-100">
@@ -362,7 +412,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                             href={child.href}
                             className="block px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-[#f5f3ff] hover:text-[#7C3AED]"
                           >
-                            {child.labelAr}
+                            {navLabel(child)}
                           </Link>
                         ))}
                       </div>
@@ -372,7 +422,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                       href={link.href}
                       className="block px-4 py-3 text-sm font-semibold text-gray-700 transition hover:text-[#7C3AED]"
                     >
-                      {link.labelAr}
+                      {navLabel(link)}
                     </Link>
                   )}
                 </div>

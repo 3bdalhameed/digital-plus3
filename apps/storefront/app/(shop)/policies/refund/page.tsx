@@ -1,21 +1,10 @@
 import { getPolicies } from "@/lib/payload";
+import { PolicyPage } from "../PolicyPage";
 
-export const metadata = { title: "سياسة الاسترداد" };
+export const metadata = { title: "سياسة الاسترداد | Refund Policy" };
 export const revalidate = 3600;
 
 export default async function RefundPolicyPage() {
   const policies = await getPolicies().catch(() => null);
-
-  return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="mb-8 text-2xl font-black text-brand-800">سياسة الاسترداد</h1>
-      <div className="brand-card prose prose-purple max-w-none text-gray-600">
-        {policies?.refundPolicy ? (
-          <div dangerouslySetInnerHTML={{ __html: policies.refundPolicy }} />
-        ) : (
-          <p>سيتم إضافة سياسة الاسترداد قريباً من لوحة تحكم CMS.</p>
-        )}
-      </div>
-    </div>
-  );
+  return <PolicyPage kind="refund" htmlContent={policies?.refundPolicy} />;
 }

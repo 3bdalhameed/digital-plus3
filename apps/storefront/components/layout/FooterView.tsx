@@ -1,0 +1,283 @@
+"use client";
+
+import Image from "next/image";
+import Link from "@/components/ui/link";
+import { Facebook, Twitter, Instagram } from "lucide-react";
+import { useLocaleStore } from "@/lib/locale-store";
+import { useEffect, useState } from "react";
+
+/** Inline WhatsApp glyph — brand mark, sized via currentColor. */
+function WhatsAppGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <path d="M16.003 3C9.376 3 4 8.376 4 15.003c0 2.34.671 4.526 1.83 6.378L4 29l7.793-1.806A11.94 11.94 0 0 0 16.003 27C22.63 27 28 21.624 28 15.003 28 8.376 22.63 3 16.003 3Zm0 21.84c-1.984 0-3.83-.554-5.4-1.51l-.388-.232-4.625 1.073 1.092-4.504-.252-.412a9.832 9.832 0 0 1-1.555-5.252c0-5.443 4.43-9.872 9.876-9.872 2.638 0 5.115 1.027 6.98 2.892a9.806 9.806 0 0 1 2.892 6.98c0 5.443-4.43 9.836-9.872 9.836Zm5.418-7.357c-.296-.148-1.755-.866-2.027-.964-.272-.099-.47-.148-.668.148-.198.296-.766.964-.94 1.163-.173.198-.347.222-.643.074-.296-.148-1.252-.461-2.385-1.47-.88-.785-1.474-1.755-1.647-2.052-.173-.296-.018-.456.13-.604.133-.133.296-.347.444-.52.148-.173.198-.296.296-.495.099-.198.05-.371-.025-.52-.074-.148-.668-1.608-.915-2.2-.241-.578-.487-.5-.668-.51l-.57-.01c-.198 0-.52.074-.792.371-.272.296-1.04 1.016-1.04 2.476s1.065 2.872 1.213 3.07c.148.198 2.094 3.198 5.075 4.487.71.306 1.263.49 1.695.628.712.226 1.36.194 1.872.118.572-.085 1.755-.717 2.003-1.41.248-.692.248-1.287.173-1.41-.074-.124-.272-.198-.568-.346Z" />
+    </svg>
+  );
+}
+
+export type FooterLinkRow = { label: string; href: string };
+export type PaymentChip = { name: string; color: string; imageUrl?: string };
+
+// Hardcoded English fallbacks alongside Arabic. Editors can set CMS
+// values (which take priority) but if empty we still render something
+// sensible in the visitor's picked language.
+const T_AR = {
+  brandDescription:
+    "نحن في ديجيتال بلس نوفّر اشتراكات رقمية أصلية لأشهر المنصات العالمية مثل Adobe و Canva و Envato و YouTube Premium وغيرها. نحرص على تقديم تجربة شراء آمنة وسريعة مع دعم فني متواصل",
+  importantLinksTitle: "روابط مهمة",
+  contactTitle:        "تواصل معنا",
+  paymentTitle:        "طرق الدفع",
+  phoneLabel:          "رقم الهاتف:",
+  emailLabel:          "البريد الإلكتروني:",
+  contactFormPrefix:   "نموذج الاتصال من",
+  contactFormLink:     "هنا",
+  importantLinks: [
+    { label: "من نحن",                       href: "/about" },
+    { label: "سياسة الاستخدام",             href: "/policies/terms" },
+    { label: "سياسة الاسترجاع والاستبدال", href: "/policies/refund" },
+    { label: "المدونة",                      href: "/blogs/news" },
+  ] as FooterLinkRow[],
+  policyLinks: [
+    { label: "سياسة الشراء",            href: "/policies/terms" },
+    { label: "سياسة الخصوصية",         href: "/policies/privacy" },
+    { label: "وسائل الدفع المتوفرة",   href: "/about#payment" },
+    { label: "خدمة التوريد B2B للتجار", href: "/about#b2b" },
+  ] as FooterLinkRow[],
+};
+const T_EN = {
+  brandDescription:
+    "Digital Plus provides authentic digital subscriptions for the world's top platforms — Adobe, Canva, Envato, YouTube Premium, and more. We deliver a secure, fast purchase experience backed by continuous technical support.",
+  importantLinksTitle: "Important Links",
+  contactTitle:        "Contact Us",
+  paymentTitle:        "Payment Methods",
+  phoneLabel:          "Phone:",
+  emailLabel:          "Email:",
+  contactFormPrefix:   "Contact form",
+  contactFormLink:     "here",
+  importantLinks: [
+    { label: "About",                    href: "/about" },
+    { label: "Terms of Service",         href: "/policies/terms" },
+    { label: "Refund & Return Policy",   href: "/policies/refund" },
+    { label: "Blog",                     href: "/blogs/news" },
+  ] as FooterLinkRow[],
+  policyLinks: [
+    { label: "Purchase Policy",       href: "/policies/terms" },
+    { label: "Privacy Policy",        href: "/policies/privacy" },
+    { label: "Accepted Payments",     href: "/about#payment" },
+    { label: "B2B Wholesale",         href: "/about#b2b" },
+  ] as FooterLinkRow[],
+};
+
+export interface FooterViewProps {
+  logoUrl: string | null;
+  storeName: string;
+  brandDescription: string;
+  importantLinksTitle: string;
+  importantLinks: FooterLinkRow[];
+  policyLinks: FooterLinkRow[];
+  contactTitle: string;
+  phone: string;
+  email: string;
+  contactFormUrl: string;
+  paymentTitle: string;
+  paymentMethods: PaymentChip[];
+  copyrightText: string;
+  /** True when the props above are the hardcoded Arabic defaults (no
+   *  CMS overrides) — lets the client swap in the English hardcoded
+   *  strings when the visitor picks EN. When any prop was set via CMS,
+   *  its `<propName>IsDefault` flag will be false and we render the CMS
+   *  value regardless of lang. */
+  defaults: {
+    brandDescription:    boolean;
+    importantLinksTitle: boolean;
+    contactTitle:        boolean;
+    paymentTitle:        boolean;
+    importantLinks:      boolean;
+    policyLinks:         boolean;
+  };
+}
+
+/**
+ * Client-side render of the footer. Reads `lang` from the locale store
+ * and, for each field, either renders the CMS value (if the editor set
+ * one) or picks the hardcoded Arabic/English fallback based on lang.
+ * Deferred to `mounted` to avoid the same hydration mismatch the header
+ * had (Zustand persist reads after initial render → server-rendered
+ * defaults must match the first client render).
+ */
+export function FooterView(props: FooterViewProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const lang = useLocaleStore((s) => s.lang);
+  const useEn = mounted && lang === "en";
+  const t = useEn ? T_EN : T_AR;
+
+  const brandDescription =
+    props.defaults.brandDescription ? t.brandDescription : props.brandDescription;
+  const importantLinksTitle =
+    props.defaults.importantLinksTitle ? t.importantLinksTitle : props.importantLinksTitle;
+  const contactTitle =
+    props.defaults.contactTitle ? t.contactTitle : props.contactTitle;
+  const paymentTitle =
+    props.defaults.paymentTitle ? t.paymentTitle : props.paymentTitle;
+  const importantLinks =
+    props.defaults.importantLinks ? t.importantLinks : props.importantLinks;
+  const policyLinks =
+    props.defaults.policyLinks ? t.policyLinks : props.policyLinks;
+
+  return (
+    <footer
+      className="mx-3 mb-6 mt-20 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#7C3AED] text-white ring-1 ring-white/20 shadow-[0_18px_40px_rgba(91,33,182,0.25)] sm:mx-4"
+      dir={useEn ? "ltr" : "rtl"}
+    >
+      <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-8">
+
+        {/* ─── Top: 4 content columns ──── */}
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+
+          {/* 1. Brand block */}
+          <div>
+            <Link href="/" className="mb-4 inline-flex items-center gap-2" aria-label={props.storeName}>
+              {props.logoUrl ? (
+                <Image
+                  src={props.logoUrl}
+                  alt={props.storeName}
+                  width={150}
+                  height={40}
+                  className="h-10 w-auto object-contain brightness-0 invert"
+                  unoptimized
+                />
+              ) : (
+                <span className="text-lg font-black tracking-tight">{props.storeName}</span>
+              )}
+            </Link>
+            <p className="text-base leading-relaxed text-white/90">
+              {brandDescription}
+              <span className="ms-1 text-pink-200">♥</span>
+            </p>
+
+            {/* Social icons */}
+            <div className="mt-4 flex items-center gap-3">
+              <SocialIcon href="https://facebook.com" label="Facebook"><Facebook className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://x.com" label="X (Twitter)"><Twitter className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://instagram.com" label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://wa.me/962795580312" label="WhatsApp"><WhatsAppGlyph className="h-4 w-4" /></SocialIcon>
+            </div>
+          </div>
+
+          {/* 2. Important links */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{importantLinksTitle}</h3>
+            <ul className="space-y-3 text-base">
+              {importantLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 3. Policy column (no header in the source design) */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white/0 select-none sm:text-lg" aria-hidden>.</h3>
+            <ul className="space-y-3 text-base">
+              {policyLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 4. Contact us */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{contactTitle}</h3>
+            <ul className="space-y-3 text-base">
+              <li>
+                <span className="text-white/70">{t.phoneLabel}</span>{" "}
+                <a href={`tel:${props.phone}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {props.phone}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/70">{t.emailLabel}</span>{" "}
+                <a href={`mailto:${props.email}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {props.email}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/70">{t.contactFormPrefix}</span>{" "}
+                <Link href={props.contactFormUrl} className="text-white/90 underline-offset-2 hover:text-white hover:underline">
+                  {t.contactFormLink}
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* ─── Divider ───────────────────────────────────────── */}
+        <div className="my-10 h-px w-full bg-white/20" />
+
+        {/* ─── Payment methods row ────── */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3" dir={useEn ? "ltr" : "rtl"}>
+          <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
+          <div className="flex flex-1 flex-wrap items-center justify-center gap-1.5">
+            {props.paymentMethods.map((p, i) => (
+              <span
+                key={`${p.name}-${i}`}
+                className="flex h-8 min-w-[48px] items-center justify-center overflow-hidden rounded-[6px] bg-white px-2.5 text-[11px] font-black uppercase tracking-tight shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
+                style={{ color: p.color }}
+                title={p.name}
+                dir="ltr"
+              >
+                {p.imageUrl ? (
+                  <Image
+                    src={p.imageUrl}
+                    alt={p.name}
+                    width={56}
+                    height={28}
+                    className="h-6 w-auto object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  p.name
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ─── Copyright ─────────────────────────────────────── */}
+        <div className="mt-6 text-center text-base text-white/80" dir={useEn ? "ltr" : "rtl"}>
+          {props.copyrightText}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function SocialIcon({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/30"
+    >
+      {children}
+    </a>
+  );
+}
