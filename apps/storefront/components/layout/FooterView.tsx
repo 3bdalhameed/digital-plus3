@@ -254,10 +254,17 @@ export function FooterView(props: FooterViewProps) {
         {/* ─── Divider ───────────────────────────────────────── */}
         <div className="my-10 h-px w-full bg-white/20" />
 
-        {/* ─── Payment methods row ────── */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3" dir={useEn ? "ltr" : "rtl"}>
+        {/* ─── Payment methods row ──────
+             Label + logos render as a single centered cluster: label
+             sits on the leading edge of that cluster (right in AR, left
+             in EN), logos flow next to it, and the whole thing is
+             centered on the row. Was previously flex-1 on the logos
+             container which pinned the label to the far edge and left
+             the logos loosely centered in whatever space remained,
+             producing a lopsided row on wide screens. */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3" dir={useEn ? "ltr" : "rtl"}>
           <span className="text-base font-bold text-white sm:text-lg">{paymentTitle}</span>
-          <div className="flex flex-1 flex-wrap items-center justify-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {props.paymentMethods.map((p, i) => (
               <span
                 key={`${p.name}-${i}`}
