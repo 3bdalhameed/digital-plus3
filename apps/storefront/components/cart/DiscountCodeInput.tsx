@@ -28,7 +28,7 @@ export function DiscountCodeInput({
   const applyDiscount = useCartStore((s) => s.applyDiscount);
   const clearDiscount = useCartStore((s) => s.clearDiscount);
   const { currency: userCurrency, rates } = useLocaleStore();
-  const { isEn, dir } = useT();
+  const { isEn, dir, lang } = useT();
 
   // Bilingual strings kept inline (this component is small enough that
   // adding entries to the shared i18n dict felt over-engineered).
@@ -69,6 +69,9 @@ export function DiscountCodeInput({
             price: it.product.price,
           })),
           customerEmail,
+          // Server picks its error/success messages in this language
+          // instead of always returning Arabic.
+          lang,
         }),
       });
       const data = await res.json();

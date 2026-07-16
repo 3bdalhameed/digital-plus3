@@ -32,6 +32,40 @@ interface ValidateBody {
     price: number;
   }>;
   customerEmail?: string;
+  /** Which language to return messages in. Client passes this from the
+   *  locale store. Defaults to "ar" so a request without lang still
+   *  returns Arabic (the pre-i18n behavior). */
+  lang?: "ar" | "en";
+}
+
+/**
+ * Every user-facing message the validate route can return, in both
+ * supported languages. Keys are the concept, values pick per lang.
+ * Messages that need to substitute a value (min-order amount) are
+ * functions.
+ */
+const MSG = {
+  invalidRequest:  { ar: "طلب غير صالح",                              en: "Invalid request" },
+  emptyCode:       { ar: "يرجى إدخال كود الخصم",                     en: "Please enter a discount code" },
+  emptyCart:       { ar: "السلة فارغة",                                en: "Cart is empty" },
+  lookupFailed:    { ar: "تعذّر التحقق من الكود، حاول مرة أخرى",     en: "Couldn't verify the code, please try again" },
+  notFound:        { ar: "كود الخصم غير صحيح",                        en: "Invalid discount code" },
+  inactive:        { ar: "كود الخصم غير مفعّل",                       en: "This discount code is not active" },
+  notStarted:      { ar: "كود الخصم لم يبدأ بعد",                     en: "This discount code hasn't started yet" },
+  expired:         { ar: "انتهت صلاحية كود الخصم",                    en: "This discount code has expired" },
+  usedUp:          { ar: "انتهت استخدامات كود الخصم",                 en: "This discount code has been used up" },
+  minOrder:        (v: number) => ({
+    ar: `أقل مبلغ لاستخدام هذا الكود هو ${v}`,
+    en: `Minimum order to use this code is ${v}`,
+  }),
+  alreadyUsed:     { ar: "لقد استخدمت هذا الكود من قبل",              en: "You've already used this code" },
+  notEligible:     { ar: "هذا الكود لا ينطبق على المنتجات في السلة",  en: "This code doesn't apply to any items in your cart" },
+  applied:         { ar: "تم تطبيق كود الخصم",                        en: "Discount code applied" },
+} as const;
+
+type LangCode = "ar" | "en";
+function pickLang(l: unknown): LangCode {
+  return l === "en" ? "en" : "ar";
 }
 
 interface DiscountDoc {
@@ -69,19 +103,22 @@ function idsFromRel(rel: DiscountDoc["allowedCategories"]): Set<string> {
 }
 
 export async function POST(req: NextRequest) {
+  // Parse body first; if it's junk we still need to pick a lang so
+  // the error message reads in the caller's script.
   let body: ValidateBody;
   try {
     body = await req.json();
   } catch {
-    return fail("طلب غير صالح");
+    return fail(MSG.invalidRequest.ar);
   }
+  const lang = pickLang(body.lang);
 
   const rawCode = (body.code ?? "").trim().toUpperCase();
   const subtotal = Number(body.subtotal ?? 0);
   const items = Array.isArray(body.items) ? body.items : [];
 
-  if (!rawCode) return fail("يرجى إدخال كود الخصم");
-  if (!Number.isFinite(subtotal) || subtotal <= 0) return fail("السلة فارغة");
+  if (!rawCode) return fail(MSG.emptyCode[lang]);
+  if (!Number.isFinite(subtotal) || subtotal <= 0) return fail(MSG.emptyCart[lang]);
 
   // Look up by exact code, case-insensitive via the upper() index.
   const url = new URL(`${PAYLOAD_API_URL}/discount-codes`);
@@ -100,34 +137,32 @@ export async function POST(req: NextRequest) {
     const json = (await res.json()) as { docs?: DiscountDoc[] };
     doc = json.docs?.[0];
   } catch {
-    return fail("تعذّر التحقق من الكود، حاول مرة أخرى");
+    return fail(MSG.lookupFailed[lang]);
   }
 
-  if (!doc) return fail("كود الخصم غير صحيح");
-  if (!doc.active) return fail("كود الخصم غير مفعّل");
+  if (!doc) return fail(MSG.notFound[lang]);
+  if (!doc.active) return fail(MSG.inactive[lang]);
 
   const now = Date.now();
   if (doc.startsAt && new Date(doc.startsAt).getTime() > now) {
-    return fail("كود الخصم لم يبدأ بعد");
+    return fail(MSG.notStarted[lang]);
   }
   if (doc.expiresAt && new Date(doc.expiresAt).getTime() < now) {
-    return fail("انتهت صلاحية كود الخصم");
+    return fail(MSG.expired[lang]);
   }
   if (
     typeof doc.maxUses === "number" &&
     doc.maxUses > 0 &&
     doc.currentUses >= doc.maxUses
   ) {
-    return fail("انتهت استخدامات كود الخصم");
+    return fail(MSG.usedUp[lang]);
   }
   if (
     typeof doc.minOrderAmount === "number" &&
     doc.minOrderAmount > 0 &&
     subtotal < doc.minOrderAmount
   ) {
-    return fail(
-      `أقل مبلغ لاستخدام هذا الكود هو ${doc.minOrderAmount}`
-    );
+    return fail(MSG.minOrder(doc.minOrderAmount)[lang]);
   }
 
   // Per-customer usage cap. Only enforced when we know who's asking.
@@ -156,7 +191,7 @@ export async function POST(req: NextRequest) {
         const json = (await res.json()) as { totalDocs?: number };
         const used = json.totalDocs ?? 0;
         if (used >= doc.maxUsesPerCustomer) {
-          return fail("لقد استخدمت هذا الكود من قبل");
+          return fail(MSG.alreadyUsed[lang]);
         }
       }
     } catch {
@@ -186,7 +221,7 @@ export async function POST(req: NextRequest) {
   })();
 
   if (eligibleSubtotal <= 0) {
-    return fail("هذا الكود لا ينطبق على المنتجات في السلة");
+    return fail(MSG.notEligible[lang]);
   }
 
   const rawAmount =
@@ -207,6 +242,6 @@ export async function POST(req: NextRequest) {
     discountType: doc.discountType,
     discountValue: doc.discountValue,
     amount,
-    message: "تم تطبيق كود الخصم",
+    message: MSG.applied[lang],
   });
 }
