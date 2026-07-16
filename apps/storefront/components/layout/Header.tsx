@@ -239,8 +239,17 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
       {/* ── Sticky header ── */}
       <header className="sticky top-0 z-30 flex flex-col">
 
-        {/* ── Announcement bar — soft lavender ── */}
-        <div className="flex items-center justify-center gap-2 bg-[#EDE9FE] py-2 px-4 text-xs font-semibold text-[#5B21B6]">
+        {/* ── Announcement bar — soft lavender ──
+             `dir` matches the visitor's language so the three tokens
+             read in the right order under both scripts:
+               AR (RTL): PLUS  ← promoBar  ← ✨
+               EN (LTR): ✨ → promoBar → PLUS
+             Without an explicit dir the bar inherits <html dir="rtl">
+             and English visitors see "PLUS :Sweet surprise ✨". */}
+        <div
+          dir={lang === "en" ? "ltr" : "rtl"}
+          className="flex items-center justify-center gap-2 bg-[#EDE9FE] py-2 px-4 text-xs font-semibold text-[#5B21B6]"
+        >
           <span>✨</span>
           <span>{s.promoBar}</span>
           <span className="font-black tracking-wider">PLUS</span>
@@ -261,11 +270,17 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
               )}
             </Link>
 
-            {/* Search — truly centered via absolute positioning */}
+            {/* Search — truly centered via absolute positioning.
+                Icon and input padding flip sides based on lang so the
+                magnifying glass sits at the visual leading edge in
+                both scripts. `dir` on the input keeps the placeholder
+                (and the typed value) aligned with the icon. */}
             <form action="/products" method="get" className="absolute left-1/2 -translate-x-1/2 hidden w-full max-w-xs sm:block sm:max-w-sm">
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
+                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE] ${
+                  lang === "en" ? "left-3" : "right-3"
+                }`}
                 aria-label={s.searchAria}
               >
                 <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -276,7 +291,10 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 placeholder={s.searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
+                dir={lang === "en" ? "ltr" : "rtl"}
+                className={`w-full rounded-full border-0 bg-white py-2.5 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50 ${
+                  lang === "en" ? "pl-12 pr-4" : "pr-12 pl-4"
+                }`}
               />
             </form>
 
@@ -378,7 +396,9 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             <div className="relative">
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE]"
+                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition hover:bg-[#DDD6FE] ${
+                  lang === "en" ? "left-3" : "right-3"
+                }`}
                 aria-label={s.searchAria}
               >
                 <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -387,7 +407,10 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 type="text"
                 name="q"
                 placeholder={s.searchPlaceholder}
-                className="w-full rounded-full border-0 bg-white py-2.5 pr-12 pl-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50"
+                dir={lang === "en" ? "ltr" : "rtl"}
+                className={`w-full rounded-full border-0 bg-white py-2.5 text-sm text-gray-700 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-white/50 ${
+                  lang === "en" ? "pl-12 pr-4" : "pr-12 pl-4"
+                }`}
               />
             </div>
           </form>

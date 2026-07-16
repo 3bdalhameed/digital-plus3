@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Tag, X, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
+import { useT } from "@/lib/i18n";
 import { formatPrice } from "@/lib/utils";
 
 /**
@@ -27,6 +28,22 @@ export function DiscountCodeInput({
   const applyDiscount = useCartStore((s) => s.applyDiscount);
   const clearDiscount = useCartStore((s) => s.clearDiscount);
   const { currency: userCurrency, rates } = useLocaleStore();
+  const { isEn, dir } = useT();
+
+  // Bilingual strings kept inline (this component is small enough that
+  // adding entries to the shared i18n dict felt over-engineered).
+  const L = {
+    placeholder: isEn ? "Enter discount code"      : "أدخل كود الخصم",
+    apply:       isEn ? "Apply"                    : "تطبيق",
+    ariaLabel:   isEn ? "Discount code"            : "كود الخصم",
+    invalid:     isEn ? "Invalid code"             : "كود غير صالح",
+    connErr:     isEn ? "Couldn't verify the code, please try again" : "تعذّر التحقق من الكود، حاول مرة أخرى",
+    emptyCart:   isEn ? "Cart is empty"            : "السلة فارغة",
+    pleaseEnter: isEn ? "Please enter a code"      : "يرجى إدخال كود الخصم",
+    applied:     isEn ? "Applied:"                 : "تم تطبيق:",
+    discountAmt: isEn ? "Discount"                 : "خصم",
+    removeAria:  isEn ? "Remove code"              : "إزالة الكود",
+  };
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,7 +73,7 @@ export function DiscountCodeInput({
       });
       const data = await res.json();
       if (!data.valid) {
-        setError(data.message || "كود غير صالح");
+        setError(data.message || L.invalid);
         return;
       }
       applyDiscount({
@@ -67,7 +84,7 @@ export function DiscountCodeInput({
       });
       setCode("");
     } catch {
-      setError("تعذّر التحقق من الكود، حاول مرة أخرى");
+      setError(L.connErr);
     } finally {
       setLoading(false);
     }
@@ -75,20 +92,20 @@ export function DiscountCodeInput({
 
   if (appliedDiscount) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm" dir="rtl">
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm" dir={dir}>
         <div className="flex items-center gap-2 text-green-700">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           <div className="min-w-0">
-            <div className="font-bold">تم تطبيق: {appliedDiscount.code}</div>
+            <div className="font-bold">{L.applied} {appliedDiscount.code}</div>
             <div className="text-xs text-green-600">
-              خصم {formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+              {L.discountAmt} {formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
             </div>
           </div>
         </div>
         <button
           type="button"
           onClick={clearDiscount}
-          aria-label="إزالة الكود"
+          aria-label={L.removeAria}
           className="rounded-lg p-1.5 text-green-700 hover:bg-green-100"
         >
           <X className="h-4 w-4" />
@@ -98,18 +115,19 @@ export function DiscountCodeInput({
   }
 
   return (
-    <form onSubmit={handleApply} dir="rtl" className="space-y-2">
+    <form onSubmit={handleApply} dir={dir} className="space-y-2">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Tag className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Tag className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${isEn ? "left-3" : "right-3"}`} />
           <input
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="أدخل كود الخصم"
-            aria-label="كود الخصم"
+            placeholder={L.placeholder}
+            aria-label={L.ariaLabel}
             disabled={loading}
-            className="w-full rounded-xl border border-brand-100 bg-white py-2.5 pr-10 pl-4 text-sm font-bold tracking-wide text-brand-800 placeholder:font-normal placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:opacity-60"
+            dir={isEn ? "ltr" : "rtl"}
+            className={`w-full rounded-xl border border-brand-100 bg-white py-2.5 text-sm font-bold tracking-wide text-brand-800 placeholder:font-normal placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:opacity-60 ${isEn ? "pl-10 pr-4" : "pr-10 pl-4"}`}
             style={{ fontFeatureSettings: '"tnum"' }}
           />
         </div>
@@ -118,7 +136,7 @@ export function DiscountCodeInput({
           disabled={loading || !code.trim()}
           className="brand-btn shrink-0 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "تطبيق"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : L.apply}
         </button>
       </div>
       {error && (

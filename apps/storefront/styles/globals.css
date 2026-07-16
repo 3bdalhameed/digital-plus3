@@ -253,7 +253,11 @@
   background: transparent;
   border: 0;
   cursor: pointer;
-  text-align: right;
+  /* text-align follows the surrounding `dir` so an English visitor
+     sees questions left-aligned and the chevron stays on the trailing
+     edge. Without this, `text-align: right` was pinning the question
+     text to the right even in LTR mode. */
+  text-align: start;
   color: #1f2937;
 }
 .elem__faq .head__ p {

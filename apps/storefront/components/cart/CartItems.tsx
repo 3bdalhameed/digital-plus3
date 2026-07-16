@@ -19,7 +19,7 @@ function getMissingRequired(fields: DeliveryField[], info: Record<string, string
 export function CartItems() {
   const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } =
     useCartStore();
-  const { t, dir } = useT();
+  const { t, dir, isEn } = useT();
   // Same visitor-picked currency the home/product pages use, so the
   // cart doesn't suddenly flip back to USD after being shown SAR/JOD/AED
   // everywhere else. Line-item, subtotal, and cart total all reformat
@@ -135,15 +135,28 @@ export function CartItems() {
               </button>
             </div>
 
-            {/* Delivery fields form — shown when fields exist and any required one is missing */}
-            {deliveryFields.length > 0 && hasUnfilled && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4" dir="rtl">
-                <div className="mb-3 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm font-semibold text-amber-800">
-                    يرجى إكمال معلومات التسليم لهذا المنتج
-                  </p>
-                </div>
+            {/* Delivery fields form — always visible when the product has
+                any delivery fields (was previously gated on `hasUnfilled`,
+                which unmounted the entire block the moment the visitor
+                typed the first character into a required field, making
+                it impossible to type more than one). The amber warning
+                banner still toggles based on `hasUnfilled` so once every
+                required field is filled it fades to a neutral card. */}
+            {deliveryFields.length > 0 && (
+              <div
+                className={`rounded-2xl border p-4 ${
+                  hasUnfilled ? "border-amber-200 bg-amber-50" : "border-[#e8e4f8] bg-white"
+                }`}
+                dir={isEn ? "ltr" : "rtl"}
+              >
+                {hasUnfilled && (
+                  <div className="mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <p className="text-sm font-semibold text-amber-800">
+                      {isEn ? "Please complete the delivery info for this item" : "يرجى إكمال معلومات التسليم لهذا المنتج"}
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-3">
                   {deliveryFields.map((field, idx) => {
                     const key = field.id || String(idx);
@@ -153,7 +166,7 @@ export function CartItems() {
                     return (
                       <div key={key}>
                         <label className="mb-1 block text-sm font-medium text-[#1e1b4b]">
-                          {field.labelAr}
+                          {isEn && field.labelEn ? field.labelEn : field.labelAr}
                           {field.required && <span className="text-red-500"> *</span>}
                         </label>
                         {field.helpText && (
@@ -170,7 +183,7 @@ export function CartItems() {
                             }
                             className={inputClass}
                           >
-                            <option value="">-- الرجاء التحديد --</option>
+                            <option value="">{isEn ? "-- Please select --" : "-- الرجاء التحديد --"}</option>
                             {(field.selectOptions || "")
                               .split(",")
                               .map((o) => o.trim())
@@ -207,7 +220,7 @@ export function CartItems() {
                           />
                         )}
                         {hasError && (
-                          <p className="mt-1 text-xs text-red-500">هذا الحقل مطلوب</p>
+                          <p className="mt-1 text-xs text-red-500">{isEn ? "This field is required" : "هذا الحقل مطلوب"}</p>
                         )}
                       </div>
                     );
@@ -247,7 +260,7 @@ export function CartItems() {
         {!canCheckout && (
           <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            يرجى إكمال معلومات التسليم لجميع المنتجات قبل المتابعة
+            {isEn ? "Please complete the delivery info for all products before proceeding" : "يرجى إكمال معلومات التسليم لجميع المنتجات قبل المتابعة"}
           </p>
         )}
         <div className="mt-4 flex gap-3">
