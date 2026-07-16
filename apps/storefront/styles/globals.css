@@ -482,54 +482,67 @@
   background: var(--tst-card);
   color: var(--tst-text);
   border-radius: var(--tst-radius);
-  padding: 18px 16px;
+  /* Reference IMG_3207 uses generous vertical padding so the card
+     reads as a distinct panel per review; the compact 18×16 padding
+     made the quote and meta bunch up. */
+  padding: 28px 22px 22px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   align-items: center;
   text-align: center;
-  box-shadow: 0 4px 14px rgba(112, 45, 255, 0.18);
+  box-shadow: 0 10px 24px rgba(88, 28, 202, 0.22);
 }
 
 .tst-stars {
   display: inline-flex;
-  gap: 2px;
+  gap: 4px;
 }
 .tst-star {
-  width: 18px;
-  height: 18px;
-  fill: rgba(255, 255, 255, 0.35);
+  width: 22px;
+  height: 22px;
+  fill: rgba(255, 255, 255, 0.28);
 }
 .tst-star.fill {
   fill: var(--tst-star);
 }
+@media (min-width: 640px) {
+  .tst-star { width: 24px; height: 24px; }
+}
 
 .tst-quote {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.75;
   color: var(--tst-text);
+  /* Slight breathing room around the quote block matches the source
+     mockup where the sentence has room above and below before the
+     name/date bar. */
+  padding: 4px 6px;
 }
-@media (min-width: 640px) { .tst-quote { font-size: 15px; } }
+@media (min-width: 640px) { .tst-quote { font-size: 16px; } }
+@media (min-width: 768px) { .tst-quote { font-size: 17px; } }
 
 .tst-meta {
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 10px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
 }
 .tst-name {
   font-weight: 800;
   color: var(--tst-text);
+  font-size: 14px;
 }
 .tst-date {
   font-variant-numeric: tabular-nums;
   direction: ltr;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 
