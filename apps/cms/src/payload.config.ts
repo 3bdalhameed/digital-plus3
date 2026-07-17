@@ -21,6 +21,7 @@ import { Posts } from "./collections/Posts";
 // import { Reviews } from "./collections/Reviews"; // registration disabled -- see note below
 import { Users } from "./collections/Users";
 import { DiscountCodes } from "./collections/DiscountCodes";
+import { MediaFolders } from "./collections/MediaFolders";
 
 // Globals
 import { HomePage } from "./globals/HomePage";
@@ -221,6 +222,7 @@ export default buildConfig({
     EvidenceLogs,
     SupportTickets,
     Media,
+    MediaFolders,
     Users,
     DiscountCodes,
   ],
@@ -505,6 +507,46 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   await run(
     "orders_discount_amount_col",
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC`
+  );
+
+  // Media folder taxonomy — new MediaFolders collection + a folder_id
+  // relationship column on media. push:false so create the table +
+  // column explicitly. Rels table isn't needed because folder is a
+  // hasOne (single-target) relationship, not hasMany.
+  await run("media_folders_table", `
+    CREATE TABLE IF NOT EXISTS media_folders (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR NOT NULL,
+      description VARCHAR,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `);
+  // Media.folder is a single-target relationship, so Payload's Drizzle
+  // stores the reference on the parent's own rels table rather than an
+  // inline FK column. Ensure media_rels exists (it usually does thanks
+  // to other upload/relationship fields, but this is idempotent) and
+  // Payload will find + join the folder rows automatically.
+  await run("media_rels_table", `
+    CREATE TABLE IF NOT EXISTS media_rels (
+      id SERIAL PRIMARY KEY,
+      "order" INTEGER,
+      parent_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      "media-folders_id" INTEGER REFERENCES media_folders(id) ON DELETE SET NULL
+    )
+  `);
+  await run(
+    "media_rels_media_folders_col",
+    `ALTER TABLE media_rels ADD COLUMN IF NOT EXISTS "media-folders_id" INTEGER REFERENCES media_folders(id) ON DELETE SET NULL`
+  );
+  await run(
+    "media_rels_parent_idx",
+    `CREATE INDEX IF NOT EXISTS media_rels_parent_idx ON media_rels(parent_id)`
+  );
+  await run(
+    "media_rels_path_idx",
+    `CREATE INDEX IF NOT EXISTS media_rels_path_idx ON media_rels(path)`
   );
   // Multi-image Banner block + its `slides` array. The slides sub-table
   // is what Payload's Drizzle adapter complains about with:

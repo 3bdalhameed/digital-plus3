@@ -40,6 +40,10 @@ export const Media: CollectionConfig = {
   labels: { singular: "ملف وسائط", plural: "الوسائط" },
   admin: {
     group: "الإعدادات",
+    // Adding `folder` to defaultColumns puts the folder chip next to
+    // each row in the Media list so staff can spot mis-filed uploads
+    // at a glance.
+    defaultColumns: ["filename", "folder", "alt", "mimeType", "updatedAt"],
     listSearchableFields: ["filename", "alt"],
     hidden: ({ user }: { user: any }) =>
       !["super_admin", "admin", "catalog"].includes(user?.role),
@@ -180,6 +184,20 @@ export const Media: CollectionConfig = {
       name: "alt",
       label: "النص البديل",
       type: "text",
+    },
+    {
+      // Optional so historical uploads without a folder still validate.
+      // Editors pick from the MediaFolders collection; the picker
+      // supports search + "Add new" so a folder can be created inline
+      // without leaving the upload screen.
+      name: "folder",
+      label: "المجلد",
+      type: "relationship",
+      relationTo: "media-folders",
+      admin: {
+        position: "sidebar",
+        description: "المجلد الذي ينتمي إليه هذا الملف. اختياري.",
+      },
     },
   ],
 };
