@@ -10,6 +10,10 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      # Own file included so edits to the CI workflow itself trigger
+      # a rebuild -- previously changing this yaml did nothing until an
+      # unrelated storefront change came through.
+      - ".github/workflows/deploy-storefront.yml"
 
 env:
   IMAGE: ghcr.io/3bdalhameed/digital-plus3/storefront

@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+// Build marker: 2026-07-18 -- bumped to force the CI workflow's
+// paths filter to actually trigger a fresh no-cache build after the
+// GHA layer cache pinned every subsequent build to the July 10 output.
 const cmsUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
 const { hostname: cmsHostname, protocol: cmsProtocol, port: cmsPort } = new URL(cmsUrl);
 
