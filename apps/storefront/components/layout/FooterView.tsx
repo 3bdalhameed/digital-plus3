@@ -157,9 +157,9 @@ export function FooterView(props: FooterViewProps) {
   const copyrightText =
     useEn && props.copyrightTextEn ? props.copyrightTextEn : props.copyrightText;
 
-  // Merge the two link lists into one flat grid to match the source
-  // mockup (IMG_3208), which shows a single "روابط مهمة" section with
-  // a 3-column grid of links underneath instead of two separate lists.
+  // Mobile pulls the two link lists into one grid to match the source
+  // mockup (IMG_3208). Desktop keeps the original two-column split so
+  // the wider layout doesn't feel empty in the middle.
   const mergedLinks = [...importantLinks, ...policyLinks];
 
   return (
@@ -167,77 +167,169 @@ export function FooterView(props: FooterViewProps) {
       className="mx-3 mb-6 mt-20 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#7C3AED] text-white ring-1 ring-white/20 shadow-[0_18px_40px_rgba(91,33,182,0.25)] sm:mx-4"
       dir={useEn ? "ltr" : "rtl"}
     >
-      <div className="mx-auto max-w-[64rem] px-4 py-12 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-8">
 
-        {/* ─── Brand block — centered logo, description, social row ── */}
-        <div>
-          <Link href="/" className="mx-auto mb-5 inline-flex items-center gap-2" aria-label={props.storeName}>
-            {props.logoUrl ? (
-              <Image
-                src={props.logoUrl}
-                alt={props.storeName}
-                width={180}
-                height={48}
-                className="h-12 w-auto object-contain brightness-0 invert"
-                unoptimized
-              />
-            ) : (
-              <span className="text-xl font-black tracking-tight">{props.storeName}</span>
-            )}
-          </Link>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/90 sm:text-base">
-            {brandDescription}
-            <span className="ms-1 text-pink-100">♡</span>
-          </p>
+        {/* ═══════════════════════════════════════════════════
+             MOBILE LAYOUT — matches IMG_3208. Everything
+             centered, links collapsed into a single 3-col grid.
+             Hidden at sm and above; desktop uses the classic
+             4-column grid below.
+             ═══════════════════════════════════════════════════ */}
+        <div className="text-center sm:hidden">
+          <div>
+            <Link href="/" className="mx-auto mb-5 inline-flex items-center gap-2" aria-label={props.storeName}>
+              {props.logoUrl ? (
+                <Image
+                  src={props.logoUrl}
+                  alt={props.storeName}
+                  width={180}
+                  height={48}
+                  className="h-12 w-auto object-contain brightness-0 invert"
+                  unoptimized
+                />
+              ) : (
+                <span className="text-xl font-black tracking-tight">{props.storeName}</span>
+              )}
+            </Link>
+            <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/90">
+              {brandDescription}
+              <span className="ms-1 text-pink-100">♡</span>
+            </p>
 
-          {/* Social row — icons only, no ring, minimal like the mockup */}
-          <div className="mt-5 flex items-center justify-center gap-5">
-            <SocialIcon href="https://facebook.com" label="Facebook"><Facebook className="h-5 w-5" strokeWidth={2} /></SocialIcon>
-            <SocialIcon href="https://x.com" label="X (Twitter)"><Twitter className="h-5 w-5" strokeWidth={2} /></SocialIcon>
-            <SocialIcon href="https://instagram.com" label="Instagram"><Instagram className="h-5 w-5" strokeWidth={2} /></SocialIcon>
-            <SocialIcon href="https://wa.me/962795580312" label="WhatsApp"><WhatsAppGlyph className="h-5 w-5" /></SocialIcon>
+            <div className="mt-5 flex items-center justify-center gap-5">
+              <SocialIcon href="https://facebook.com" label="Facebook" variant="bare"><Facebook className="h-5 w-5" strokeWidth={2} /></SocialIcon>
+              <SocialIcon href="https://x.com" label="X (Twitter)" variant="bare"><Twitter className="h-5 w-5" strokeWidth={2} /></SocialIcon>
+              <SocialIcon href="https://instagram.com" label="Instagram" variant="bare"><Instagram className="h-5 w-5" strokeWidth={2} /></SocialIcon>
+              <SocialIcon href="https://wa.me/962795580312" label="WhatsApp" variant="bare"><WhatsAppGlyph className="h-5 w-5" /></SocialIcon>
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <h3 className="mb-6 text-lg font-black text-white">{importantLinksTitle}</h3>
+            <ul className="mx-auto grid max-w-2xl grid-cols-3 gap-x-4 gap-y-4 text-sm">
+              {mergedLinks.map((l, i) => (
+                <li key={`m-${l.href}-${i}`} className="text-center">
+                  <Link href={l.href} className="inline-block text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-10">
+            <h3 className="mb-5 text-lg font-black text-white">{contactTitle}</h3>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <span className="text-white/75">{t.phoneLabel}</span>{" "}
+                <a href={`tel:${props.phone}`} dir="ltr" className="text-white/95 hover:text-white">
+                  {props.phone}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/75">{t.emailLabel}</span>{" "}
+                <a href={`mailto:${props.email}`} dir="ltr" className="text-white/95 hover:text-white">
+                  {props.email}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/75">{t.contactFormPrefix}</span>{" "}
+                <Link href={props.contactFormUrl} className="text-white/95 underline underline-offset-2 hover:text-white">
+                  {t.contactFormLink}
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* ─── Important links — one heading + 3-column grid of merged
-             links. Mobile also shows 3 columns so the layout matches
-             the reference mockup exactly at every breakpoint. */}
-        <div className="mt-10">
-          <h3 className="mb-6 text-lg font-black text-white sm:text-xl">{importantLinksTitle}</h3>
-          <ul className="mx-auto grid max-w-2xl grid-cols-3 gap-x-4 gap-y-4 text-sm sm:text-base">
-            {mergedLinks.map((l, i) => (
-              <li key={`${l.href}-${i}`} className="text-center">
-                <Link href={l.href} className="inline-block text-white/90 transition-colors hover:text-white">
-                  {l.label}
+        {/* ═══════════════════════════════════════════════════
+             DESKTOP LAYOUT — original 4-column grid.
+             Hidden below sm; that breakpoint uses the centered
+             mobile layout above.
+             ═══════════════════════════════════════════════════ */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+          {/* 1. Brand block */}
+          <div>
+            <Link href="/" className="mb-4 inline-flex items-center gap-2" aria-label={props.storeName}>
+              {props.logoUrl ? (
+                <Image
+                  src={props.logoUrl}
+                  alt={props.storeName}
+                  width={150}
+                  height={40}
+                  className="h-10 w-auto object-contain brightness-0 invert"
+                  unoptimized
+                />
+              ) : (
+                <span className="text-lg font-black tracking-tight">{props.storeName}</span>
+              )}
+            </Link>
+            <p className="text-base leading-relaxed text-white/90">
+              {brandDescription}
+              <span className="ms-1 text-pink-200">♥</span>
+            </p>
+
+            <div className="mt-4 flex items-center gap-3">
+              <SocialIcon href="https://facebook.com" label="Facebook"><Facebook className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://x.com" label="X (Twitter)"><Twitter className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://instagram.com" label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href="https://wa.me/962795580312" label="WhatsApp"><WhatsAppGlyph className="h-4 w-4" /></SocialIcon>
+            </div>
+          </div>
+
+          {/* 2. Important links */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{importantLinksTitle}</h3>
+            <ul className="space-y-3 text-base">
+              {importantLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 3. Policy column (no header in the source design) */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white/0 select-none sm:text-lg" aria-hidden>.</h3>
+            <ul className="space-y-3 text-base">
+              {policyLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-white/90 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 4. Contact us */}
+          <div>
+            <h3 className="mb-5 text-base font-black text-white sm:text-lg">{contactTitle}</h3>
+            <ul className="space-y-3 text-base">
+              <li>
+                <span className="text-white/70">{t.phoneLabel}</span>{" "}
+                <a href={`tel:${props.phone}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {props.phone}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/70">{t.emailLabel}</span>{" "}
+                <a href={`mailto:${props.email}`} dir="ltr" className="text-white/90 hover:text-white">
+                  {props.email}
+                </a>
+              </li>
+              <li>
+                <span className="text-white/70">{t.contactFormPrefix}</span>{" "}
+                <Link href={props.contactFormUrl} className="text-white/90 underline-offset-2 hover:text-white hover:underline">
+                  {t.contactFormLink}
                 </Link>
               </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* ─── Contact — centered heading + stacked contact lines ── */}
-        <div className="mt-10">
-          <h3 className="mb-5 text-lg font-black text-white sm:text-xl">{contactTitle}</h3>
-          <ul className="space-y-3 text-sm sm:text-base">
-            <li>
-              <span className="text-white/75">{t.phoneLabel}</span>{" "}
-              <a href={`tel:${props.phone}`} dir="ltr" className="text-white/95 hover:text-white">
-                {props.phone}
-              </a>
-            </li>
-            <li>
-              <span className="text-white/75">{t.emailLabel}</span>{" "}
-              <a href={`mailto:${props.email}`} dir="ltr" className="text-white/95 hover:text-white">
-                {props.email}
-              </a>
-            </li>
-            <li>
-              <span className="text-white/75">{t.contactFormPrefix}</span>{" "}
-              <Link href={props.contactFormUrl} className="text-white/95 underline underline-offset-2 hover:text-white">
-                {t.contactFormLink}
-              </Link>
-            </li>
-          </ul>
+            </ul>
+          </div>
         </div>
 
         {/* ─── Divider ───────────────────────────────────────── */}
@@ -292,18 +384,25 @@ function SocialIcon({
   href,
   label,
   children,
+  variant = "chip",
 }: {
   href: string;
   label: string;
   children: React.ReactNode;
+  /** `chip` (default) = white/15 filled circle used on desktop.
+   *  `bare` = plain glyph used on mobile per IMG_3208. */
+  variant?: "chip" | "bare";
 }) {
+  const chip = variant === "chip"
+    ? "flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30"
+    : "inline-flex items-center justify-center text-white/95 hover:text-white";
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="inline-flex items-center justify-center text-white/95 transition hover:text-white"
+      className={`${chip} transition`}
     >
       {children}
     </a>
