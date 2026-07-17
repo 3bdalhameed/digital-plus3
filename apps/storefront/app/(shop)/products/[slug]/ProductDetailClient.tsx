@@ -23,7 +23,8 @@ export function ProductDetailClient({ product, productName }: Props) {
   // pages; the detail page was rendering in the product's base
   // currency verbatim, so a JO visitor with SAR selected still saw
   // USD prices here.
-  const { currency: userCurrency, rates } = useLocaleStore();
+  const { currency: userCurrency, rates, lang } = useLocaleStore();
+  const isEn = lang === "en";
   const [tab, setTab] = useState<"desc" | "reviews">("desc");
   const [qty, setQty] = useState(1);
 
@@ -317,15 +318,24 @@ export function ProductDetailClient({ product, productName }: Props) {
         {tab === "desc" ? (
           <div className="rounded-2xl border border-[#e8e4f8] bg-white p-6">
             {(() => {
-              const html = product.descriptionHtml || lexicalToHtml(product.description);
+              // English visitors get descriptionHtmlEn when the editor
+              // filled it, falling back to the Arabic descriptionHtml
+              // (then the lexical richText) so a half-translated product
+              // still shows *something*. Arabic visitors always see
+              // descriptionHtml.
+              const arHtml = (product as any).descriptionHtml || lexicalToHtml(product.description);
+              const enHtml = (product as any).descriptionHtmlEn as string | undefined;
+              const html = isEn && enHtml ? enHtml : arHtml;
               return html ? (
                 <div
-                  className="prose prose-sm max-w-none text-right"
-                  dir="rtl"
+                  className={`prose prose-sm max-w-none ${isEn ? "text-left" : "text-right"}`}
+                  dir={isEn ? "ltr" : "rtl"}
                   dangerouslySetInnerHTML={{ __html: html }}
                 />
               ) : (
-                <p className="text-center text-sm text-[#6b7280]">لا يوجد وصف مفصل لهذا المنتج.</p>
+                <p className="text-center text-sm text-[#6b7280]">
+                  {isEn ? "No detailed description for this product." : "لا يوجد وصف مفصل لهذا المنتج."}
+                </p>
               );
             })()}
           </div>
