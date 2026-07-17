@@ -19,6 +19,12 @@ services:
       # ── Auth ──
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-}
+      # Auth.js v5 names + proxy trust. Behind Cloudflare -> Coolify these
+      # must reach the container or NextAuth mis-derives HTTPS and every
+      # sign-in fails with "MissingCSRF".
+      AUTH_URL: ${AUTH_URL:-${NEXTAUTH_URL:-}}
+      AUTH_SECRET: ${AUTH_SECRET:-${NEXTAUTH_SECRET:-}}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       # ── CMS ──

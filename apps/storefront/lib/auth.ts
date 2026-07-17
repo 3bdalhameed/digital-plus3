@@ -49,6 +49,11 @@ export const {
   signOut,
 } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Behind Cloudflare -> Coolify, TLS is terminated at the edge and the
+  // container sees the forwarded request. Without trustHost, Auth.js v5
+  // can't tell it's on HTTPS and sets/reads the CSRF cookie under
+  // mismatched names, producing "MissingCSRF" on every sign-in.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
