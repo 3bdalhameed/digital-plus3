@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "@/components/ui/link";
 import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine } from "lucide-react";
@@ -25,6 +25,16 @@ export function ProductDetailClient({ product, productName }: Props) {
   // USD prices here.
   const { currency: userCurrency, rates, lang } = useLocaleStore();
   const isEn = lang === "en";
+
+  // Sticky bottom action bar overlaps the tail of the footer when the
+  // page is scrolled to the very end. Tag <body> so a CSS rule in
+  // globals.css can add extra bottom padding to the footer while this
+  // page is mounted. Removed on unmount so other pages recover their
+  // normal footer spacing.
+  useEffect(() => {
+    document.body.classList.add("has-sticky-actions");
+    return () => document.body.classList.remove("has-sticky-actions");
+  }, []);
   const [tab, setTab] = useState<"desc" | "reviews">("desc");
   const [qty, setQty] = useState(1);
 
