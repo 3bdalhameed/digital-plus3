@@ -2,50 +2,54 @@
 
 import { useState, Suspense, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import Link from "@/components/ui/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Mail, Lock, KeyRound } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
-// All user-facing copy for this page. Kept as a plain object rather
-// than nested in useT() because there are ~30 strings and centralizing
-// them here is easier to scan than sprinkling ternaries.
+/**
+ * OTP-only login. Password path removed after we couldn't make the
+ * bcrypt credentials flow behave reliably behind the Cloudflare /
+ * Coolify proxy chain (MissingCSRF ping-ponging). OTP works because
+ * the code lives in the DB and the sign-in POST doesn't rely on a
+ * pre-existing csrf cookie round-trip in the same way.
+ *
+ * Flow:
+ *   1. User types email → POST /api/auth/otp/request → 6-digit code emailed
+ *   2. User types code → signIn("otp", { email, code }) → session set → redirect /
+ *
+ * Accounts are auto-created on first successful OTP verify inside the
+ * auth "otp" provider, so this doubles as registration -- no separate
+ * /register page needed.
+ */
+
 function loginCopy(isEn: boolean) {
   return {
-    verified:      isEn ? "✓ Your email is confirmed, you can sign in now" : "✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن",
-    registered:    isEn ? "✓ Account created! You can sign in now" : "✓ تم إنشاء حسابك! يمكنك تسجيل الدخول الآن",
-    invalidCreds:  isEn ? "Incorrect email or password" : "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-    rateLimited:   isEn ? "You requested a code recently. Please wait a moment before trying again" : "لقد طلبت رمزاً مؤخراً. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى",
-    sendFailed:    isEn ? "Couldn't send the code. Check your connection and try again" : "تعذّر إرسال الرمز. تحقق من اتصالك بالإنترنت وحاول مرة أخرى",
-    otpInvalid:    isEn ? "Code is incorrect or expired" : "الرمز غير صحيح أو منتهي الصلاحية",
-    heading:       isEn ? "Sign in" : "تسجيل الدخول",
-    welcomeBack:   isEn ? "Welcome back" : "مرحباً بعودتك",
-    tabPassword:   isEn ? "Password" : "كلمة المرور",
-    tabOtp:        isEn ? "Verification code" : "رمز التحقق",
-    emailLabel:    isEn ? "Email" : "البريد الإلكتروني",
-    passwordLabel: isEn ? "Password" : "كلمة المرور",
-    signInBtn:     isEn ? "Sign in" : "تسجيل الدخول",
-    otpHint:       isEn ? "We'll send a 6-digit code to your email. No password needed." : "سنرسل لك رمزاً مؤلفاً من ٦ أرقام إلى بريدك الإلكتروني. لا حاجة لكلمة مرور.",
-    sendCode:      isEn ? "Send code" : "إرسال الرمز",
-    otpSentPrefix: isEn ? "📧 We sent a 6-digit code to " : "📧 أرسلنا رمزاً مؤلفاً من ٦ أرقام إلى ",
-    otpSentSuffix: isEn ? "." : ".",
+    heading:       isEn ? "Sign in"                          : "تسجيل الدخول",
+    welcomeBack:   isEn ? "Enter your email to receive a login code" : "أدخل بريدك الإلكتروني لتلقي رمز الدخول",
+    emailLabel:    isEn ? "Email"                            : "البريد الإلكتروني",
+    sendCode:      isEn ? "Send code"                        : "إرسال الرمز",
+    otpSentPrefix: isEn ? "📧 Code sent to "                  : "📧 تم إرسال الرمز إلى ",
     otpCheckInbox: isEn ? "Check your inbox (spam folder too, sometimes)." : "تفقّد صندوق الوارد (وملف الرسائل غير المرغوب فيها أحياناً).",
-    otpCodeLabel:  isEn ? "Verification code" : "رمز التحقق",
-    confirmSignIn: isEn ? "Confirm sign in" : "تأكيد الدخول",
-    changeEmail:   isEn ? "← Change email" : "← تغيير البريد",
+    otpCodeLabel:  isEn ? "Verification code"                : "رمز التحقق",
+    confirmSignIn: isEn ? "Confirm sign in"                  : "تأكيد الدخول",
+    changeEmail:   isEn ? "← Change email"                    : "← تغيير البريد",
     resendCodeCd:  (secs: number) => isEn ? `Resend code (${secs})` : `أعد إرسال الرمز (${secs})`,
-    resendCode:    isEn ? "Resend code" : "أعد إرسال الرمز",
-    noAccount:     isEn ? "Don't have an account?" : "ليس لديك حساب؟",
-    createAccount: isEn ? "Create account" : "إنشاء حساب",
+    resendCode:    isEn ? "Resend code"                      : "أعد إرسال الرمز",
+    rateLimited:   isEn ? "You requested a code recently. Wait a moment before trying again." : "لقد طلبت رمزاً مؤخراً. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى",
+    sendFailed:    isEn ? "Couldn't send the code. Check your connection and try again." : "تعذّر إرسال الرمز. تحقق من اتصالك بالإنترنت وحاول مرة أخرى",
+    otpInvalid:    isEn ? "Code is incorrect or expired"     : "الرمز غير صحيح أو منتهي الصلاحية",
+    firstTimeHint: isEn ? "New here? Just enter your email — your account will be created automatically." : "جديد هنا؟ أدخل بريدك الإلكتروني وسنقوم بإنشاء حسابك تلقائياً.",
   };
 }
 
-function StatusNotices({ M }: { M: ReturnType<typeof loginCopy> }) {
+function StatusNotices() {
   const params = useSearchParams();
-  const justRegistered = params.get("registered") === "true";
-
-  if (justRegistered) {
-    return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">{M.registered}</div>;
+  if (params.get("signedOut") === "1") {
+    return (
+      <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">
+        ✓ تم تسجيل الخروج بنجاح
+      </div>
+    );
   }
   return null;
 }
@@ -54,108 +58,65 @@ export default function LoginPage() {
   const { isEn, dir } = useT();
   const M = loginCopy(isEn);
 
-  /* ─── Method tabs ─── */
-  const [method, setMethod] = useState<"password" | "otp">("password");
-
-  /* ─── Shared fields ─── */
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-
-  /* ─── Password flow ─── */
-  const [password, setPassword] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
-
-  /* ─── OTP flow ─── */
-  const [otpStep, setOtpStep] = useState<"email" | "code">("email");
+  const [step, setStep] = useState<"email" | "code">("email");
   const [otpCode, setOtpCode] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpResendCooldown, setOtpResendCooldown] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // Cooldown countdown for "resend code"
+  // Countdown for the resend timer.
   useEffect(() => {
-    if (otpResendCooldown <= 0) return;
-    const t = setTimeout(() => setOtpResendCooldown((s) => s - 1), 1000);
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [otpResendCooldown]);
+  }, [resendCooldown]);
 
-  // Auto-focus code input when switching to code step
+  // Auto-focus the code input the moment we switch to the code step.
   useEffect(() => {
-    if (otpStep === "code") {
-      setTimeout(() => codeInputRef.current?.focus(), 50);
-    }
-  }, [otpStep]);
+    if (step === "code") setTimeout(() => codeInputRef.current?.focus(), 50);
+  }, [step]);
 
-  /* ─── Password submit — straight to Auth.js signIn, no pre-check ─── */
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPwLoading(true);
-    setError("");
-
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.error) {
-      setError(M.invalidCreds);
-      setPwLoading(false);
-    } else {
-      window.location.href = "/";
-    }
-  };
-
-  /* ─── OTP: request code ─── */
-  const handleOtpRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setOtpLoading(true);
+  async function requestCode(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!email.trim() || loading) return;
+    setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/auth/otp/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() }),
       });
       if (res.status === 429) {
         setError(M.rateLimited);
-        setOtpLoading(false);
         return;
       }
-      setOtpStep("code");
-      setOtpResendCooldown(60);
+      setStep("code");
+      setResendCooldown(60);
     } catch {
       setError(M.sendFailed);
     } finally {
-      setOtpLoading(false);
+      setLoading(false);
     }
-  };
+  }
 
-  /* ─── OTP: verify code ─── */
-  const handleOtpVerify = async (e: React.FormEvent) => {
+  async function verifyCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || otpCode.length !== 6) return;
-    setOtpLoading(true);
+    if (otpCode.length !== 6 || loading) return;
+    setLoading(true);
     setError("");
-    const result = await signIn("otp", { email, code: otpCode, redirect: false });
+    const result = await signIn("otp", { email: email.trim(), code: otpCode, redirect: false });
     if (result?.error) {
       setError(M.otpInvalid);
-      setOtpLoading(false);
       setOtpCode("");
+      setLoading(false);
     } else {
       window.location.href = "/";
     }
-  };
+  }
 
-  /* ─── OTP: resend ─── */
-  const handleOtpResend = async () => {
-    if (otpResendCooldown > 0) return;
-    setError("");
-    await fetch("/api/auth/otp/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setOtpResendCooldown(60);
-  };
-
-  /* ─── Render ─── */
   return (
     <div className="w-full" dir={dir}>
       <div className="mb-6 text-center">
@@ -165,88 +126,17 @@ export default function LoginPage() {
 
       <div className="brand-card">
         <Suspense>
-          <StatusNotices M={M} />
+          <StatusNotices />
         </Suspense>
 
-        {/* ── Method tab switcher ── */}
-        <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-brand-50 p-1">
-          <button
-            type="button"
-            onClick={() => { setMethod("password"); setError(""); }}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition-all ${
-              method === "password"
-                ? "bg-white text-brand-700 shadow-sm"
-                : "text-brand-500 hover:text-brand-700"
-            }`}
-          >
-            <Lock className="h-4 w-4" />
-            {M.tabPassword}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMethod("otp"); setError(""); setOtpStep("email"); }}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition-all ${
-              method === "otp"
-                ? "bg-white text-brand-700 shadow-sm"
-                : "text-brand-500 hover:text-brand-700"
-            }`}
-          >
-            <KeyRound className="h-4 w-4" />
-            {M.tabOtp}
-          </button>
-        </div>
-
-        {/* ── Error notice (shared) ── */}
         {error && (
           <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
         )}
 
-        {/* ── PASSWORD method ── */}
-        {method === "password" && (
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.emailLabel}</label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-brand-200 bg-brand-50 py-3 pr-10 pl-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  placeholder="example@email.com"
-                  required
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.passwordLabel}</label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-brand-200 bg-brand-50 py-3 pr-10 pl-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  placeholder="••••••••"
-                  required
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
-            <button type="submit" disabled={pwLoading} className="brand-btn w-full py-3 disabled:opacity-50">
-              {pwLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.signInBtn}
-            </button>
-          </form>
-        )}
-
-        {/* ── OTP method ── */}
-        {method === "otp" && otpStep === "email" && (
-          <form onSubmit={handleOtpRequest} className="space-y-4">
+        {step === "email" && (
+          <form onSubmit={requestCode} className="space-y-4">
             <p className="rounded-xl bg-brand-50 p-3 text-xs leading-relaxed text-brand-700">
-              {M.otpHint}
+              {M.firstTimeHint}
             </p>
 
             <div>
@@ -260,21 +150,26 @@ export default function LoginPage() {
                   className="w-full rounded-xl border border-brand-200 bg-brand-50 py-3 pr-10 pl-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   placeholder="example@email.com"
                   required
+                  autoFocus
                   dir="ltr"
                 />
               </div>
             </div>
 
-            <button type="submit" disabled={otpLoading || !email} className="brand-btn w-full py-3 disabled:opacity-50">
-              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.sendCode}
+            <button
+              type="submit"
+              disabled={loading || !email.trim()}
+              className="brand-btn w-full py-3 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.sendCode}
             </button>
           </form>
         )}
 
-        {method === "otp" && otpStep === "code" && (
-          <form onSubmit={handleOtpVerify} className="space-y-4">
+        {step === "code" && (
+          <form onSubmit={verifyCode} className="space-y-4">
             <div className="rounded-xl bg-green-50 p-3 text-xs leading-relaxed text-green-700">
-              {M.otpSentPrefix}<span dir="ltr" className="font-bold">{email}</span>{M.otpSentSuffix}
+              {M.otpSentPrefix}<span dir="ltr" className="font-bold">{email}</span>.
               <br />{M.otpCheckInbox}
             </div>
 
@@ -298,36 +193,31 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={otpLoading || otpCode.length !== 6}
+              disabled={loading || otpCode.length !== 6}
               className="brand-btn w-full py-3 disabled:opacity-50"
             >
-              {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.confirmSignIn}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : M.confirmSignIn}
             </button>
 
             <div className="flex items-center justify-between text-xs">
               <button
                 type="button"
-                onClick={() => { setOtpStep("email"); setOtpCode(""); setError(""); }}
+                onClick={() => { setStep("email"); setOtpCode(""); setError(""); }}
                 className="text-brand-500 underline hover:text-brand-700"
               >
                 {M.changeEmail}
               </button>
               <button
                 type="button"
-                onClick={handleOtpResend}
-                disabled={otpResendCooldown > 0}
+                onClick={() => resendCooldown === 0 && requestCode()}
+                disabled={resendCooldown > 0}
                 className="text-brand-500 underline hover:text-brand-700 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
               >
-                {otpResendCooldown > 0 ? M.resendCodeCd(otpResendCooldown) : M.resendCode}
+                {resendCooldown > 0 ? M.resendCodeCd(resendCooldown) : M.resendCode}
               </button>
             </div>
           </form>
         )}
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          {M.noAccount}{" "}
-          <Link href="/register" className="font-bold text-brand-500 hover:underline">{M.createAccount}</Link>
-        </p>
       </div>
     </div>
   );

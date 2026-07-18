@@ -55,8 +55,22 @@ export function CartItems() {
         const hasUnfilled = missingKeys.length > 0;
 
         return (
-          <div key={item.product.id} className="brand-card space-y-4">
-            <div className="flex items-center gap-4">
+          <div key={item.product.id} className="brand-card relative space-y-4">
+            {/* Trash absolutely-positioned in the trailing corner so
+                it can't push the flex row off-screen on narrow phones
+                (the previous horizontal layout was overflowing the
+                card edge, cutting the icon in half). */}
+            <button
+              onClick={() => removeItem(item.product.id)}
+              aria-label={isEn ? "Remove" : "إزالة"}
+              className="absolute end-2 top-2 z-10 rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+
+            {/* Row wraps on mobile: image + info on line 1, quantity +
+                subtotal on line 2 (or same line on ≥sm). */}
+            <div className="flex flex-wrap items-center gap-4 pe-8">
               {/* Image */}
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-brand-50">
                 {imageUrl ? (
@@ -72,10 +86,10 @@ export function CartItems() {
               </div>
 
               {/* Info */}
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/products/${item.product.slug}`}
-                  className="text-sm font-bold text-brand-800 hover:text-brand-500"
+                  className="line-clamp-2 text-sm font-bold text-brand-800 hover:text-brand-500"
                 >
                   {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                 </Link>
@@ -100,39 +114,33 @@ export function CartItems() {
                 )}
               </div>
 
-              {/* Quantity */}
-              <div className="flex items-center gap-2 rounded-xl border border-brand-100 p-1">
-                <button
-                  onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                  className="rounded-lg p-1 hover:bg-brand-50"
-                >
-                  <Minus className="h-4 w-4 text-brand-600" />
-                </button>
-                <span className="min-w-[2rem] text-center text-sm font-bold text-brand-800">
-                  {item.quantity}
-                </span>
-                <button
-                  onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                  className="rounded-lg p-1 hover:bg-brand-50"
-                >
-                  <Plus className="h-4 w-4 text-brand-600" />
-                </button>
-              </div>
+              {/* Quantity + subtotal — wrap to a new line on narrow
+                  screens so they never squeeze the trash off-canvas. */}
+              <div className="flex w-full items-center justify-between gap-3 sm:w-auto">
+                <div className="flex items-center gap-2 rounded-xl border border-brand-100 p-1">
+                  <button
+                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                    className="rounded-lg p-1 hover:bg-brand-50"
+                  >
+                    <Minus className="h-4 w-4 text-brand-600" />
+                  </button>
+                  <span className="min-w-[2rem] text-center text-sm font-bold text-brand-800">
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                    className="rounded-lg p-1 hover:bg-brand-50"
+                  >
+                    <Plus className="h-4 w-4 text-brand-600" />
+                  </button>
+                </div>
 
-              {/* Subtotal */}
-              <div className="min-w-[5rem] text-left">
-                <span className="text-sm font-bold text-brand-600">
-                  {formatPrice(item.product.price * item.quantity, item.product.currency, userCurrency, rates)}
-                </span>
+                <div className="min-w-[5rem] text-end">
+                  <span className="text-sm font-bold text-brand-600">
+                    {formatPrice(item.product.price * item.quantity, item.product.currency, userCurrency, rates)}
+                  </span>
+                </div>
               </div>
-
-              {/* Remove */}
-              <button
-                onClick={() => removeItem(item.product.id)}
-                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
             </div>
 
             {/* Delivery fields form — always visible when the product has

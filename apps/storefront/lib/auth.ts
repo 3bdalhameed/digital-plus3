@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyOtp } from "@/lib/otp";
 import { normalizeEmail } from "@/lib/normalize-email";
@@ -80,34 +79,6 @@ export const {
   },
 
   providers: [
-    // ── Password login ──────────────────────────────────────────────
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email:    { label: "البريد الإلكتروني", type: "email" },
-        password: { label: "كلمة المرور",       type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        // Every write in the app lowercases the email, so lookup must
-        // do the same or a browser autofill with any capital letter
-        // returns null and the user sees "wrong password".
-        const email = normalizeEmail(String(credentials.email));
-        if (!email) return null;
-
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.password) return null;
-
-        const ok = await bcrypt.compare(String(credentials.password), user.password);
-        if (!ok) return null;
-
-        if (!user.emailVerified) return null;
-
-        return { id: user.id, email: user.email, name: user.name };
-      },
-    }),
-
     // ── Passwordless OTP login ──────────────────────────────────────
     // Verifies the 6-digit code from /api/auth/otp/request. If the
     // user doesn't exist yet, auto-create a verified account -- they
