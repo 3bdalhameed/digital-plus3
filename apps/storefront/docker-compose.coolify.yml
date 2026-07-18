@@ -5,8 +5,13 @@ services:
     # cache that were both stuck on the July 10 image, so no code
     # change was reaching the running container. Every Coolify deploy
     # now runs `docker build` against the freshly-cloned source.
+    # Coolify runs `docker compose` with `--project-directory` set to
+    # the repo root, so relative paths in this file resolve from there
+    # (not from apps/storefront/). context must be `.` -- an earlier
+    # `../../` climbed above the artifact dir and buildx died with
+    # `lstat /apps: no such file or directory`.
     build:
-      context: ../../
+      context: .
       dockerfile: apps/storefront/Dockerfile
     restart: unless-stopped
     ports:
