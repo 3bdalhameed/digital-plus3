@@ -10,23 +10,20 @@ import { normalizeEmail } from "@/lib/normalize-email";
  * - GET  → list pending reviews (default) or filter by ?status=…
  * - POST → { id, status } to approve / reject / re-pend a review
  *
- * Gated by ADMIN_EMAILS env var: a comma-separated list of email
- * addresses allowed to hit these endpoints. Any signed-in user whose
- * normalized email is in that list is treated as admin. Anyone else
- * gets 403. We don't ship this behind Payload admin because the CMS
- * intentionally doesn't register Reviews as a collection (Payload's
- * Drizzle adapter chokes on this table's schema shape).
+ * Gated by Payload's `users` table -- anyone signed in on the
+ * storefront whose email matches a CMS user with role in
+ * {super_admin, admin, catalog} can moderate. Same set that already
+ * has write access to Media / Products / Orders in the CMS admin,
+ * so the moderation permission piggybacks on existing role config
+ * (no separate ADMIN_EMAILS env var to keep in sync).
+ *
+ * We hit `users` via $queryRaw because Prisma's schema only models
+ * the NextAuth tables (Account/Session/User) -- the Payload-managed
+ * `users` collection lives in the same DB but isn't in schema.prisma.
  */
 export const dynamic = "force-dynamic";
 
-function adminEmails(): Set<string> {
-  return new Set(
-    (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
+const ADMIN_ROLES = new Set(["super_admin", "admin", "catalog"]);
 
 async function requireAdmin(): Promise<
   { ok: true } | { ok: false; error: string; status: number }
@@ -34,11 +31,20 @@ async function requireAdmin(): Promise<
   const session = await auth();
   const email = normalizeEmail(session?.user?.email);
   if (!email) return { ok: false, error: "غير مصرح", status: 401 };
-  const allow = adminEmails();
-  if (allow.size === 0) {
-    return { ok: false, error: "ADMIN_EMAILS env var is not configured", status: 503 };
+
+  try {
+    const rows = await prisma.$queryRaw<{ role: string | null }[]>(
+      Prisma.sql`SELECT role FROM users WHERE lower(email) = ${email} LIMIT 1`,
+    );
+    const role = rows[0]?.role ?? null;
+    if (!role || !ADMIN_ROLES.has(role)) {
+      return { ok: false, error: "ممنوع", status: 403 };
+    }
+  } catch {
+    // If the users lookup fails (DB down, table missing) don't leak the
+    // moderation queue -- treat as forbidden.
+    return { ok: false, error: "تعذّر التحقق من الصلاحيات", status: 503 };
   }
-  if (!allow.has(email)) return { ok: false, error: "ممنوع", status: 403 };
   return { ok: true };
 }
 
