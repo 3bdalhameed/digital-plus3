@@ -345,50 +345,55 @@ html[dir="rtl"] .ot-sidebar {
   border-left: 1px solid var(--ot-border) !important;
 }
 
-/* Toggle button — lives OUTSIDE the sidebar in the DOM so it stays
-   fixed to the viewport when the mobile drawer is sliding (transform
-   on an ancestor would trap it). Positioned to sit at the sidebar's
-   trailing edge on desktop; on mobile it's pinned to the screen edge
-   at the top corner. Transitions its `right`/`left` to follow the
-   sidebar as it expands/collapses so it always looks attached. */
-.ot-toggle {
-  position: fixed !important;
-  top: 22px !important;
-  z-index: 60 !important;
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: var(--ot-toggle-bg) !important;
-  color: var(--ot-toggle-text) !important;
-  border: 1px solid var(--ot-toggle-border) !important;
-  box-shadow: 0 4px 12px rgba(15,23,42,0.18) !important;
-  cursor: pointer !important;
-  padding: 0 !important;
-  transition: transform 0.15s ease, color 0.15s, background 0.15s,
-              box-shadow 0.15s,
-              left 0.28s cubic-bezier(0.4,0,0.2,1),
-              right 0.28s cubic-bezier(0.4,0,0.2,1) !important;
-}
-.ot-toggle:hover {
-  transform: scale(1.08);
-  color: var(--ot-toggle-hover-text) !important;
-  box-shadow: 0 6px 16px rgba(15,23,42,0.24) !important;
-}
-.ot-toggle:active { transform: scale(0.96); }
+/* Two-toggle setup — one integrated into the sidebar's brand row for
+   desktop (never overlaps sidebar content), one floating for mobile
+   (position: fixed at the viewport edge, only mount that responds
+   correctly when the drawer transforms). Each is hidden at the
+   opposite breakpoint. See @media (max-width: 900px) below. */
 
-/* Desktop resting position — anchor to sidebar's trailing edge.
-   Sidebar is 264px expanded, 76px collapsed; toggle sits 14px past
-   that inner edge so it looks like it's clipped to the divider.
-   Selectors key off the toggle's own `data-dir` (set by JS) instead
-   of `html[dir]`, since Payload's admin doesn't guarantee `dir` on
-   the root element. */
-.ot-toggle[data-dir="ltr"] { left: 250px !important; right: auto !important; }
-.ot-toggle[data-dir="ltr"][data-collapsed="true"] { left: 62px !important; }
-.ot-toggle[data-dir="rtl"] { right: 250px !important; left: auto !important; }
-.ot-toggle[data-dir="rtl"][data-collapsed="true"] { right: 62px !important; }
+/* -- Desktop toggle: sits INSIDE the brand row -- */
+.ot-toggle-desktop {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ot-toggle-bg);
+  color: var(--ot-toggle-text);
+  border: 1px solid var(--ot-toggle-border);
+  cursor: pointer;
+  padding: 0;
+  margin-inline-start: auto;
+  transition: transform 0.15s ease, color 0.15s, background 0.15s;
+}
+.ot-toggle-desktop:hover {
+  transform: scale(1.06);
+  color: var(--ot-toggle-hover-text);
+}
+.ot-toggle-desktop:active { transform: scale(0.96); }
+/* Brand row is a flex container; use `margin-inline-start: auto` so
+   the toggle pushes to the end of the row regardless of direction.
+   When collapsed to 76px the brand's link contracts and the toggle
+   is the only visible child -- center it. */
+.ot-brand { display: flex !important; align-items: center !important; gap: 8px !important; }
+.ot-sidebar[data-collapsed="true"] .ot-toggle-desktop { margin-inline-start: 0 !important; }
+.ot-sidebar[data-collapsed="true"] .ot-brand__link { display: none !important; }
+
+/* -- Mobile toggle: fixed to the viewport, only visible <900px -- */
+.ot-toggle-mobile {
+  display: none;  /* opened up inside the mobile media query */
+  position: fixed;
+  top: 14px;
+  z-index: 101;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s;
+}
+.ot-toggle-mobile:active { transform: scale(0.94); }
 
 .ot-brand {
   height: 72px !important;
@@ -3076,13 +3081,14 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   .ot-sidebar[data-collapsed="false"] .ot-profile { justify-content: flex-start !important; padding: 12px !important; }
   .ot-sidebar[data-collapsed="false"] .ot-logout { display: inline-flex !important; }
 
-  /* Toggle button — anchored to the START edge of the screen on
-     mobile (right in RTL, left in LTR), same side the drawer slides
-     out from, always visible. Bigger + higher-contrast so it reads
-     as a real primary control instead of an artefact. Does NOT track
-     the drawer's inner edge -- the user's finger stays in the same
-     corner whether they're opening or closing. */
-  .ot-toggle {
+  /* Mobile-only floating toggle — bigger, brand-purple, always at the
+     SAME screen corner (the drawer's slide-out edge) so the user's
+     finger doesn't need to chase it. Desktop toggle inside the brand
+     row is hidden here since the drawer's own brand row can slide off
+     with it and we need a viewport-fixed handle. */
+  .ot-toggle-desktop { display: none !important; }
+  .ot-toggle-mobile {
+    display: flex !important;
     top: 14px !important;
     z-index: 101 !important;
     width: 46px !important;
@@ -3093,18 +3099,18 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
     border: none !important;
     box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35) !important;
   }
-  .ot-toggle:hover,
-  .ot-toggle:active {
+  .ot-toggle-mobile:hover,
+  .ot-toggle-mobile:active {
     background: #6D28D9 !important;
     color: #fff !important;
   }
-  .ot-toggle[data-dir="rtl"],
-  .ot-toggle[data-dir="rtl"][data-collapsed="true"] {
+  .ot-toggle-mobile[data-dir="rtl"],
+  .ot-toggle-mobile[data-dir="rtl"][data-collapsed="true"] {
     right: 14px !important;
     left: auto !important;
   }
-  .ot-toggle[data-dir="ltr"],
-  .ot-toggle[data-dir="ltr"][data-collapsed="true"] {
+  .ot-toggle-mobile[data-dir="ltr"],
+  .ot-toggle-mobile[data-dir="ltr"][data-collapsed="true"] {
     left: 14px !important;
     right: auto !important;
   }

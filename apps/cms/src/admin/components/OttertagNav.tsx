@@ -333,20 +333,18 @@ const OttertagNav: React.FC = () => {
         onClick={() => setCollapsed(true)}
         aria-hidden="true"
       />
-      {/* Toggle button rendered OUTSIDE the aside on purpose. The
-          sidebar uses transform to slide off-screen on mobile, and
-          any transform on an ancestor turns child `position: fixed`
-          into de-facto `position: absolute` -- the toggle would slide
-          away with the drawer and become impossible to reach. As a
-          sibling it stays fixed to the viewport and can double as
-          the mobile "open/close menu" affordance.
-          `data-collapsed` mirrors the sidebar so the CSS can align
-          the toggle to the sidebar's edge on desktop and to the
-          screen edge on mobile. `data-dir` is our own direction
-          attribute so the CSS doesn't rely on `html[dir]` being set. */}
+      {/* Mobile-only toggle. Rendered as a sibling of <aside> because
+          the drawer uses `transform` to slide off-screen, and any
+          transform on an ancestor demotes child `position: fixed` to
+          a de-facto absolute -- the button would slide out with the
+          drawer and become unreachable. As an outside sibling it
+          stays pinned to the viewport regardless of drawer state.
+          Hidden on desktop (see .ot-toggle-mobile in custom.css) --
+          the desktop equivalent lives inside the sidebar's brand row
+          below so it can't overlap search / nav content. */}
       <button
         type="button"
-        className="ot-toggle"
+        className="ot-toggle ot-toggle-mobile"
         data-collapsed={collapsed ? "true" : "false"}
         data-dir={dir}
         onClick={() => setCollapsed((c) => !c)}
@@ -368,7 +366,10 @@ const OttertagNav: React.FC = () => {
       aria-label="القائمة الرئيسية"
       dir="ltr"
     >
-      {/* Brand */}
+      {/* Brand — desktop-only toggle lives here alongside the brand
+          name so it's part of the sidebar's chrome instead of floating
+          over its content. Hidden on mobile (mobile uses the sibling
+          .ot-toggle-mobile above). */}
       <div className="ot-brand">
         <NavLink to={adminRoute} className="ot-brand__link">
           <div className="ot-brand__logo">
@@ -376,6 +377,16 @@ const OttertagNav: React.FC = () => {
           </div>
           <span className="ot-brand__name">digital-plus3 admin</span>
         </NavLink>
+        <button
+          type="button"
+          className="ot-toggle-desktop"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
+          aria-expanded={!collapsed}
+          title={`${collapsed ? "توسيع" : "طي"} (Ctrl+B)`}
+        >
+          <MenuToggle size={16} strokeWidth={2.25} />
+        </button>
       </div>
 
       {/* Search */}
