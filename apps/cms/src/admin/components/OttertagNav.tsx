@@ -99,9 +99,21 @@ const OttertagNav: React.FC = () => {
   const [theme, setTheme] = useState<ThemeKey>(() =>
     (readLS<ThemeKey>(LS_THEME, "dark") as ThemeKey) ?? "dark"
   );
-  const [collapsed, setCollapsed] = useState<boolean>(() =>
-    readLS<string>(LS_COLLAPSED, "0") === "1"
-  );
+  /* On mobile, `collapsed` doubles as "drawer closed" — see the
+     @media (max-width: 900px) block in custom.css. If the visitor
+     hasn't touched the toggle yet (no LS entry) we default to
+     collapsed on narrow screens so the drawer doesn't cover the
+     dashboard on first paint. Desktop first-visit is still expanded. */
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(LS_COLLAPSED) : null;
+      if (raw === "1") return true;
+      if (raw === "0") return false;
+      return typeof window !== "undefined" && window.innerWidth < 900;
+    } catch {
+      return false;
+    }
+  });
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -276,7 +288,29 @@ const OttertagNav: React.FC = () => {
   const displayName = (user as any)?.name || user?.email || "مسؤول";
   const roleLabel = user?.id ? "مدير النظام" : "زائر";
 
+  /* Auto-close the mobile drawer after navigation. On desktop this is
+     a no-op — the CSS keeps the sidebar visible regardless of the
+     collapsed flag above 900px, and clicking a nav link there doesn't
+     "close" anything. On mobile, tapping a link would leave the drawer
+     open on top of the newly loaded page, so we collapse it. */
+  const closeOnMobile = () => {
+    try {
+      if (window.innerWidth < 900) setCollapsed(true);
+    } catch {}
+  };
+
   return (
+    <>
+      {/* Mobile-only backdrop. Rendered outside <aside> so the click
+          target covers the whole viewport minus the drawer itself.
+          Purely CSS-driven visibility — see @media (max-width: 900px)
+          in custom.css. */}
+      <div
+        className="ot-backdrop"
+        data-visible={!collapsed ? "true" : "false"}
+        onClick={() => setCollapsed(true)}
+        aria-hidden="true"
+      />
     <aside
       className="ot-sidebar"
       data-theme={theme}
@@ -339,6 +373,7 @@ const OttertagNav: React.FC = () => {
             <NavLink
               to={adminRoute}
               exact
+              onClick={closeOnMobile}
               className="ot-item ot-tip-host"
               activeClassName="ot-item--active"
             >
@@ -380,6 +415,7 @@ const OttertagNav: React.FC = () => {
                     <li key={it.id}>
                       <NavLink
                         to={it.href}
+                        onClick={closeOnMobile}
                         className={`ot-item ot-tip-host ${active ? "ot-item--active" : ""}`}
                       >
                         <Icon className="ot-item__icon" size={18} strokeWidth={active ? 2.25 : 2} />
@@ -444,6 +480,7 @@ const OttertagNav: React.FC = () => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

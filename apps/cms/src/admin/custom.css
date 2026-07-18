@@ -2993,6 +2993,117 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   font-variant-numeric: tabular-nums;
 }
 
+/* Sidebar drawer + backdrop for phones ────────────────────
+   On mobile the sidebar is not part of the page layout — it slides
+   in on top of the content as a real drawer. Without this, the
+   264px sidebar (or the 76px collapsed one) sits alongside the
+   content and pushes it off-screen, which is what made the panel
+   feel like a floating orphan on the phone. */
+
+.ot-backdrop { display: none; }
+
+@media (max-width: 900px) {
+  /* Drawer positioning — fixed, full-height, slides off the trailing
+     edge when `data-collapsed="true"` (== "closed"). On mobile the
+     `collapsed` flag flips meaning: closed vs open, not narrow vs wide. */
+  .ot-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    width: 288px !important;
+    min-width: 288px !important;
+    z-index: 100 !important;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1) !important;
+  }
+  html[dir="rtl"] .ot-sidebar {
+    right: 0 !important;
+    left: auto !important;
+    border-left: none !important;
+  }
+  html[dir="ltr"] .ot-sidebar {
+    left: 0 !important;
+    right: auto !important;
+    border-right: none !important;
+  }
+
+  /* Closed drawer → translate fully off the trailing edge. */
+  html[dir="rtl"] .ot-sidebar[data-collapsed="true"] {
+    transform: translateX(100%) !important;
+  }
+  html[dir="ltr"] .ot-sidebar[data-collapsed="true"] {
+    transform: translateX(-100%) !important;
+  }
+  /* Open drawer → the collapsed shrink-to-icons rules don't apply on
+     mobile; force the sidebar back to full width + visible labels
+     regardless of what desktop CSS did. */
+  .ot-sidebar[data-collapsed="false"] {
+    transform: none !important;
+    width: 288px !important;
+    min-width: 288px !important;
+  }
+  .ot-sidebar[data-collapsed="false"] .ot-item__label,
+  .ot-sidebar[data-collapsed="false"] .ot-brand__name,
+  .ot-sidebar[data-collapsed="false"] .ot-profile__meta {
+    opacity: 1 !important;
+    max-width: none !important;
+  }
+  .ot-sidebar[data-collapsed="false"] .ot-brand {
+    padding: 0 20px !important;
+    justify-content: flex-start !important;
+  }
+  .ot-sidebar[data-collapsed="false"] .ot-theme { flex-direction: row !important; }
+  .ot-sidebar[data-collapsed="false"] .ot-profile { justify-content: flex-start !important; padding: 12px !important; }
+  .ot-sidebar[data-collapsed="false"] .ot-logout { display: inline-flex !important; }
+
+  /* Toggle button always visible on the screen edge — it's the only
+     way to reopen the drawer once collapsed. Sits above the drawer's
+     own z-index so it stays tappable even when the sheet slides in. */
+  .ot-toggle {
+    position: fixed !important;
+    top: 14px !important;
+    z-index: 101 !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+  }
+  html[dir="rtl"] .ot-toggle {
+    right: 12px !important;
+    left: auto !important;
+  }
+  html[dir="ltr"] .ot-toggle {
+    left: 12px !important;
+    right: auto !important;
+  }
+  /* When drawer is open, park the toggle at the drawer's inner edge
+     so it doubles as a close affordance next to the panel content. */
+  html[dir="rtl"] .ot-sidebar[data-collapsed="false"] ~ .ot-toggle,
+  html[dir="rtl"] .ot-sidebar[data-collapsed="false"] .ot-toggle {
+    right: 300px !important;
+  }
+  html[dir="ltr"] .ot-sidebar[data-collapsed="false"] ~ .ot-toggle,
+  html[dir="ltr"] .ot-sidebar[data-collapsed="false"] .ot-toggle {
+    left: 300px !important;
+  }
+
+  /* Backdrop — click closes the drawer via the onClick in JSX. */
+  .ot-backdrop[data-visible="true"] {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 99;
+    animation: ot-backdrop-in 0.2s ease;
+  }
+  @keyframes ot-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
 /* Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .pl__stats { grid-template-columns: repeat(2, 1fr); }
