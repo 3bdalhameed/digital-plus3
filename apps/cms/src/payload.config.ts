@@ -901,6 +901,32 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "reviews_status_idx",
     "CREATE INDEX IF NOT EXISTS reviews_status_idx ON reviews(status)"
   );
+  // Open reviews up to non-buyers as well -- the product page now lets
+  // anyone signed in leave a review, not just the order owner. Two
+  // schema changes:
+  //   1. order_id becomes nullable (rows without a purchase context).
+  //   2. The single unique (order_id, product_id, customer_id) is
+  //      split into two partial uniques so both flows are protected:
+  //        - buyer reviews: still one per (order, product, customer)
+  //        - open reviews:  one per (product, customer) with NULL order
+  //      NULLs in a full-column unique index would otherwise let one
+  //      customer post unlimited no-order reviews for the same product.
+  await run(
+    "reviews_order_id_nullable",
+    "ALTER TABLE reviews ALTER COLUMN order_id DROP NOT NULL"
+  );
+  await run(
+    "reviews_unique_drop_full",
+    "DROP INDEX IF EXISTS reviews_unique_order_product_customer"
+  );
+  await run(
+    "reviews_unique_with_order",
+    "CREATE UNIQUE INDEX IF NOT EXISTS reviews_unique_with_order ON reviews(order_id, product_id, customer_id) WHERE order_id IS NOT NULL"
+  );
+  await run(
+    "reviews_unique_no_order",
+    "CREATE UNIQUE INDEX IF NOT EXISTS reviews_unique_no_order ON reviews(product_id, customer_id) WHERE order_id IS NULL"
+  );
 
   return results;
 }
