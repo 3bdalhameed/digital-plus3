@@ -97,6 +97,20 @@ type PrismaLike = typeof prismaOrders | Prisma.TransactionClient;
  * Threads `now` from the caller for exact timestamp consistency with
  * the surrounding order-write, and accepts an optional tx handle so
  * concurrent guest checkouts can share atomicity with the order.
+ *
+ * Two guards worth knowing about:
+ *   - `ON CONFLICT DO NOTHING` (no target) — the customers table has
+ *     TWO unique indexes, a plain (email) from Payload's `unique:true`
+ *     field AND a functional (lower(email)) from runMigrations. A
+ *     targeted `ON CONFLICT (email)` only handles the plain one; a
+ *     legacy mixed-case row that conflicts on the functional index
+ *     alone would throw a 23505 and abort the whole checkout tx.
+ *     Untargeted conflict clause catches either violation.
+ *   - Fallback SELECT uses `lower(email) = lower(...)` so a legacy
+ *     row that hasn't been touched by the case-normalization migration
+ *     is still found. A case-sensitive `email = ${email}` returned 0
+ *     rows in that scenario, which surfaced as
+ *     "Cannot read properties of undefined (reading 'id')".
  */
 export async function getOrCreateCustomer(
   email: string,
@@ -109,15 +123,21 @@ export async function getOrCreateCustomer(
       WITH ins AS (
         INSERT INTO customers (email, name, updated_at, created_at)
         VALUES (${email}, ${name || email}, ${now}::timestamptz, ${now}::timestamptz)
-        ON CONFLICT (email) DO NOTHING
+        ON CONFLICT DO NOTHING
         RETURNING id
       )
       SELECT id FROM ins
       UNION ALL
-      SELECT id FROM customers WHERE email = ${email}
+      SELECT id FROM customers WHERE lower(email) = lower(${email})
       LIMIT 1
     `
   );
+  if (!rows[0]) {
+    // Both CTE branches came back empty. Almost impossible after the
+    // untargeted ON CONFLICT + lower() fallback, but surface a real
+    // error instead of a mystery `.id of undefined` if it happens.
+    throw new Error(`getOrCreateCustomer: no row for ${email}`);
+  }
   return rows[0].id;
 }
 
