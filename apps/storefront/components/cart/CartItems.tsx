@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "@/components/ui/link";
+import { useEffect, useState } from "react";
 import { Trash2, Plus, Minus, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
@@ -20,11 +21,34 @@ export function CartItems() {
   const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } =
     useCartStore();
   const { t, dir, isEn } = useT();
-  // Same visitor-picked currency the home/product pages use, so the
-  // cart doesn't suddenly flip back to USD after being shown SAR/JOD/AED
-  // everywhere else. Line-item, subtotal, and cart total all reformat
-  // via `formatPrice(amt, "USD", userCurrency, rates)`.
   const { currency: userCurrency, rates } = useLocaleStore();
+
+  // Live stock check: the cart holds a snapshot of the product at
+  // add-time, so we need to ask the server for the current inStock
+  // state per item on mount. Any product marked out of stock since
+  // it was added shows an inline warning + blocks checkout.
+  const [liveStock, setLiveStock] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const ids = items.map((i) => String(i.product.id));
+    if (ids.length === 0) { setLiveStock({}); return; }
+    let cancelled = false;
+    fetch("/api/cart/stock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+      .then((r) => r.ok ? r.json() : { stock: {} })
+      .then((data: { stock?: Record<string, boolean> }) => {
+        if (!cancelled) setLiveStock(data.stock ?? {});
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // Re-run when the set of item IDs changes (add/remove).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.map((i) => i.product.id).join(",")]);
+
+  const isOutOfStock = (id: string | number) => liveStock[String(id)] === false;
+  const anyOutOfStock = items.some((i) => isOutOfStock(i.product.id));
 
   if (items.length === 0) {
     return (
@@ -41,7 +65,7 @@ export function CartItems() {
     );
   }
 
-  const canCheckout = items.every((item) => {
+  const canCheckout = !anyOutOfStock && items.every((item) => {
     const fields: DeliveryField[] = (item.product as any).deliveryFields || [];
     return getMissingRequired(fields, item.deliveryInfo).length === 0;
   });
@@ -54,12 +78,12 @@ export function CartItems() {
         const missingKeys = getMissingRequired(deliveryFields, item.deliveryInfo);
         const hasUnfilled = missingKeys.length > 0;
 
+        const oos = isOutOfStock(item.product.id);
+
         return (
-          <div key={item.product.id} className="brand-card relative space-y-4">
+          <div key={item.product.id} className={`brand-card relative space-y-4 ${oos ? "border-2 border-red-200 bg-red-50/40" : ""}`}>
             {/* Trash absolutely-positioned in the trailing corner so
-                it can't push the flex row off-screen on narrow phones
-                (the previous horizontal layout was overflowing the
-                card edge, cutting the icon in half). */}
+                it can't push the flex row off-screen on narrow phones. */}
             <button
               onClick={() => removeItem(item.product.id)}
               aria-label={isEn ? "Remove" : "إزالة"}
@@ -67,6 +91,20 @@ export function CartItems() {
             >
               <Trash2 className="h-4 w-4" />
             </button>
+
+            {/* Out-of-stock banner — shown when the CMS marks the
+                product OOS AFTER it was added to the cart. Prompts
+                the visitor to remove it before checkout. */}
+            {oos && (
+              <div className="flex items-start gap-2 rounded-xl bg-red-100 px-3 py-2 text-sm text-red-800" dir={dir}>
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  {isEn
+                    ? "This product just went out of stock. Please remove it to continue."
+                    : "أصبح هذا المنتج غير متوفر في المخزون. يرجى إزالته للمتابعة."}
+                </p>
+              </div>
+            )}
 
             {/* Row wraps on mobile: image + info on line 1, quantity +
                 subtotal on line 2 (or same line on ≥sm). */}
@@ -265,7 +303,14 @@ export function CartItems() {
             {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
           </span>
         </div>
-        {!canCheckout && (
+        {anyOutOfStock ? (
+          <p className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {isEn
+              ? "Some products in your cart are out of stock. Please remove them before proceeding."
+              : "بعض المنتجات في السلة غير متوفرة في المخزون. يرجى إزالتها قبل المتابعة."}
+          </p>
+        ) : !canCheckout && (
           <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {isEn ? "Please complete the delivery info for all products before proceeding" : "يرجى إكمال معلومات التسليم لجميع المنتجات قبل المتابعة"}

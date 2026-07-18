@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "@/components/ui/link";
-import { Star, Clock, CheckCircle2, Package } from "lucide-react";
+import { useState } from "react";
+import { Star, ChevronDown, Package } from "lucide-react";
 import { RateProductButton } from "@/components/orders/RateProductButton";
-import { getOrderStatusLabel, getOrderStatusColor, formatPrice, getRelativeTime } from "@/lib/utils";
+import { getOrderStatusLabel, getOrderStatusColor, formatPrice } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-/** Small stars row used inline in each order card. */
+/**
+ * Simplified orders list — one compact row per order with a summary
+ * pill, click-to-expand for items + rating actions. Previously each
+ * row had 3-4 stacked status blocks (paid vs delivered vs auto-
+ * confirmed vs rating summary) that were confusing to skim through
+ * for anyone with more than a couple of orders.
+ */
+
 function StarsRow({ rating }: { rating: number }) {
   return (
     <span className="inline-flex items-center gap-0.5">
@@ -21,122 +29,137 @@ function StarsRow({ rating }: { rating: number }) {
   );
 }
 
+function formatDate(iso: string, locale: string) {
+  try {
+    return new Date(iso).toLocaleDateString(locale, {
+      day: "numeric", month: "short", year: "numeric",
+    });
+  } catch { return ""; }
+}
+
 export function OrdersView({ orders }: { orders: any[] }) {
-  const { t, dir, isEn } = useT();
+  const { t, dir, isEn, lang } = useT();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   const M = {
-    heading:        t("ordersTitle"),
-    empty:          isEn ? "No orders yet" : "لا توجد طلبات",
-    orderPrefix:    isEn ? "Order #" : "طلب #",
-    awaitingConfirm:       isEn ? "Awaiting delivery confirmation"          : "بانتظار تأكيد الاستلام",
-    autoConfirmHint:       isEn ? "Will be auto-confirmed after 7 days if you don't confirm manually." : "سيتم التأكيد تلقائياً بعد 7 أيام إذا لم تقم بذلك يدوياً.",
-    confirmedByCustomer:   isEn ? "You confirmed delivery"                  : "تم تأكيد الاستلام",
-    confirmedAuto:         isEn ? "Auto-confirmed after 7 days"             : "تم التأكيد تلقائياً بعد 7 أيام",
-    confirmedByAdmin:      isEn ? "Confirmed by the store"                  : "تم التأكيد من قبل المتجر",
-    delivered:             isEn ? "Delivered"                               : "تم التسليم",
-    allRated:  (r: number, tot: number) => isEn ? `You rated all products (${r}/${tot})`   : `قيّمت جميع المنتجات (${r}/${tot})`,
-    pendingRatings: (tot: number) => isEn ? `Awaiting your rating (${tot} items)`    : `بانتظار التقييم (${tot} منتج)`,
-    partialRated:  (r: number, tot: number) => isEn ? `You rated ${r} of ${tot}`                : `قيّمت ${r} من أصل ${tot}`,
-    autoRating:            isEn ? "Auto"        : "تلقائي",
-    awaitingRating:        isEn ? "Not rated"   : "بانتظار التقييم",
+    heading:      t("ordersTitle"),
+    empty:        isEn ? "No orders yet"                                  : "لا توجد طلبات",
+    emptyHint:    isEn ? "Your purchases will appear here once you place your first order." : "ستظهر مشترياتك هنا بعد إتمام أول طلب.",
+    orderPrefix:  isEn ? "Order"                                          : "طلب",
+    itemsCount:   (n: number) => isEn
+      ? `${n} ${n === 1 ? "item" : "items"}`
+      : `${n} ${n === 1 ? "منتج" : "منتجات"}`,
+    ratingProgress: (r: number, t: number) => isEn
+      ? `${r}/${t} rated`
+      : `${r}/${t} مقيّم`,
+    hideDetails:  isEn ? "Hide details"                                    : "إخفاء التفاصيل",
+    showDetails:  isEn ? "Show details"                                    : "عرض التفاصيل",
+    notRated:     isEn ? "Not rated"                                       : "بلا تقييم",
+    autoRating:   isEn ? "Auto"                                            : "تلقائي",
   };
 
-  return (
-    <div className="mx-auto max-w-3xl" dir={dir}>
-      <h1 className="mb-8 text-2xl font-black text-brand-800">{M.heading}</h1>
+  const dateLocale = isEn ? "en-US" : "ar-EG-u-nu-latn";
 
-      {orders.length === 0 ? (
-        <div className="brand-card py-16 text-center">
-          <span className="text-5xl">📋</span>
-          <h2 className="mt-4 text-lg font-bold text-brand-800">{M.empty}</h2>
-          <Link href="/products" className="brand-btn mt-4 inline-block">
+  if (orders.length === 0) {
+    return (
+      <div className="mx-auto max-w-3xl" dir={dir}>
+        <h1 className="mb-8 text-2xl font-black text-brand-800">{M.heading}</h1>
+        <div className="brand-card flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-3xl">
+            <Package className="h-8 w-8 text-brand-500" />
+          </span>
+          <h2 className="text-lg font-bold text-brand-800">{M.empty}</h2>
+          <p className="max-w-sm text-sm text-gray-500">{M.emptyHint}</p>
+          <Link href="/products" className="brand-btn mt-3">
             {t("browseProducts")}
           </Link>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => {
-            const isPaid      = order.status === "paid";
-            const isDelivered = order.status === "delivered";
-            const totalItems  = order.items.length;
-            const ratedItems  = order.items.filter((i: any) => i.reviewRating != null).length;
+      </div>
+    );
+  }
 
-            return (
-              <div key={order.id} className="brand-card block">
-                <Link
-                  href={`/orders/${order.id}`}
-                  className="flex items-start justify-between gap-3 transition-colors hover:text-brand-700"
+  return (
+    <div className="mx-auto max-w-3xl" dir={dir}>
+      <h1 className="mb-6 text-2xl font-black text-brand-800">{M.heading}</h1>
+
+      <div className="space-y-3">
+        {orders.map((order) => {
+          const isOpen = expanded.has(String(order.id));
+          const totalItems  = order.items.length;
+          const ratedItems  = order.items.filter((i: any) => i.reviewRating != null).length;
+          const canRate     = order.status === "delivered";
+
+          return (
+            <div key={order.id} className="brand-card overflow-hidden p-0">
+              {/* Summary row — always visible. Click to expand. */}
+              <button
+                type="button"
+                onClick={() => toggle(String(order.id))}
+                className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-brand-50/60"
+              >
+                {/* Left: order number + date */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-brand-800">
+                    {M.orderPrefix} #{order.orderNumber}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {formatDate(order.createdAt, dateLocale)} · {M.itemsCount(totalItems)}
+                  </p>
+                </div>
+
+                {/* Middle: status pill */}
+                <span
+                  className={`hidden shrink-0 rounded-full px-3 py-1 text-[11px] font-bold sm:inline-block ${getOrderStatusColor(order.status)}`}
                 >
-                  <div>
-                    <p className="text-sm font-bold text-brand-800">
-                      {M.orderPrefix}{order.orderNumber}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      {getRelativeTime(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="text-left">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${getOrderStatusColor(order.status)}`}
-                    >
-                      {getOrderStatusLabel(order.status)}
-                    </span>
-                    <p className="mt-1 text-sm font-bold text-brand-600">
-                      {formatPrice(order.totalAmount, order.currency)}
-                    </p>
-                  </div>
-                </Link>
+                  {getOrderStatusLabel(order.status)}
+                </span>
 
-                {isPaid && (
-                  <div className="mt-4 flex items-start gap-2 rounded-xl border border-brand-100 bg-brand-50 p-3">
-                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-brand-800">{M.awaitingConfirm}</p>
-                      <p className="mt-0.5 text-xs text-gray-500">{M.autoConfirmHint}</p>
-                    </div>
-                  </div>
+                {/* Right: total + chevron */}
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-sm font-bold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
+                    {formatPrice(order.totalAmount, order.currency)}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </div>
+              </button>
+
+              {/* Mobile: status pill under summary row so it's visible without expand */}
+              <div className="border-t border-brand-50 px-4 py-2 sm:hidden">
+                <span
+                  className={`inline-block rounded-full px-3 py-1 text-[11px] font-bold ${getOrderStatusColor(order.status)}`}
+                >
+                  {getOrderStatusLabel(order.status)}
+                </span>
+                {canRate && (
+                  <span className="ms-2 text-[11px] text-gray-500">
+                    {M.ratingProgress(ratedItems, totalItems)}
+                  </span>
                 )}
+              </div>
 
-                {isDelivered && totalItems > 0 && (() => {
-                  const cfg =
-                    order.confirmedBy === "customer"
-                      ? { title: M.confirmedByCustomer, border: "border-green-100", bg: "bg-green-50", titleClr: "text-green-800", subClr: "text-green-700", icon: "text-green-600" }
-                      : order.confirmedBy === "auto"
-                      ? { title: M.confirmedAuto,       border: "border-amber-100", bg: "bg-amber-50", titleClr: "text-amber-800", subClr: "text-amber-700", icon: "text-amber-600" }
-                      : order.confirmedBy === "admin"
-                      ? { title: M.confirmedByAdmin,    border: "border-brand-100", bg: "bg-brand-50", titleClr: "text-brand-800", subClr: "text-brand-700", icon: "text-brand-600" }
-                      : { title: M.delivered,           border: "border-green-100", bg: "bg-green-50", titleClr: "text-green-800", subClr: "text-green-700", icon: "text-green-600" };
-                  return (
-                    <div className={`mt-4 flex items-start gap-2 rounded-xl border ${cfg.border} ${cfg.bg} p-3`}>
-                      {order.confirmedBy === "auto" ? (
-                        <Clock className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
-                      ) : order.confirmedBy === "admin" ? (
-                        <Package className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
-                      ) : (
-                        <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.icon}`} />
-                      )}
-                      <div className="flex-1">
-                        <p className={`text-xs font-bold ${cfg.titleClr}`}>{cfg.title}</p>
-                        <p className={`mt-0.5 text-xs ${cfg.subClr}`}>
-                          {ratedItems === totalItems
-                            ? M.allRated(ratedItems, totalItems)
-                            : ratedItems === 0
-                            ? M.pendingRatings(totalItems)
-                            : M.partialRated(ratedItems, totalItems)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {isDelivered && order.items.length > 0 && (
-                  <div className="mt-3 divide-y divide-brand-50 border-t border-brand-100 pt-3">
+              {/* Expanded — items list + rating actions */}
+              {isOpen && (
+                <div className="border-t border-brand-100 bg-brand-50/40 px-4 py-3">
+                  {canRate && (
+                    <p className="mb-2 hidden text-xs text-gray-500 sm:block">
+                      {M.ratingProgress(ratedItems, totalItems)}
+                    </p>
+                  )}
+                  <ul className="divide-y divide-brand-100">
                     {order.items.map((item: any, idx: number) => (
-                      <div key={`${order.id}-${idx}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-                        <span className="line-clamp-1 font-medium text-brand-800">
+                      <li key={`${order.id}-${idx}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                        <span className="line-clamp-1 flex-1 font-medium text-brand-800">
                           {item.productName}
                         </span>
-                        {item.reviewRating != null ? (
+                        {canRate && item.reviewRating != null ? (
                           <span className="flex shrink-0 items-center gap-1.5">
                             <StarsRow rating={item.reviewRating} />
                             {item.reviewSource === "auto" && (
@@ -145,27 +168,34 @@ export function OrdersView({ orders }: { orders: any[] }) {
                               </span>
                             )}
                           </span>
-                        ) : item.productId ? (
+                        ) : canRate && item.productId ? (
                           <RateProductButton
                             orderId={order.id}
                             productId={item.productId}
                             productName={item.productName}
                             size="sm"
                           />
-                        ) : (
-                          <span className="shrink-0 text-xs text-gray-400">
-                            {M.awaitingRating}
-                          </span>
-                        )}
-                      </div>
+                        ) : canRate ? (
+                          <span className="shrink-0 text-xs text-gray-400">{M.notRated}</span>
+                        ) : null}
+                      </li>
                     ))}
+                  </ul>
+
+                  <div className="mt-3 flex justify-end">
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="text-xs font-bold text-brand-500 hover:underline"
+                    >
+                      {isEn ? "Full details →" : "التفاصيل الكاملة ←"}
+                    </Link>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

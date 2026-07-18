@@ -3,11 +3,12 @@
 import Link from "@/components/ui/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown, LogOut } from "lucide-react";
+import { ShoppingCart, Heart, Search, Menu, X, User, ChevronDown, LogOut, Globe } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { useSession, signOut } from "next-auth/react";
+import { LocaleModal } from "@/components/layout/LocaleModal";
 import type { SiteSettings, NavbarConfig, NavLink } from "@my-store/types";
 
 const DEFAULT_NAV: NavLink[] = [
@@ -88,7 +89,11 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const wishlistCount = mounted ? rawWishlistCount : 0;
   const lang = mounted ? localeStore.lang : "ar";
   const currency = mounted ? localeStore.currency : "USD";
-  const { setLang, setCurrency, fetchRates, detectCurrency } = localeStore;
+  const { fetchRates, detectCurrency } = localeStore;
+
+  // Locale modal open/close state. The globe button in the actions
+  // row toggles it; closing it via the X, Done button, or Escape.
+  const [localeOpen, setLocaleOpen] = useState(false);
 
   // UI copy in the visitor's picked language. Falls back to Arabic
   // during the SSR + first-CSR pass so the hydration guard above
@@ -120,6 +125,11 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
 
   return (
     <>
+      {/* Locale (language + currency) picker modal. Mounted once at
+          the root; opens from either the drawer button or the
+          desktop actions row via setLocaleOpen(true). */}
+      <LocaleModal open={localeOpen} onClose={() => setLocaleOpen(false)} />
+
       {/* ── Overlay ── */}
       {drawerOpen && (
         <div
@@ -190,31 +200,16 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
         </nav>
 
         <div className="absolute bottom-0 w-full border-t border-gray-100 p-6 flex flex-col gap-3">
-          {/* Lang + Currency row in drawer */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center rounded-lg border border-gray-200">
-              {(["ar", "en"] as const).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                    lang === l ? "bg-[#7C3AED] text-white" : "text-gray-500 hover:text-[#7C3AED]"
-                  }`}
-                >
-                  {l === "ar" ? s.langLabelAr : s.langLabelEn}
-                </button>
-              ))}
-            </div>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as any)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 outline-none"
-            >
-              {(["USD", "SAR", "JOD", "AED"] as const).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          {/* Single "language + currency" trigger — opens the modal */}
+          <button
+            onClick={() => { setDrawerOpen(false); setLocaleOpen(true); }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50"
+          >
+            <Globe className="h-4 w-4 text-[#7C3AED]" />
+            <span>{lang === "en" ? "English" : "العربية"}</span>
+            <span className="text-gray-400">·</span>
+            <span>{currency}</span>
+          </button>
 
           {session?.user ? (
             <>
@@ -329,31 +324,20 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 </Link>
               )}
 
-              {/* Language toggle */}
-              <div className="hidden items-center rounded-lg bg-white/10 sm:flex">
-                {(["ar", "en"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`rounded-lg px-2 py-1.5 text-[11px] font-bold transition-colors ${
-                      lang === l ? "bg-white text-[#7C3AED]" : "text-white/70 hover:text-white"
-                    }`}
-                  >
-                    {l === "ar" ? "ع" : "EN"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Currency selector */}
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as any)}
-                className="hidden rounded-lg bg-white/10 px-2 py-1.5 text-[11px] font-bold text-white outline-none sm:block cursor-pointer"
+              {/* Locale chooser — single button that opens the picker
+                  modal instead of two inline switches. Shows the
+                  current lang code + currency as a preview. */}
+              <button
+                type="button"
+                onClick={() => setLocaleOpen(true)}
+                aria-label={lang === "en" ? "Language & Currency" : "اللغة والعملة"}
+                className="hidden items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-white/20 sm:flex"
               >
-                {(["USD", "SAR", "JOD", "AED"] as const).map((c) => (
-                  <option key={c} value={c} className="text-gray-900">{c}</option>
-                ))}
-              </select>
+                <Globe className="h-3.5 w-3.5" />
+                <span>{lang === "en" ? "EN" : "ع"}</span>
+                <span className="opacity-60">·</span>
+                <span>{currency}</span>
+              </button>
 
               {/* Wishlist */}
               <Link
