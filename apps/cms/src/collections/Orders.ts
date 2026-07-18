@@ -130,6 +130,11 @@ export const Orders: CollectionConfig = {
       type: "relationship",
       relationTo: "customers",
       required: true,
+      // Locked once the order exists -- reassigning a paid order to a
+      // different customer would silently break the customer's order
+      // history + review eligibility. Support can still see who it
+      // belongs to; they just can't rewire it from this screen.
+      admin: { readOnly: true },
     },
     {
       name: "items",
@@ -137,6 +142,12 @@ export const Orders: CollectionConfig = {
       labels: { singular: "منتج", plural: "المنتجات" },
       type: "array",
       required: true,
+      // Order line items are immutable after creation. Editing them here
+      // wouldn't refund the customer, wouldn't ping the delivery pipeline,
+      // wouldn't fix the totals stored on `totalAmount`, and would just
+      // make the row disagree with what was actually charged. Locked as
+      // read-only so support can inspect but not tamper.
+      admin: { readOnly: true },
       fields: [
         {
           name: "product",
@@ -219,6 +230,10 @@ export const Orders: CollectionConfig = {
           label: "المبلغ الإجمالي",
           type: "number",
           required: true,
+          // Charged amount is what actually hit the payment gateway --
+          // editing it after the fact wouldn't move money, just make
+          // reporting lie. Read-only.
+          admin: { readOnly: true },
         },
         {
           name: "currency",
@@ -231,13 +246,14 @@ export const Orders: CollectionConfig = {
             { label: "SAR", value: "SAR" },
             { label: "AED", value: "AED" },
           ],
+          admin: { readOnly: true },
         },
       ],
     },
-    // Discount snapshot — text + numeric (not a relationship) so the
-    // order stays intact if the code is later deleted or its rules
-    // change. `discountAmount` is already subtracted from `totalAmount`;
-    // it's stored for admin visibility and reporting.
+    // Discount snapshot — kept visible + read-only. The amount was
+    // already subtracted from totalAmount at checkout; editing it here
+    // wouldn't reissue anything, just create a disagreement between
+    // stored numbers.
     {
       type: "row",
       fields: [
@@ -245,39 +261,38 @@ export const Orders: CollectionConfig = {
         { name: "discountAmount", label: "قيمة الخصم",   type: "number", admin: { readOnly: true } },
       ],
     },
-    {
-      type: "collapsible",
-      label: "بيانات الدفع",
-      fields: [
-        { name: "paymentReference", label: "مرجع الدفع", type: "text" },
-        { name: "airwallexPaymentIntentId", label: "Airwallex Intent ID", type: "text" },
-      ],
-    },
-    {
-      type: "collapsible",
-      label: "قبول الشروط",
-      fields: [
-        { name: "termsAcceptedAt", label: "وقت القبول", type: "date" },
-        { name: "termsAcceptedIP", label: "عنوان IP", type: "text" },
-        { name: "termsAcceptedUserAgent", label: "User Agent", type: "textarea" },
-      ],
-    },
+    // ── Fields kept in the schema but HIDDEN from the edit form ──
+    // These still exist on the DB row and are readable via the API
+    // (support scripts, evidence collection, refunds workflow), they
+    // just don't clutter the admin edit page. `admin.hidden: true`
+    // omits them from the form entirely -- no collapsible section,
+    // no wasted vertical space on a mobile screen.
+    { name: "paymentReference",       label: "مرجع الدفع",       type: "text",     admin: { hidden: true, readOnly: true } },
+    { name: "airwallexPaymentIntentId", label: "Airwallex Intent ID", type: "text", admin: { hidden: true, readOnly: true } },
+    { name: "termsAcceptedAt",        label: "وقت القبول",       type: "date",     admin: { hidden: true, readOnly: true } },
+    { name: "termsAcceptedIP",        label: "عنوان IP",          type: "text",     admin: { hidden: true, readOnly: true } },
+    { name: "termsAcceptedUserAgent", label: "User Agent",          type: "textarea", admin: { hidden: true, readOnly: true } },
+    { name: "digitalDeliveryLog",     label: "سجل التسليم",       type: "json",     admin: { hidden: true, readOnly: true } },
+    // Delivery status stays visible but read-only + collapsed at the
+    // bottom -- admins usually care about it, but it's driven by the
+    // storefront's confirm flow rather than being edited by hand here.
     {
       type: "collapsible",
       label: "التسليم الرقمي",
+      admin: { initCollapsed: true },
       fields: [
         {
           name: "deliveryStatus",
           label: "حالة التسليم",
           type: "select",
+          admin: { readOnly: true },
           options: [
             { label: "قيد الانتظار", value: "pending" },
             { label: "تم الإرسال", value: "sent" },
             { label: "تم التأكيد", value: "confirmed" },
           ],
         },
-        { name: "deliveredAt", label: "تاريخ التسليم", type: "date" },
-        { name: "digitalDeliveryLog", label: "سجل التسليم", type: "json" },
+        { name: "deliveredAt", label: "تاريخ التسليم", type: "date", admin: { readOnly: true } },
       ],
     },
   ],

@@ -44,12 +44,26 @@ const OrderSummaryCards: React.FC = () => {
   // unsaved edits in real time.
   const fields = useFormFields(([fields]) => fields);
   const get = (k: string) => fields?.[k]?.value;
-  const items = (get("items") as any[]) || [];
-  // useFormFields flattens nested array fields with dot notation, so we
-  // walk the flat keys to assemble each item.
+
+  // useFormFields flattens nested array fields with dot notation
+  // (`items.0.product`, `items.1.quantity`, ...). The `items` key
+  // itself may hold an array of row IDs, `undefined`, or an empty
+  // array during the initial hydration pass, which is why the summary
+  // was rendering "لا توجد منتجات" for orders that clearly HAVE items
+  // (seen in the raw edit form below). Instead of trusting
+  // `items.length`, scan the flat keys and use the highest index
+  // present as the count.
   const itemList = useMemo(() => {
+    let maxIdx = -1;
+    for (const key of Object.keys(fields || {})) {
+      const m = key.match(/^items\.(\d+)\./);
+      if (m) {
+        const i = Number(m[1]);
+        if (i > maxIdx) maxIdx = i;
+      }
+    }
     const out: Array<{ productId: any; quantity: number; unitPrice: number; totalPrice: number }> = [];
-    for (let i = 0; i < items.length; i++) {
+    for (let i = 0; i <= maxIdx; i++) {
       out.push({
         productId: fields[`items.${i}.product`]?.value,
         quantity:  Number(fields[`items.${i}.quantity`]?.value ?? 1),
@@ -58,7 +72,7 @@ const OrderSummaryCards: React.FC = () => {
       });
     }
     return out;
-  }, [fields, items.length]);
+  }, [fields]);
 
   const orderNumber  = get("orderNumber") as string | undefined;
   const status       = (get("status") as string) || "pending";
