@@ -6,6 +6,7 @@ import path from "path";
 import dotenv from "dotenv";
 import Dashboard from "./admin/components/Dashboard";
 import ThemeProvider from "./admin/components/ThemeProvider";
+import ReviewsModerationView from "./admin/views/ReviewsModerationView";
 import OttertagNav from "./admin/components/OttertagNav";
 
 // Collections
@@ -53,6 +54,13 @@ export default buildConfig({
       Nav: OttertagNav as any,
       views: {
         Dashboard: Dashboard as any,
+        // Custom top-level route for the review moderation queue.
+        // Renders at /admin/reviews-moderation inside the Payload
+        // panel; the sidebar link in OttertagNav points here.
+        ReviewsModeration: {
+          path: "/reviews-moderation",
+          Component: ReviewsModerationView as any,
+        } as any,
       },
     },
     meta: {
@@ -196,6 +204,99 @@ export default buildConfig({
           slug ? `&slug=${encodeURIComponent(slug)}` : ""
         }`;
         res.redirect(target);
+      },
+    },
+
+    /* ═════════════════════════════════════════════════════════════
+       Review moderation queue.
+       Payload can't own the reviews table as a proper collection
+       (its Drizzle adapter chokes on the direct-FK schema shape),
+       so the admin UI is a custom view + these raw endpoints.
+       Both gated by an authenticated Payload user with an admin
+       role (super_admin / admin / catalog).
+    ═════════════════════════════════════════════════════════════ */
+    {
+      path: "/reviews-moderation",
+      method: "get",
+      handler: async (req, res) => {
+        const role = (req.user as any)?.role as string | undefined;
+        if (!role || !["super_admin", "admin", "catalog"].includes(role)) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+        const db = req.payload.db as any;
+        const pool = db?.pool ?? db?.drizzle?.session?.client ?? db?.client;
+        if (!pool?.query) {
+          res.status(500).json({ error: "DB pool unavailable" });
+          return;
+        }
+        const raw = String((req.query as any)?.status ?? "pending").toLowerCase();
+        const allowed = new Set(["pending", "approved", "rejected", "all"]);
+        const status = allowed.has(raw) ? raw : "pending";
+        try {
+          const sql = status === "all"
+            ? `SELECT r.id, r.product_id, r.order_id, r.rating, r.comment,
+                      r.source, r.status, r.created_at,
+                      p.name_ar AS product_name, p.slug AS product_slug,
+                      c.email   AS customer_email, c.name AS customer_name
+                 FROM reviews r
+                 LEFT JOIN products  p ON p.id = r.product_id
+                 LEFT JOIN customers c ON c.id = r.customer_id
+                ORDER BY r.created_at DESC
+                LIMIT 200`
+            : `SELECT r.id, r.product_id, r.order_id, r.rating, r.comment,
+                      r.source, r.status, r.created_at,
+                      p.name_ar AS product_name, p.slug AS product_slug,
+                      c.email   AS customer_email, c.name AS customer_name
+                 FROM reviews r
+                 LEFT JOIN products  p ON p.id = r.product_id
+                 LEFT JOIN customers c ON c.id = r.customer_id
+                WHERE r.status = $1
+                ORDER BY r.created_at DESC
+                LIMIT 200`;
+          const params = status === "all" ? [] : [status];
+          const { rows } = await pool.query(sql, params);
+          res.json({ reviews: rows });
+        } catch (e: any) {
+          res.status(500).json({ error: e?.message ?? "Query failed" });
+        }
+      },
+    },
+    {
+      path: "/reviews-moderation",
+      method: "post",
+      handler: async (req, res) => {
+        const role = (req.user as any)?.role as string | undefined;
+        if (!role || !["super_admin", "admin", "catalog"].includes(role)) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+        const db = req.payload.db as any;
+        const pool = db?.pool ?? db?.drizzle?.session?.client ?? db?.client;
+        if (!pool?.query) {
+          res.status(500).json({ error: "DB pool unavailable" });
+          return;
+        }
+        const body = (req.body ?? {}) as { id?: unknown; status?: unknown };
+        const id = Number(body.id);
+        const nextStatus = String(body.status ?? "").toLowerCase();
+        if (!Number.isFinite(id) || id <= 0) {
+          res.status(400).json({ error: "Invalid id" });
+          return;
+        }
+        if (!["approved", "rejected", "pending"].includes(nextStatus)) {
+          res.status(400).json({ error: "Invalid status" });
+          return;
+        }
+        try {
+          await pool.query(
+            "UPDATE reviews SET status = $1, updated_at = NOW() WHERE id = $2",
+            [nextStatus, id],
+          );
+          res.json({ ok: true });
+        } catch (e: any) {
+          res.status(500).json({ error: e?.message ?? "Update failed" });
+        }
       },
     },
   ],

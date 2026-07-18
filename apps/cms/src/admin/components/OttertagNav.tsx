@@ -205,6 +205,20 @@ const OttertagNav: React.FC = () => {
       });
     });
 
+    // Custom admin view: review moderation queue. Not a Payload
+    // collection (Payload can't own the reviews table's schema) so
+    // we hand-add the sidebar link here and gate it by role.
+    const currentRole = (user as any)?.role as string | undefined;
+    if (currentRole && ["super_admin", "admin", "catalog"].includes(currentRole)) {
+      items.push({
+        id: "reviews-moderation",
+        slug: "reviews-moderation",
+        label: "مراجعة التقييمات",
+        href: `${adminRoute}/reviews-moderation`,
+        group: "المتجر",
+      });
+    }
+
     /* Group by admin.group (fallback to "General") */
     const grouped = new Map<string, typeof items>();
     items.forEach((it) => {
