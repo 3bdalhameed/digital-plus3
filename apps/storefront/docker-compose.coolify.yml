@@ -1,11 +1,13 @@
 services:
   storefront:
-    image: ghcr.io/3bdalhameed/digital-plus3/storefront:latest
-    # Without this, Docker Compose reuses the locally cached :latest tag
-    # and never fetches the updated image from GHCR — meaning CI builds
-    # an image with new files (e.g. public/ assets) but Coolify keeps
-    # running the old one. Same fix as commit 28404c9d on the CMS.
-    pull_policy: always
+    # Build directly from the git repo Coolify already checks out --
+    # bypasses the ghcr.io :latest tag and the GitHub Actions build
+    # cache that were both stuck on the July 10 image, so no code
+    # change was reaching the running container. Every Coolify deploy
+    # now runs `docker build` against the freshly-cloned source.
+    build:
+      context: ../../
+      dockerfile: apps/storefront/Dockerfile
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"
