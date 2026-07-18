@@ -6,11 +6,17 @@ import { ArrowLeft, ArrowRight, Sparkles, ShieldCheck, User as UserIcon, CreditC
 import { ProductCard } from "@/components/product/ProductCard";
 import { useState, useEffect, useRef, useId } from "react";
 import { useLocaleStore } from "@/lib/locale-store";
+import { useDragScroll } from "@/lib/use-drag-scroll";
 import type { HomePageSection } from "@my-store/types";
 
 // ── Horizontal product carousel ─────────────────────────────────
 function ProductCarousel({ children }: { children: React.ReactNode }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+  // Same ref for two jobs:
+  //   - the useDragScroll hook attaches mousedown/move/up so users can
+  //     grab-and-drag the rail;
+  //   - the arrow buttons below call scrollBy on it for keyboard/click
+  //     nav.
+  const trackRef = useDragScroll<HTMLDivElement>();
 
   const scroll = (dir: "left" | "right") => {
     const el = trackRef.current;
@@ -24,7 +30,7 @@ function ProductCarousel({ children }: { children: React.ReactNode }) {
       {/* Track */}
       <div
         ref={trackRef}
-        className="flex gap-2 overflow-x-auto pt-2 pb-3 scroll-smooth"
+        className="flex gap-2 overflow-x-auto pt-2 pb-3 scroll-smooth select-none cursor-grab active:cursor-grabbing"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}

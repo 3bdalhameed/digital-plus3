@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
+import { useDragScroll } from "@/lib/use-drag-scroll";
 import type { Product } from "@my-store/types";
 
 /**
@@ -12,7 +12,11 @@ import type { Product } from "@my-store/types";
  * the padding. Sizes and structure mirror FeaturedProductsSection.
  */
 export function RelatedProducts({ products, title = "منتجات ذات صلة" }: { products: Product[]; title?: string }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+  // Grab-and-drag scrolling for the rail. Same hook the homepage
+  // carousel uses -- see lib/use-drag-scroll.ts for details on how
+  // clicks-that-are-actually-drags get swallowed so ProductCard's
+  // <Link> doesn't navigate mid-drag.
+  const trackRef = useDragScroll<HTMLDivElement>();
 
   if (!products.length) return null;
 
@@ -48,7 +52,7 @@ export function RelatedProducts({ products, title = "منتجات ذات صلة"
         <div className="relative">
           <div
             ref={trackRef}
-            className="flex gap-2 overflow-x-auto pt-2 pb-3 scroll-smooth"
+            className="flex gap-2 overflow-x-auto pt-2 pb-3 scroll-smooth select-none cursor-grab active:cursor-grabbing"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {products.map((p) => (
