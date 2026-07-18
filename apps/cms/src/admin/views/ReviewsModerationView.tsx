@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useCallback, useEffect, useState } from "react";
+import { DefaultTemplate } from "payload/components/templates";
 
 /**
  * Custom Payload admin view for the review moderation queue.
@@ -60,7 +61,21 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export default function ReviewsModerationView() {
+/**
+ * Payload passes admin-page props (user, permissions, etc.) into
+ * every custom view. We forward them to DefaultTemplate so the
+ * sidebar + header render around our content -- without this the
+ * view rendered as a bare page with no nav.
+ */
+export default function ReviewsModerationView(props: any) {
+  return (
+    <DefaultTemplate {...props}>
+      <ReviewsModerationInner />
+    </DefaultTemplate>
+  );
+}
+
+function ReviewsModerationInner() {
   const [tab, setTab] = useState<Tab>("pending");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
