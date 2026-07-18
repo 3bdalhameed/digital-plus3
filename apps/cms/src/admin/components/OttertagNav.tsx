@@ -5,6 +5,7 @@ import { useAuth, useConfig } from "payload/components/utilities";
 import {
   ChevronDown,
   Menu as MenuToggle,
+  X as CloseIcon,
   Search,
   Sun,
   Moon,
@@ -114,6 +115,27 @@ const OttertagNav: React.FC = () => {
       return false;
     }
   });
+
+  /* Direction detection.
+     Payload's admin doesn't always set `dir` on <html>, so
+     `html[dir="rtl"] .foo` selectors silently miss and the toggle /
+     drawer default to LTR positioning even in an Arabic admin --
+     which put the hamburger on the opposite side of the drawer in
+     the last iteration. Read the direction from document (or default
+     to rtl since this deployment is an Arabic panel) once at mount
+     and thread it through as `data-dir` on the elements we position,
+     so our own CSS doesn't depend on Payload setting a global. */
+  const [dir, setDir] = useState<"rtl" | "ltr">("rtl");
+  useEffect(() => {
+    try {
+      const raw =
+        (typeof document !== "undefined" &&
+          (document.documentElement.getAttribute("dir") ||
+            document.body.getAttribute("dir"))) ||
+        "rtl";
+      setDir(raw.toLowerCase() === "ltr" ? "ltr" : "rtl");
+    } catch { /* keep default */ }
+  }, []);
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -320,22 +342,29 @@ const OttertagNav: React.FC = () => {
           the mobile "open/close menu" affordance.
           `data-collapsed` mirrors the sidebar so the CSS can align
           the toggle to the sidebar's edge on desktop and to the
-          screen edge on mobile. */}
+          screen edge on mobile. `data-dir` is our own direction
+          attribute so the CSS doesn't rely on `html[dir]` being set. */}
       <button
         type="button"
         className="ot-toggle"
         data-collapsed={collapsed ? "true" : "false"}
+        data-dir={dir}
         onClick={() => setCollapsed((c) => !c)}
         aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
         aria-expanded={!collapsed}
         title={`${collapsed ? "توسيع" : "طي"} (Ctrl+B)`}
       >
-        <MenuToggle size={18} strokeWidth={2.25} />
+        {collapsed ? (
+          <MenuToggle size={20} strokeWidth={2.5} />
+        ) : (
+          <CloseIcon size={20} strokeWidth={2.5} />
+        )}
       </button>
     <aside
       className="ot-sidebar"
       data-theme={theme}
       data-collapsed={collapsed ? "true" : "false"}
+      data-dir={dir}
       aria-label="القائمة الرئيسية"
       dir="ltr"
     >
