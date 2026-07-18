@@ -311,6 +311,27 @@ const OttertagNav: React.FC = () => {
         onClick={() => setCollapsed(true)}
         aria-hidden="true"
       />
+      {/* Toggle button rendered OUTSIDE the aside on purpose. The
+          sidebar uses transform to slide off-screen on mobile, and
+          any transform on an ancestor turns child `position: fixed`
+          into de-facto `position: absolute` -- the toggle would slide
+          away with the drawer and become impossible to reach. As a
+          sibling it stays fixed to the viewport and can double as
+          the mobile "open/close menu" affordance.
+          `data-collapsed` mirrors the sidebar so the CSS can align
+          the toggle to the sidebar's edge on desktop and to the
+          screen edge on mobile. */}
+      <button
+        type="button"
+        className="ot-toggle"
+        data-collapsed={collapsed ? "true" : "false"}
+        onClick={() => setCollapsed((c) => !c)}
+        aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
+        aria-expanded={!collapsed}
+        title={`${collapsed ? "توسيع" : "طي"} (Ctrl+B)`}
+      >
+        <MenuToggle size={18} strokeWidth={2.25} />
+      </button>
     <aside
       className="ot-sidebar"
       data-theme={theme}
@@ -318,18 +339,6 @@ const OttertagNav: React.FC = () => {
       aria-label="القائمة الرئيسية"
       dir="ltr"
     >
-      {/* Edge toggle — hamburger */}
-      <button
-        type="button"
-        className="ot-toggle"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
-        aria-expanded={!collapsed}
-        title={`${collapsed ? "توسيع" : "طي"} (Ctrl+B)`}
-      >
-        <MenuToggle size={16} strokeWidth={2.25} />
-      </button>
-
       {/* Brand */}
       <div className="ot-brand">
         <NavLink to={adminRoute} className="ot-brand__link">

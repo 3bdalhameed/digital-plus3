@@ -345,14 +345,19 @@ html[dir="rtl"] .ot-sidebar {
   border-left: 1px solid var(--ot-border) !important;
 }
 
+/* Toggle button — lives OUTSIDE the sidebar in the DOM so it stays
+   fixed to the viewport when the mobile drawer is sliding (transform
+   on an ancestor would trap it). Positioned to sit at the sidebar's
+   trailing edge on desktop; on mobile it's pinned to the screen edge
+   at the top corner. Transitions its `right`/`left` to follow the
+   sidebar as it expands/collapses so it always looks attached. */
 .ot-toggle {
-  position: absolute !important;
-  top: 24px !important;
-  right: -14px !important;
+  position: fixed !important;
+  top: 22px !important;
   z-index: 60 !important;
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 9px !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -362,7 +367,10 @@ html[dir="rtl"] .ot-sidebar {
   box-shadow: 0 4px 12px rgba(15,23,42,0.18) !important;
   cursor: pointer !important;
   padding: 0 !important;
-  transition: transform 0.15s ease, color 0.15s, background 0.15s, box-shadow 0.15s !important;
+  transition: transform 0.15s ease, color 0.15s, background 0.15s,
+              box-shadow 0.15s,
+              left 0.28s cubic-bezier(0.4,0,0.2,1),
+              right 0.28s cubic-bezier(0.4,0,0.2,1) !important;
 }
 .ot-toggle:hover {
   transform: scale(1.08);
@@ -370,7 +378,14 @@ html[dir="rtl"] .ot-sidebar {
   box-shadow: 0 6px 16px rgba(15,23,42,0.24) !important;
 }
 .ot-toggle:active { transform: scale(0.96); }
-html[dir="rtl"] .ot-toggle { right: auto !important; left: -14px !important; }
+
+/* Desktop resting position — anchor to sidebar's trailing edge.
+   Sidebar is 264px expanded, 76px collapsed; toggle sits 14px past
+   that inner edge so it looks like it's clipped to the divider. */
+html[dir="ltr"] .ot-toggle { left: 250px !important; right: auto !important; }
+html[dir="ltr"] .ot-toggle[data-collapsed="true"] { left: 62px !important; }
+html[dir="rtl"] .ot-toggle { right: 250px !important; left: auto !important; }
+html[dir="rtl"] .ot-toggle[data-collapsed="true"] { right: 62px !important; }
 
 .ot-brand {
   height: 72px !important;
@@ -2997,8 +3012,7 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
    On mobile the sidebar is not part of the page layout — it slides
    in on top of the content as a real drawer. Without this, the
    264px sidebar (or the 76px collapsed one) sits alongside the
-   content and pushes it off-screen, which is what made the panel
-   feel like a floating orphan on the phone. */
+   content and pushes it off-screen. */
 
 .ot-backdrop { display: none; }
 
@@ -3016,6 +3030,9 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
     min-width: 288px !important;
     z-index: 100 !important;
     transition: transform 0.28s cubic-bezier(0.4,0,0.2,1) !important;
+    /* Contain the drawer's own visual weight so it looks like a sheet,
+       not a torn strip. */
+    box-shadow: 0 10px 40px rgba(15,23,42,0.35) !important;
   }
   html[dir="rtl"] .ot-sidebar {
     right: 0 !important;
@@ -3035,9 +3052,8 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   html[dir="ltr"] .ot-sidebar[data-collapsed="true"] {
     transform: translateX(-100%) !important;
   }
-  /* Open drawer → the collapsed shrink-to-icons rules don't apply on
-     mobile; force the sidebar back to full width + visible labels
-     regardless of what desktop CSS did. */
+  /* Open drawer → the desktop "collapsed = icon-only" rules must not
+     apply; force full width + visible labels back on. */
   .ot-sidebar[data-collapsed="false"] {
     transform: none !important;
     width: 288px !important;
@@ -3057,34 +3073,27 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   .ot-sidebar[data-collapsed="false"] .ot-profile { justify-content: flex-start !important; padding: 12px !important; }
   .ot-sidebar[data-collapsed="false"] .ot-logout { display: inline-flex !important; }
 
-  /* Toggle button always visible on the screen edge — it's the only
-     way to reopen the drawer once collapsed. Sits above the drawer's
-     own z-index so it stays tappable even when the sheet slides in. */
+  /* Toggle button — anchored to the screen edge on mobile, always
+     visible. Deliberately does NOT track the drawer's inner edge, so
+     the button stays put whether the sheet is open or closed and the
+     user always knows where to reach for the menu. */
   .ot-toggle {
-    position: fixed !important;
     top: 14px !important;
     z-index: 101 !important;
-    width: 40px !important;
-    height: 40px !important;
+    width: 42px !important;
+    height: 42px !important;
     border-radius: 12px !important;
+    box-shadow: 0 6px 16px rgba(15,23,42,0.28) !important;
   }
-  html[dir="rtl"] .ot-toggle {
+  html[dir="rtl"] .ot-toggle,
+  html[dir="rtl"] .ot-toggle[data-collapsed="true"] {
     right: 12px !important;
     left: auto !important;
   }
-  html[dir="ltr"] .ot-toggle {
+  html[dir="ltr"] .ot-toggle,
+  html[dir="ltr"] .ot-toggle[data-collapsed="true"] {
     left: 12px !important;
     right: auto !important;
-  }
-  /* When drawer is open, park the toggle at the drawer's inner edge
-     so it doubles as a close affordance next to the panel content. */
-  html[dir="rtl"] .ot-sidebar[data-collapsed="false"] ~ .ot-toggle,
-  html[dir="rtl"] .ot-sidebar[data-collapsed="false"] .ot-toggle {
-    right: 300px !important;
-  }
-  html[dir="ltr"] .ot-sidebar[data-collapsed="false"] ~ .ot-toggle,
-  html[dir="ltr"] .ot-sidebar[data-collapsed="false"] .ot-toggle {
-    left: 300px !important;
   }
 
   /* Backdrop — click closes the drawer via the onClick in JSX. */
