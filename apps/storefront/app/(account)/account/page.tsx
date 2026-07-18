@@ -1,15 +1,16 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { getSettings } from "@/lib/payload";
 import { AccountContent } from "./AccountContent";
 
 export const metadata = { title: "حسابي | My Account" };
 
-// Per-user page. Any caching across requests risks serving one
-// visitor's name/email to another (or to a stale version of the same
-// visitor after they signed in as a different account). Force a fresh
-// SSR every request so the seed passed to AccountContent always
-// matches the current cookie's session.
+// Session-aware content lives entirely in the client component so a
+// refresh doesn't flash the /login page. Previously the server
+// called auth() and redirect("/login") if the cookie wasn't
+// decrypted in time -- the client then re-hydrated with the session
+// present and bounced back to /account, producing a visible flash.
+// Now the server just renders the shell + logo; AccountContent's
+// useSession() handles the signed-out state client-side without
+// any redirect.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -28,14 +29,6 @@ async function getLogoUrl(): Promise<string | null> {
 }
 
 export default async function AccountPage() {
-  const [session, logoUrl] = await Promise.all([auth(), getLogoUrl()]);
-  if (!session?.user) redirect("/login");
-
-  return (
-    <AccountContent
-      userName={session.user.name}
-      userEmail={session.user.email}
-      logoUrl={logoUrl}
-    />
-  );
+  const logoUrl = await getLogoUrl();
+  return <AccountContent logoUrl={logoUrl} />;
 }

@@ -2,34 +2,47 @@
 
 import Link from "@/components/ui/link";
 import Image from "next/image";
-import { User, ShoppingBag, MessageCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { User, ShoppingBag, MessageCircle, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 
 /**
  * Renders the account card from the CLIENT session so the greeting
- * always matches whatever the header shows. Server passes userName /
- * userEmail as an SSR seed (avoids a blank first paint), but once
- * next-auth hydrates on the client its session wins -- prevents the
- * "Header shows Test, card shows Abdalhameed" split when signing in
- * as a different account keeps the SSR cached from a previous session.
+ * always matches the header. Handles the signed-out case itself with
+ * a client-side redirect + loading state so a refresh never flashes
+ * the /login page underneath the /account URL -- the previous
+ * server-side redirect(auth()) approach was racing the cookie decrypt
+ * and briefly bouncing to /login before the client re-hydrated.
  */
 export function AccountContent({
-  userName,
-  userEmail,
   logoUrl,
 }: {
-  userName: string | null | undefined;
-  userEmail: string | null | undefined;
   logoUrl: string | null;
 }) {
   const { t, dir, isEn } = useT();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // Prefer the client session once hydrated; fall back to the SSR seed
-  // so the card isn't blank while status === "loading".
-  const displayName  = session?.user?.name  ?? userName;
-  const displayEmail = session?.user?.email ?? userEmail;
+  // While next-auth is still checking the cookie, render a spinner —
+  // don't redirect yet, and don't render the (empty) card either.
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="mx-auto flex max-w-2xl items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+      </div>
+    );
+  }
+
+  const displayName  = session?.user?.name  ?? "";
+  const displayEmail = session?.user?.email ?? "";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6" dir={dir}>
