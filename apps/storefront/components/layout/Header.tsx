@@ -254,10 +254,31 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
         <div className="bg-gradient-to-l from-[#7C3AED] via-[#8B5CF6] to-[#A78BFA]" style={{ borderRadius: "0 0 50% 50% / 0 0 14px 14px" }}>
           <div className="relative mx-auto flex max-w-[90rem] items-center px-4 py-3 pb-5 sm:px-6 sm:py-4 sm:pb-6 lg:px-8">
 
-            {/* Logo — LEFT in RTL (first in DOM). Replace LogoMark with your animated logo. */}
-            <Link href="/" className="flex shrink-0 items-center" aria-label={storeName}>
+            {/* Hamburger — MOBILE only, at the start of the row.
+                Rendered as a distinct pill-styled button so it visually
+                anchors the row the way the reference navbar does. */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white transition hover:bg-white/25 lg:hidden"
+              aria-label={s.openMenu}
+            >
+              <Menu className="h-6 w-6" strokeWidth={2.5} />
+            </button>
+
+            {/* Logo —
+                Mobile: absolutely centered on the row so hamburger and
+                the action icons frame it symmetrically.
+                Desktop: reverts to static positioning at the start of
+                the row (via `lg:static` + neutralizing the translate
+                utilities) so it doesn't fight the absolute-centered
+                desktop search bar. */}
+            <Link
+              href="/"
+              className="absolute left-1/2 top-1/2 flex shrink-0 -translate-x-1/2 -translate-y-1/2 items-center lg:static lg:translate-x-0 lg:translate-y-0"
+              aria-label={storeName}
+            >
               {logoUrl ? (
-                <div className="relative h-14 w-32 shrink-0 overflow-hidden sm:h-16 sm:w-36">
+                <div className="relative h-12 w-28 shrink-0 overflow-hidden sm:h-14 sm:w-32 lg:h-16 lg:w-36">
                   <Image src={logoUrl} alt={storeName} fill className="object-contain" />
                 </div>
               ) : (
@@ -296,17 +317,11 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
             {/* Spacer — pushes actions to the right */}
             <div className="flex-1" />
 
-            {/* Actions — RIGHT in RTL (last in DOM) */}
+            {/* Actions — RIGHT in RTL (last in DOM).
+                Hamburger has been lifted out to the row start (above),
+                so this group is now just: auth / locale (desktop) plus
+                wishlist / cart (all breakpoints). */}
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-              {/* Hamburger — mobile only */}
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 lg:hidden"
-                aria-label={s.openMenu}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-
               {/* Auth — desktop only */}
               {session?.user ? (
                 <div className="hidden items-center gap-1.5 sm:flex">
