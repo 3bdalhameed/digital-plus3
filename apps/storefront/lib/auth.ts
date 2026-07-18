@@ -1,42 +1,41 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyOtp } from "@/lib/otp";
 import { normalizeEmail } from "@/lib/normalize-email";
 
+/**
+ * Payload customer sync — every storefront user has a matching row in
+ * Payload's customers collection so orders and support tickets can
+ * link back. Called from the signIn callback after either provider
+ * authenticates. Never blocks the login (returns null on failure).
+ */
 async function syncPayloadCustomer(rawEmail: string, rawName: string): Promise<string | null> {
-  // Every write to customers.email in this repo goes through the
-  // canonical form so a session with mixed-case Google email can't
-  // create a duplicate of the lowercased row later inserted by
-  // getOrCreateCustomer at checkout.
   const email = normalizeEmail(rawEmail);
   if (!email) return null;
   const name = rawName?.trim() || email;
   try {
     const apiUrl = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
-    const secret = process.env.PAYLOAD_INTERNAL_SECRET || "";
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "x-internal-secret": secret,
+      "x-internal-secret": process.env.PAYLOAD_INTERNAL_SECRET || "",
     };
-
     const existing = await fetch(
       `${apiUrl}/customers?where[email][equals]=${encodeURIComponent(email)}&limit=1`,
-      { headers, cache: "no-store" }
+      { headers, cache: "no-store" },
     );
-    const existingData = await existing.json();
-    if (existingData?.docs?.[0]?.id) return String(existingData.docs[0].id);
+    const data = await existing.json();
+    if (data?.docs?.[0]?.id) return String(data.docs[0].id);
 
     const created = await fetch(`${apiUrl}/customers`, {
       method: "POST",
       headers,
       body: JSON.stringify({ email, name }),
     });
-    const createdData = await created.json();
-    return createdData?.doc?.id != null ? String(createdData.doc.id) : null;
+    const j = await created.json();
+    return j?.doc?.id != null ? String(j.doc.id) : null;
   } catch {
     return null;
   }
@@ -49,67 +48,85 @@ export const {
   signOut,
 } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  // Behind Cloudflare -> Coolify, TLS is terminated at the edge and the
-  // container sees the forwarded request. Without trustHost, Auth.js v5
-  // can't tell it's on HTTPS and sets/reads the CSRF cookie under
-  // mismatched names, producing "MissingCSRF" on every sign-in.
-  trustHost: true,
   session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+
+  // ── Proxy / Cloudflare survival kit ─────────────────────────────
+  // Everything below is set explicitly so Auth.js v5 doesn't try to
+  // auto-detect anything based on the request headers. Cloudflare +
+  // Coolify's Traefik proxy chain re-writes enough of the request
+  // that the auto-detected values ended up mismatched and every
+  // signin/signout POST failed with MissingCSRF.
+  trustHost: true,
+  useSecureCookies: true,
+  cookies: {
+    sessionToken: {
+      name: "authjs.session-token",
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: true },
+    },
+    csrfToken: {
+      name: "authjs.csrf-token",
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: true },
+    },
+    callbackUrl: {
+      name: "authjs.callback-url",
+      options: { sameSite: "lax", path: "/", secure: true },
+    },
+  },
+
   pages: {
     signIn: "/login",
     error: "/login",
   },
+
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    // ── Password login ──────────────────────────────────────────────
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "البريد الإلكتروني", type: "email" },
-        password: { label: "كلمة المرور", type: "password" },
+        email:    { label: "البريد الإلكتروني", type: "email" },
+        password: { label: "كلمة المرور",       type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        // Every write in the app lowercases the email, so lookup must
+        // do the same or a browser autofill with any capital letter
+        // returns null and the user sees "wrong password".
+        const email = normalizeEmail(String(credentials.email));
+        if (!email) return null;
 
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!isValid) return null;
+        const ok = await bcrypt.compare(String(credentials.password), user.password);
+        if (!ok) return null;
 
         if (!user.emailVerified) return null;
 
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
-    /* ───── Passwordless OTP login ─────────────────────────────────
-       Verifies the 6-digit code from /api/auth/otp/request, then
-       either signs in the existing user OR creates a verified account
-       on the fly (since possessing the OTP proves email ownership). */
+
+    // ── Passwordless OTP login ──────────────────────────────────────
+    // Verifies the 6-digit code from /api/auth/otp/request. If the
+    // user doesn't exist yet, auto-create a verified account -- they
+    // just proved email ownership by receiving + entering the code.
     CredentialsProvider({
-      id: "otp",
+      id:   "otp",
       name: "otp",
       credentials: {
         email: { label: "البريد الإلكتروني", type: "email" },
-        code: { label: "رمز التحقق", type: "text" },
+        code:  { label: "رمز التحقق",       type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.code) return null;
-        const email = String(credentials.email).trim().toLowerCase();
+        const email = normalizeEmail(String(credentials.email));
+        if (!email) return null;
+
         const ok = await verifyOtp(email, String(credentials.code));
         if (!ok) return null;
 
-        // Find existing account, otherwise auto-create one (verified —
-        // they proved email ownership via the OTP).
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           user = await prisma.user.create({
@@ -125,13 +142,13 @@ export const {
             data: { emailVerified: new Date() },
           });
         }
-
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
+
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       if (user.email && user.id) {
         const prismaUser = await prisma.user.findUnique({ where: { id: user.id } });
         if (prismaUser && !prismaUser.payloadCustomerId) {

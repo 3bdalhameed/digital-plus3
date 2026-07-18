@@ -2,107 +2,113 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Resend } from "resend";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
 
-const resend = new Resend(process.env.RESEND_API_KEY || 'placeholder');
-
+/**
+ * POST /api/auth/register
+ *
+ * Simplified account creation:
+ *   - email + password + optional name
+ *   - password is bcrypt hashed (12 rounds)
+ *   - account is marked emailVerified immediately so the user can log
+ *     in right away. If you want a "click the link before you can log
+ *     in" flow later, drop `emailVerified: new Date()` and switch to
+ *     a Resend-sent verification token.
+ *   - a welcome email is fire-and-forget (never blocks registration)
+ *
+ * Response: { success: true } on 201, { error } on 4xx/5xx.
+ */
 const registerSchema = z.object({
-  name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
-  email: z.string().email("بريد إلكتروني غير صالح"),
+  name:     z.string().trim().max(120).optional(),
+  email:    z.string().email(),
   password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
 });
 
-async function sendVerificationEmail(email: string, name: string, token: string) {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const verifyUrl = `${baseUrl}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@yourdomain.com";
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
-  await resend.emails.send({
-    from: fromEmail,
-    to: email,
-    subject: "تأكيد بريدك الإلكتروني",
-    html: `
-      <div dir="rtl" style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f5f3ff;border-radius:16px;">
-        <h2 style="color:#7C3AED;margin-bottom:8px;">مرحباً ${name}!</h2>
-        <p style="color:#4B5563;">شكراً لتسجيلك. اضغط على الزر أدناه لتأكيد بريدك الإلكتروني:</p>
-        <a href="${verifyUrl}" style="display:inline-block;margin:24px 0;padding:14px 32px;background:#7C3AED;color:#fff;border-radius:12px;text-decoration:none;font-weight:bold;">
-          تأكيد البريد الإلكتروني
-        </a>
-        <p style="color:#9CA3AF;font-size:12px;">الرابط صالح لمدة 24 ساعة. إذا لم تنشئ حساباً تجاهل هذه الرسالة.</p>
-      </div>
-    `,
-  });
+async function sendWelcomeEmail(email: string, name: string) {
+  if (!resend) return;
+  const from = process.env.RESEND_FROM_EMAIL || "noreply@digital-plus3.com";
+  try {
+    await resend.emails.send({
+      from,
+      to: email,
+      subject: "مرحباً بك في ديجيتال بلس",
+      html: `
+        <div dir="rtl" style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f5f3ff;border-radius:16px;">
+          <h2 style="color:#7C3AED;margin-bottom:8px;">مرحباً ${name}!</h2>
+          <p style="color:#4B5563;">تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول والاستفادة من عروضنا.</p>
+        </div>
+      `,
+    });
+  } catch (e) {
+    console.error("[register] welcome email failed:", e);
+  }
 }
 
 export async function POST(req: NextRequest) {
+  let body: unknown;
   try {
-    const body = await req.json();
-    const parsed = registerSchema.safeParse(body);
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+  }
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
-    }
+  const parsed = registerSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message ?? "بيانات غير صالحة" },
+      { status: 400 },
+    );
+  }
 
-    const { name, email, password } = parsed.data;
+  const email = normalizeEmail(parsed.data.email);
+  if (!email) {
+    return NextResponse.json({ error: "البريد الإلكتروني غير صالح" }, { status: 400 });
+  }
 
+  const name = parsed.data.name?.trim() || email.split("@")[0];
+
+  try {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: "هذا البريد الإلكتروني مسجل مسبقاً" }, { status: 409 });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-    let user: any;
-    try {
-      user = await prisma.user.create({
-        data: { name, email, password: hashedPassword },
-      });
-    } catch (dbErr: any) {
-      console.error("DB error:", dbErr?.message);
-      if (dbErr?.message?.includes("does not exist") || dbErr?.code === "P1001") {
-        return NextResponse.json({ error: "قاعدة البيانات غير مهيأة. يرجى التواصل مع الدعم." }, { status: 503 });
-      }
-      throw dbErr;
-    }
-
-    // Create verification token (24h expiry)
-    const token = crypto.randomBytes(32).toString("hex");
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
-
-    // Send verification email (non-blocking — don't fail registration if email fails)
-    if (process.env.RESEND_API_KEY) {
-      sendVerificationEmail(email, name, token).catch((e) =>
-        console.error("Email send failed:", e)
+      return NextResponse.json(
+        { error: "هذا البريد الإلكتروني مسجل مسبقاً" },
+        { status: 409 },
       );
     }
 
-    // Sync to Payload CMS customer
-    try {
-      const payloadRes = await fetch(`${process.env.PAYLOAD_API_URL}/customers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
-      });
-      if (payloadRes.ok) {
-        const customer = await payloadRes.json();
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { payloadCustomerId: customer.doc?.id || customer.id },
-        });
-      }
-    } catch (e) {
-      console.error("Failed to create Payload customer:", e);
-    }
+    const hashedPassword = await bcrypt.hash(parsed.data.password, 12);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+        // Emailed verification link removed for now -- verify on create
+        // so the visitor can go straight to /login and sign in without
+        // an extra round-trip.
+        emailVerified: new Date(),
+      },
+    });
 
-    return NextResponse.json({ success: true }, { status: 201 });
-  } catch (error: any) {
-    console.error("Registration error:", error);
-    return NextResponse.json({ error: "حدث خطأ في إنشاء الحساب" }, { status: 500 });
+    // Fire-and-forget welcome email.
+    sendWelcomeEmail(email, name).catch(() => {});
+
+    return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
+  } catch (err: any) {
+    console.error("[register] failed:", err?.message);
+    if (err?.code === "P1001") {
+      return NextResponse.json(
+        { error: "قاعدة البيانات غير متاحة، يرجى المحاولة لاحقاً" },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json(
+      { error: "حدث خطأ أثناء إنشاء الحساب" },
+      { status: 500 },
+    );
   }
 }

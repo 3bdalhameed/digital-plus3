@@ -4,7 +4,7 @@ import { useState, Suspense, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import Link from "@/components/ui/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Mail, Lock, RefreshCw, KeyRound } from "lucide-react";
+import { Loader2, Mail, Lock, KeyRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 // All user-facing copy for this page. Kept as a plain object rather
@@ -13,8 +13,7 @@ import { useT } from "@/lib/i18n";
 function loginCopy(isEn: boolean) {
   return {
     verified:      isEn ? "✓ Your email is confirmed, you can sign in now" : "✓ تم تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول الآن",
-    registered:    isEn ? "📧 Account created! Check your email to confirm your account before signing in" : "📧 تم إنشاء حسابك! تحقق من بريدك الإلكتروني لتأكيد حسابك قبل تسجيل الدخول",
-    linkExpired:   isEn ? "⚠️ Verification link expired. Sign in and we'll send you a new one" : "⚠️ انتهت صلاحية رابط التحقق. سجّل الدخول وسنرسل لك رابطاً جديداً",
+    registered:    isEn ? "✓ Account created! You can sign in now" : "✓ تم إنشاء حسابك! يمكنك تسجيل الدخول الآن",
     invalidCreds:  isEn ? "Incorrect email or password" : "البريد الإلكتروني أو كلمة المرور غير صحيحة",
     rateLimited:   isEn ? "You requested a code recently. Please wait a moment before trying again" : "لقد طلبت رمزاً مؤخراً. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى",
     sendFailed:    isEn ? "Couldn't send the code. Check your connection and try again" : "تعذّر إرسال الرمز. تحقق من اتصالك بالإنترنت وحاول مرة أخرى",
@@ -23,10 +22,6 @@ function loginCopy(isEn: boolean) {
     welcomeBack:   isEn ? "Welcome back" : "مرحباً بعودتك",
     tabPassword:   isEn ? "Password" : "كلمة المرور",
     tabOtp:        isEn ? "Verification code" : "رمز التحقق",
-    unverifiedTitle: isEn ? "📧 Your email isn't verified yet" : "📧 بريدك الإلكتروني غير مؤكد بعد",
-    unverifiedBody:  isEn ? "You need to confirm your email before signing in. Check your inbox and spam folder." : "يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول. تحقق من صندوق الوارد والبريد المزعج.",
-    resendSent:    isEn ? "✓ A new verification link has been sent to your email" : "✓ تم إرسال رابط تحقق جديد إلى بريدك",
-    resendLink:    isEn ? "Resend verification link" : "أعد إرسال رابط التحقق",
     emailLabel:    isEn ? "Email" : "البريد الإلكتروني",
     passwordLabel: isEn ? "Password" : "كلمة المرور",
     signInBtn:     isEn ? "Sign in" : "تسجيل الدخول",
@@ -40,8 +35,6 @@ function loginCopy(isEn: boolean) {
     changeEmail:   isEn ? "← Change email" : "← تغيير البريد",
     resendCodeCd:  (secs: number) => isEn ? `Resend code (${secs})` : `أعد إرسال الرمز (${secs})`,
     resendCode:    isEn ? "Resend code" : "أعد إرسال الرمز",
-    or:            isEn ? "or" : "أو",
-    signInGoogle:  isEn ? "Sign in with Google" : "الدخول بحساب Google",
     noAccount:     isEn ? "Don't have an account?" : "ليس لديك حساب؟",
     createAccount: isEn ? "Create account" : "إنشاء حساب",
   };
@@ -50,17 +43,9 @@ function loginCopy(isEn: boolean) {
 function StatusNotices({ M }: { M: ReturnType<typeof loginCopy> }) {
   const params = useSearchParams();
   const justRegistered = params.get("registered") === "true";
-  const justVerified = params.get("verified") === "true";
-  const linkExpired = params.get("error") === "link-expired";
 
-  if (justVerified) {
-    return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">{M.verified}</div>;
-  }
   if (justRegistered) {
-    return <div className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">{M.registered}</div>;
-  }
-  if (linkExpired) {
-    return <div className="mb-4 rounded-xl bg-orange-50 p-3 text-sm text-orange-700">{M.linkExpired}</div>;
+    return <div className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-700">{M.registered}</div>;
   }
   return null;
 }
@@ -79,9 +64,6 @@ export default function LoginPage() {
   /* ─── Password flow ─── */
   const [password, setPassword] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
-  const [unverified, setUnverified] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendSent, setResendSent] = useState(false);
 
   /* ─── OTP flow ─── */
   const [otpStep, setOtpStep] = useState<"email" | "code">("email");
@@ -104,31 +86,11 @@ export default function LoginPage() {
     }
   }, [otpStep]);
 
-  /* ─── Password submit ─── */
+  /* ─── Password submit — straight to Auth.js signIn, no pre-check ─── */
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwLoading(true);
     setError("");
-    setUnverified(false);
-    setResendSent(false);
-
-    const check = await fetch("/api/auth/pre-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const { status } = await check.json();
-
-    if (status === "email_not_verified") {
-      setUnverified(true);
-      setPwLoading(false);
-      return;
-    }
-    if (status !== "ok") {
-      setError(M.invalidCreds);
-      setPwLoading(false);
-      return;
-    }
 
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
@@ -137,17 +99,6 @@ export default function LoginPage() {
     } else {
       window.location.href = "/";
     }
-  };
-
-  const handleResend = async () => {
-    setResendLoading(true);
-    await fetch("/api/auth/resend-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setResendLoading(false);
-    setResendSent(true);
   };
 
   /* ─── OTP: request code ─── */
@@ -253,28 +204,6 @@ export default function LoginPage() {
         {/* ── PASSWORD method ── */}
         {method === "password" && (
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            {unverified && (
-              <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-bold">{M.unverifiedTitle}</p>
-                <p className="mt-1 text-xs text-amber-700">
-                  {M.unverifiedBody}
-                </p>
-                {resendSent ? (
-                  <p className="mt-2 text-xs font-bold text-green-700">{M.resendSent}</p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={resendLoading}
-                    className="mt-2 flex items-center gap-1.5 text-xs font-bold text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
-                  >
-                    {resendLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    {M.resendLink}
-                  </button>
-                )}
-              </div>
-            )}
-
             <div>
               <label className="mb-1.5 block text-sm font-medium text-brand-700">{M.emailLabel}</label>
               <div className="relative">
@@ -394,19 +323,6 @@ export default function LoginPage() {
             </div>
           </form>
         )}
-
-        {/* ── Google OAuth (always available) ── */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-brand-100" /></div>
-          <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">{M.or}</span></div>
-        </div>
-
-        <button
-          onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand-100 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-        >
-          {M.signInGoogle}
-        </button>
 
         <p className="mt-6 text-center text-sm text-gray-500">
           {M.noAccount}{" "}

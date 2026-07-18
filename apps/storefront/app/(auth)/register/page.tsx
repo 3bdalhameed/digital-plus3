@@ -44,7 +44,7 @@ export default function RegisterPage() {
         throw new Error(data.error || M.registerFailed);
       }
 
-      router.push("/login?registered=true&verify=true");
+      router.push("/login?registered=true");
     } catch (err: any) {
       setError(err.message);
     } finally {
