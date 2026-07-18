@@ -3,8 +3,17 @@
 import Link from "@/components/ui/link";
 import Image from "next/image";
 import { User, ShoppingBag, MessageCircle } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 
+/**
+ * Renders the account card from the CLIENT session so the greeting
+ * always matches whatever the header shows. Server passes userName /
+ * userEmail as an SSR seed (avoids a blank first paint), but once
+ * next-auth hydrates on the client its session wins -- prevents the
+ * "Header shows Test, card shows Abdalhameed" split when signing in
+ * as a different account keeps the SSR cached from a previous session.
+ */
 export function AccountContent({
   userName,
   userEmail,
@@ -15,6 +24,12 @@ export function AccountContent({
   logoUrl: string | null;
 }) {
   const { t, dir, isEn } = useT();
+  const { data: session } = useSession();
+
+  // Prefer the client session once hydrated; fall back to the SSR seed
+  // so the card isn't blank while status === "loading".
+  const displayName  = session?.user?.name  ?? userName;
+  const displayEmail = session?.user?.email ?? userEmail;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6" dir={dir}>
@@ -43,8 +58,8 @@ export function AccountContent({
           <User className="h-6 w-6 text-brand-500" />
         </div>
         <div>
-          <p className="font-bold text-brand-800">{userName}</p>
-          <p className="text-sm text-gray-500">{userEmail}</p>
+          <p className="font-bold text-brand-800">{displayName}</p>
+          <p className="text-sm text-gray-500">{displayEmail}</p>
         </div>
       </div>
 

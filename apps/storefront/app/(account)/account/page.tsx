@@ -5,6 +5,14 @@ import { AccountContent } from "./AccountContent";
 
 export const metadata = { title: "حسابي | My Account" };
 
+// Per-user page. Any caching across requests risks serving one
+// visitor's name/email to another (or to a stale version of the same
+// visitor after they signed in as a different account). Force a fresh
+// SSR every request so the seed passed to AccountContent always
+// matches the current cookie's session.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getLogoUrl(): Promise<string | null> {
   try {
     const settings = await getSettings();
