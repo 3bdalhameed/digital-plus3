@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "@/components/ui/link";
-import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine } from "lucide-react";
+import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
@@ -350,35 +350,11 @@ export function ProductDetailClient({ product, productName }: Props) {
             })()}
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#e8e4f8] bg-[#FAFAFC] p-6">
-            <h2 className="mb-6 text-lg font-black text-[#1e1b4b]" dir="rtl">
-              تقييمات العملاء
-            </h2>
-
-            {/* Empty state card */}
-            <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#e8e4f8] bg-white px-6 py-12 text-center">
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="h-7 w-7 text-[#D1D5DB]" strokeWidth={1.5} />
-                ))}
-              </div>
-
-              <p className="mt-2 text-sm font-semibold text-[#1e1b4b]" dir="rtl">
-                لا يوجد أي تقييمات.
-              </p>
-              <p className="text-sm text-[#6b7280]" dir="rtl">
-                كن أول من يكتب تقييماً لهذا المنتج
-              </p>
-
-              <button
-                onClick={() => setReviewOpen(true)}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
-              >
-                <PenLine className="h-4 w-4" strokeWidth={2.5} />
-                <span>يكتب تقييم</span>
-              </button>
-            </div>
-          </div>
+          <ProductReviews
+            productId={Number(product.id)}
+            isEn={isEn}
+            onWriteReview={() => setReviewOpen(true)}
+          />
         )}
       </div>
 
@@ -626,6 +602,138 @@ export function ProductDetailClient({ product, productName }: Props) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Approved-reviews list for the "التقييمات" tab. Fetches from
+   /api/product-reviews (which filters status = 'approved' server-side)
+   so pending or rejected reviews never surface here. Auto-source
+   entries (from the 7-day sweep) are labeled but still counted.
+═══════════════════════════════════════════════════════════════════ */
+type PublicReview = {
+  id: number;
+  rating: number;
+  comment: string | null;
+  reviewerName: string;
+  source: string;
+  createdAt: string;
+};
+
+function ProductReviews({
+  productId,
+  isEn,
+  onWriteReview,
+}: {
+  productId: number;
+  isEn: boolean;
+  onWriteReview: () => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<{ count: number; average: number; reviews: PublicReview[] }>({
+    count: 0, average: 0, reviews: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/product-reviews?productId=${productId}`, { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : { count: 0, average: 0, reviews: [] })
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [productId]);
+
+  const heading = isEn ? "Customer reviews" : "تقييمات العملاء";
+  const writeBtn = isEn ? "Write a review" : "يكتب تقييم";
+  const emptyTitle = isEn ? "No reviews yet." : "لا يوجد أي تقييمات.";
+  const emptyBody = isEn ? "Be the first to review this product" : "كن أول من يكتب تقييماً لهذا المنتج";
+  const autoLabel = isEn ? "auto" : "تلقائي";
+
+  return (
+    <div className="rounded-2xl border border-[#e8e4f8] bg-[#FAFAFC] p-6" dir={isEn ? "ltr" : "rtl"}>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-black text-[#1e1b4b]">{heading}</h2>
+        {data.count > 0 && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="flex items-center gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${i < Math.round(data.average) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  strokeWidth={2}
+                />
+              ))}
+            </span>
+            <span className="font-bold text-brand-800">{data.average.toFixed(1)}</span>
+            <span className="text-xs text-gray-500">({data.count})</span>
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
+        </div>
+      ) : data.reviews.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#e8e4f8] bg-white px-6 py-12 text-center">
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Star key={i} className="h-7 w-7 text-[#D1D5DB]" strokeWidth={1.5} />
+            ))}
+          </div>
+          <p className="mt-2 text-sm font-semibold text-[#1e1b4b]">{emptyTitle}</p>
+          <p className="text-sm text-[#6b7280]">{emptyBody}</p>
+          <button
+            onClick={onWriteReview}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
+          >
+            <PenLine className="h-4 w-4" strokeWidth={2.5} />
+            <span>{writeBtn}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {data.reviews.map((r) => (
+            <div key={r.id} className="rounded-2xl border border-[#e8e4f8] bg-white p-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 ${i < r.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-sm font-bold text-brand-800">{r.reviewerName}</span>
+                  {r.source === "auto" && (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                      {autoLabel}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-400" dir="ltr">
+                  {new Date(r.createdAt).toLocaleDateString(isEn ? "en-US" : "ar-EG-u-nu-latn", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })}
+                </span>
+              </div>
+              {r.comment && <p className="text-sm leading-relaxed text-gray-700">{r.comment}</p>}
+            </div>
+          ))}
+          <button
+            onClick={onWriteReview}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand-200 bg-white px-6 py-3 text-sm font-black text-brand-700 transition-all hover:bg-brand-50"
+          >
+            <PenLine className="h-4 w-4" strokeWidth={2.5} />
+            <span>{writeBtn}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

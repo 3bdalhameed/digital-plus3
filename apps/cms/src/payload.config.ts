@@ -782,6 +782,24 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "reviews_unique",
     "CREATE UNIQUE INDEX IF NOT EXISTS reviews_unique_order_product_customer ON reviews(order_id, product_id, customer_id)"
   );
+  // Moderation flow: new reviews land as 'pending' and only render on
+  // the product page once an admin flips them to 'approved'. Existing
+  // rows are backfilled as approved so we don't retroactively hide
+  // reviews visible before the flag existed. Auto-sweep-generated
+  // reviews (source='auto') skip moderation because they're implicit
+  // 5-star ratings from the 7-day delivery sweep, not user comments.
+  await run(
+    "reviews_status_col",
+    "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS status VARCHAR NOT NULL DEFAULT 'pending'"
+  );
+  await run(
+    "reviews_status_backfill",
+    "UPDATE reviews SET status = 'approved' WHERE status = 'pending' AND (created_at < NOW() - INTERVAL '1 day' OR source = 'auto')"
+  );
+  await run(
+    "reviews_status_idx",
+    "CREATE INDEX IF NOT EXISTS reviews_status_idx ON reviews(status)"
+  );
 
   return results;
 }
@@ -817,8 +835,8 @@ async function runOrderMaintenance(db: any): Promise<{ confirmed: number; autoRe
   const confirmed = confirmRes.rowCount ?? 0;
 
   const reviewRes = await pool.query(`
-    INSERT INTO reviews (product_id, order_id, customer_id, rating, source, created_at, updated_at)
-    SELECT DISTINCT oi.product_id, o.id, o.customer_id, 5, 'auto', NOW(), NOW()
+    INSERT INTO reviews (product_id, order_id, customer_id, rating, source, status, created_at, updated_at)
+    SELECT DISTINCT oi.product_id, o.id, o.customer_id, 5, 'auto', 'approved', NOW(), NOW()
       FROM orders o
       JOIN orders_items oi ON oi._parent_id = o.id
      WHERE o.status = 'delivered'

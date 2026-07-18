@@ -85,10 +85,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "تم تقييم هذا المنتج مسبقاً" }, { status: 409 });
     }
 
+    // Customer-submitted reviews start as 'pending' and only appear on
+    // the public product page once an admin approves them in the admin
+    // panel. Auto-sweep reviews (source='auto') are inserted elsewhere
+    // as 'approved' since they're implicit 5-star ratings from the
+    // 7-day delivery sweep, not user commentary.
     const [review] = await prismaReviews.$queryRaw<{ id: number }[]>(
       Prisma.sql`
-        INSERT INTO reviews (order_id, product_id, customer_id, rating, comment, source, created_at, updated_at)
-        VALUES (${orderId}, ${productId}, ${customerId}, ${rating}, ${reviewText ?? null}, 'customer', NOW(), NOW())
+        INSERT INTO reviews (order_id, product_id, customer_id, rating, comment, source, status, created_at, updated_at)
+        VALUES (${orderId}, ${productId}, ${customerId}, ${rating}, ${reviewText ?? null}, 'customer', 'pending', NOW(), NOW())
         ON CONFLICT (order_id, product_id, customer_id) DO NOTHING
         RETURNING id
       `
