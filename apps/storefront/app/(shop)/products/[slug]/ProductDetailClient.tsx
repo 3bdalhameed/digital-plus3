@@ -45,14 +45,68 @@ export function ProductDetailClient({ product, productName }: Props) {
   const [reviewText, setReviewText] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  // Eligibility: POST /api/reviews requires an orderId, and only the
+  // customer who bought this product can review it. When the modal
+  // opens we ask the server for the most recent order this signed-in
+  // visitor has containing this product (null if not signed in / not a
+  // buyer), plus any existing rating so we can show it instead of a
+  // form. The endpoint is safe to call anonymously (returns null).
+  const [eligibility, setEligibility] = useState<{
+    checked: boolean;
+    orderId: number | null;
+    existingRating: number | null;
+  }>({ checked: false, orderId: null, existingRating: null });
+
+  useEffect(() => {
+    if (!reviewOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/orders/for-product?productId=${product.id}`,
+          { credentials: "include", cache: "no-store" },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        setEligibility({
+          checked: true,
+          orderId: data?.orderId ?? null,
+          existingRating: data?.existingRating ?? null,
+        });
+      } catch {
+        if (!cancelled) setEligibility({ checked: true, orderId: null, existingRating: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [reviewOpen, product.id]);
 
   const handleSubmitReview = async () => {
     if (!reviewRating || !reviewText.trim()) return;
+    if (!eligibility.orderId) {
+      setReviewError("لا يمكنك تقييم هذا المنتج قبل شرائه.");
+      return;
+    }
+    setReviewError(null);
     setReviewSubmitting(true);
     try {
-      // Backend submit endpoint not built yet — this is the placeholder.
-      // When you build /api/reviews, swap the next line for the fetch call.
-      await new Promise((r) => setTimeout(r, 600));
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId:    eligibility.orderId,
+          productId:  product.id,
+          rating:     reviewRating,
+          reviewText: reviewText.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setReviewError(data?.error ?? "تعذّر إرسال التقييم.");
+        return;
+      }
       setReviewSubmitted(true);
       setTimeout(() => {
         setReviewOpen(false);
@@ -61,6 +115,8 @@ export function ProductDetailClient({ product, productName }: Props) {
         setReviewText("");
         setReviewSubmitted(false);
       }, 1800);
+    } catch {
+      setReviewError("تعذّر الاتصال بالخادم.");
     } finally {
       setReviewSubmitting(false);
     }
@@ -386,6 +442,43 @@ export function ProductDetailClient({ product, productName }: Props) {
                   تم استلام تقييمك وسيظهر بعد المراجعة.
                 </p>
               </div>
+            ) : !eligibility.checked ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-[#7C3AED]" />
+                <p className="text-xs text-[#6b7280]">جاري التحقق...</p>
+              </div>
+            ) : !eligibility.orderId ? (
+              /* Not a verified buyer — hide the form entirely. */
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7]">
+                  <ShoppingBag className="h-8 w-8 text-[#B45309]" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-lg font-black text-[#1e1b4b]">للمشترين فقط</h3>
+                <p className="text-sm text-[#6b7280]">
+                  يمكنك تقييم هذا المنتج بعد شرائه واستلامه.
+                </p>
+              </div>
+            ) : eligibility.existingRating ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DCFCE7]">
+                  <BadgeCheck className="h-8 w-8 text-[#16A34A]" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-lg font-black text-[#1e1b4b]">لقد قيّمت هذا المنتج</h3>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      className={`h-6 w-6 ${
+                        i <= (eligibility.existingRating ?? 0)
+                          ? "fill-[#F59E0B] text-[#F59E0B]"
+                          : "text-[#D1D5DB]"
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-[#6b7280]">شكراً على مشاركتك تجربتك.</p>
+              </div>
             ) : (
               <>
                 <h3 className="mb-1 text-lg font-black text-[#1e1b4b]">اكتب تقييماً</h3>
@@ -439,6 +532,12 @@ export function ProductDetailClient({ product, productName }: Props) {
                   rows={4}
                   className="mb-5 w-full resize-none rounded-xl border border-[#ddd6fe] bg-white px-4 py-2.5 text-sm text-[#1e1b4b] outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
                 />
+
+                {reviewError && (
+                  <div className="mb-3 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-xs font-bold text-[#991b1b]">
+                    {reviewError}
+                  </div>
+                )}
 
                 <button
                   onClick={handleSubmitReview}
