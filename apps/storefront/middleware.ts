@@ -1,6 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
+ * Page routes whose response body is scoped to the signed-in user.
+ *
+ * These MUST never be served from any cache layer -- browser disk
+ * cache, Cloudflare edge, or a shared proxy -- because the same URL
+ * returns different content depending on the session cookie. The
+ * symptom when this leaks is exactly the one we hit: user A visits
+ * /orders, signs out, user B signs in on the same browser, navigates
+ * to /orders via a client-side <Link>, and sees A's data until they
+ * hit F5. `dynamic = "force-dynamic"` on the page keeps the ORIGIN
+ * from caching, but Next 14 doesn't always emit the response headers
+ * a CDN needs to keep its own cache out of the loop. Stamping the
+ * headers explicitly here makes it unambiguous:
+ *
+ *   Cache-Control: private, no-store, must-revalidate  -> no cache
+ *                                                          layer may
+ *                                                          retain
+ *                                                          this body
+ *   Vary: Cookie                                       -> if any
+ *                                                          cache
+ *                                                          ignores the
+ *                                                          above, at
+ *                                                          least key
+ *                                                          on cookies
+ *
+ * Both the HTML document AND the RSC prefetch responses go through
+ * middleware, so a hovered <Link href="/orders"> that Next prefetches
+ * silently in the background can't poison the browser HTTP cache with
+ * a previous user's payload either.
+ */
+const AUTH_SCOPED_PAGES = [
+  /^\/orders(\/|$|\?)/,
+  /^\/account(\/|$|\?)/,
+  /^\/wishlist(\/|$|\?)/,
+  /^\/checkout(\/|$|\?)/,
+  /^\/cart(\/|$|\?)/,
+];
+
+/**
  * Per-IP, per-endpoint rate limiting at the Next.js edge.
  *
  * Each entry below is { match, limit, windowMs }:
@@ -57,8 +95,25 @@ function clientIp(req: NextRequest): string {
   return req.headers.get("x-real-ip") || req.headers.get("cf-connecting-ip") || "unknown";
 }
 
+/** Apply `Cache-Control: no-store` to a NextResponse and return it. */
+function stampNoStore(res: NextResponse): NextResponse {
+  res.headers.set("Cache-Control", "private, no-store, must-revalidate");
+  res.headers.set("Pragma", "no-cache");
+  res.headers.set("Vary", "Cookie");
+  return res;
+}
+
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  // Auth-scoped page routes: force revalidation at every cache layer
+  // so signing out and back in as a different account can never
+  // surface the previous user's data. Runs BEFORE the rate-limit
+  // check because these paths aren't under /api/*, so we short-
+  // circuit early.
+  if (AUTH_SCOPED_PAGES.some((r) => r.test(path))) {
+    return stampNoStore(NextResponse.next());
+  }
 
   // Find the first matching rule, if any. Most specific rules are first.
   const rule = RULES.find((r) => r.match.test(path));
@@ -99,8 +154,17 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Only run middleware for /api/* paths. Page navigations and static assets
-// are excluded so we never accidentally throttle a browse session.
+// Run middleware for /api/* (rate limiting) AND the auth-scoped page
+// routes listed above (no-store headers). Static assets and the
+// public storefront pages skip middleware entirely so browsing stays
+// throttle-free and CDN-friendly.
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/api/:path*",
+    "/orders/:path*",
+    "/account/:path*",
+    "/wishlist/:path*",
+    "/checkout/:path*",
+    "/cart/:path*",
+  ],
 };
