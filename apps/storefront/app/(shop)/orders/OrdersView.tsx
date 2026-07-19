@@ -123,7 +123,7 @@ export function OrdersView({ orders }: { orders: any[] }) {
                 {/* Right: total + chevron */}
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm font-bold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
-                    {formatPrice(order.totalAmount, order.currency)}
+                    {formatPrice(order.totalAmount, order.currency, undefined, undefined, lang)}
                   </span>
                   <ChevronDown
                     className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}

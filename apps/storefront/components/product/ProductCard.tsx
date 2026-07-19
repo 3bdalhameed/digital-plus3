@@ -114,11 +114,11 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Price — centered stack: current price big purple, compare price below struck-through */}
         <div className="flex flex-col items-center gap-0.5" dir="ltr">
           <span className="text-base font-black text-[#7C3AED] sm:text-lg" style={{ fontFeatureSettings: '"tnum"' }}>
-            {formatPrice(product.price, product.currency, currency, rates)}
+            {formatPrice(product.price, product.currency, currency, rates, lang)}
           </span>
           {hasDiscount && (
             <span className="text-[10px] text-gray-400 line-through sm:text-xs" style={{ fontFeatureSettings: '"tnum"' }}>
-              {formatPrice(product.comparePrice!, product.currency, currency, rates)}
+              {formatPrice(product.comparePrice!, product.currency, currency, rates, lang)}
             </span>
           )}
         </div>

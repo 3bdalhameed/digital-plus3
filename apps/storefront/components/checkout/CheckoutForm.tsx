@@ -23,7 +23,7 @@ export function CheckoutForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { items, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } = useCartStore();
-  const { currency: userCurrency, rates } = useLocaleStore();
+  const { currency: userCurrency, rates, lang } = useLocaleStore();
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -300,7 +300,8 @@ export function CheckoutForm() {
                     item.product.price * item.quantity,
                     item.product.currency,
                     userCurrency,
-                    rates
+                    rates,
+                    lang
                   )}
                 </span>
               </div>
@@ -313,13 +314,13 @@ export function CheckoutForm() {
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>المجموع الفرعي</span>
                   <span style={{ fontFeatureSettings: '"tnum"' }}>
-                    {formatPrice(totalPrice(), "USD", userCurrency, rates)}
+                    {formatPrice(totalPrice(), "USD", userCurrency, rates, lang)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-green-600">
                   <span>خصم ({appliedDiscount.code})</span>
                   <span style={{ fontFeatureSettings: '"tnum"' }}>
-                    −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+                    −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates, lang)}
                   </span>
                 </div>
               </>
@@ -327,7 +328,7 @@ export function CheckoutForm() {
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-brand-800">المجموع</span>
               <span className="text-xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
-                {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
+                {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}
               </span>
             </div>
           </div>
@@ -578,7 +579,7 @@ export function CheckoutForm() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              `تأكيد الطلب — ${formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}`
+              `تأكيد الطلب — ${formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}`
             )}
           </button>
         </div>

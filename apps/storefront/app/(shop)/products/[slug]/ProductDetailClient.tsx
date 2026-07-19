@@ -225,11 +225,11 @@ export function ProductDetailClient({ product, productName }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-black text-[#7C3AED]">
-                {formatPrice(product.price, product.currency, userCurrency, rates)}
+                {formatPrice(product.price, product.currency, userCurrency, rates, lang)}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-[#9ca3af] line-through">
-                  {formatPrice(product.comparePrice, product.currency, userCurrency, rates)}
+                  {formatPrice(product.comparePrice, product.currency, userCurrency, rates, lang)}
                 </span>
               )}
             </div>
@@ -568,7 +568,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                   {related.nameAr || related.name?.ar || ""}
                 </p>
                 <p className="mt-1 text-sm font-extrabold text-[#7C3AED]">
-                  {formatPrice(related.price, related.currency, userCurrency, rates)}
+                  {formatPrice(related.price, related.currency, userCurrency, rates, lang)}
                 </p>
               </Link>
             ))}

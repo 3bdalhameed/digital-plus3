@@ -21,7 +21,7 @@ export function CartItems() {
   const { items, removeItem, updateQuantity, updateDeliveryInfo, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } =
     useCartStore();
   const { t, dir, isEn } = useT();
-  const { currency: userCurrency, rates } = useLocaleStore();
+  const { currency: userCurrency, rates, lang } = useLocaleStore();
 
   // Live stock check: the cart holds a snapshot of the product at
   // add-time, so we need to ask the server for the current inStock
@@ -132,7 +132,7 @@ export function CartItems() {
                   {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                 </Link>
                 <p className="mt-1 text-sm font-semibold text-brand-600">
-                  {formatPrice(item.product.price, item.product.currency, userCurrency, rates)}
+                  {formatPrice(item.product.price, item.product.currency, userCurrency, rates, lang)}
                 </p>
                 {/* Filled delivery info summary */}
                 {item.deliveryInfo && deliveryFields.length > 0 && !hasUnfilled && (
@@ -175,7 +175,7 @@ export function CartItems() {
 
                 <div className="min-w-[5rem] text-end">
                   <span className="text-sm font-bold text-brand-600">
-                    {formatPrice(item.product.price * item.quantity, item.product.currency, userCurrency, rates)}
+                    {formatPrice(item.product.price * item.quantity, item.product.currency, userCurrency, rates, lang)}
                   </span>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export function CartItems() {
           <div className="flex items-center justify-between text-sm text-gray-600" dir="rtl">
             <span>{t("subtotal")}</span>
             <span style={{ fontFeatureSettings: '"tnum"' }}>
-              {formatPrice(totalPrice(), "USD", userCurrency, rates)}
+              {formatPrice(totalPrice(), "USD", userCurrency, rates, lang)}
             </span>
           </div>
         )}
@@ -293,14 +293,14 @@ export function CartItems() {
           <div className="flex items-center justify-between text-sm text-green-600" dir="rtl">
             <span>خصم ({appliedDiscount.code})</span>
             <span style={{ fontFeatureSettings: '"tnum"' }}>
-              −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+              −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates, lang)}
             </span>
           </div>
         )}
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-brand-800">{t("total")}</span>
           <span className="text-2xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
-            {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates)}
+            {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}
           </span>
         </div>
         {anyOutOfStock ? (

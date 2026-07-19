@@ -6,12 +6,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format price — converts from product currency to display currency using live or fallback rates */
+/** Format price — converts from product currency to display currency using
+ *  live or fallback rates and renders in the caller's UI language so the
+ *  currency SYMBOL matches (e.g. "ر.س" in Arabic, "SAR" / "$" in English).
+ *
+ *  `locale` selects the Intl.NumberFormat locale tag: pass "ar" (default,
+ *  keeps Latin numerals via -u-nu-latn) or "en". Any other tag is passed
+ *  straight through so callers can localize further if we ever add more.
+ */
 export function formatPrice(
   amount: number,
   fromCurrency = "USD",
   toCurrency?: string,
-  rates?: Record<string, number>
+  rates?: Record<string, number>,
+  locale: "ar" | "en" | string = "ar"
 ): string {
   const target = toCurrency ?? fromCurrency;
   let converted = amount;
@@ -27,10 +35,11 @@ export function formatPrice(
       converted = (amount * (TO_USD[fromCurrency] ?? 1)) * (FROM_USD[toCurrency] ?? 1);
     }
   }
-  // Arabic locale with Latin-numeral subtag so the currency symbol keeps its
-  // Arabic-friendly form (e.g. "ر.س" for SAR) but the number itself renders
-  // in Latin digits.
-  return new Intl.NumberFormat("ar-u-nu-latn", {
+  // Pick the format locale by UI language so the currency symbol renders
+  // in the reader's script -- "ر.س" for Arabic vs "SAR" / "$" for English.
+  // Arabic keeps Latin digits (-u-nu-latn) so prices stay easy to skim.
+  const intlLocale = locale === "en" ? "en-US" : "ar-u-nu-latn";
+  return new Intl.NumberFormat(intlLocale, {
     style: "currency",
     currency: target,
     minimumFractionDigits: 0,

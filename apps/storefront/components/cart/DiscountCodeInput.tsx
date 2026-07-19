@@ -101,7 +101,7 @@ export function DiscountCodeInput({
           <div className="min-w-0">
             <div className="font-bold">{L.applied} {appliedDiscount.code}</div>
             <div className="text-xs text-green-600">
-              {L.discountAmt} {formatPrice(appliedDiscount.amount, "USD", userCurrency, rates)}
+              {L.discountAmt} {formatPrice(appliedDiscount.amount, "USD", userCurrency, rates, lang)}
             </div>
           </div>
         </div>
