@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "@/components/ui/link";
 import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useWishlistStore } from "@/lib/wishlist-store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
 import { lexicalToHtml } from "@/lib/lexical";
@@ -17,6 +18,30 @@ interface Props {
 
 export function ProductDetailClient({ product, productName }: Props) {
   const addItem = useCartStore((s) => s.addItem);
+  const toggleFav = useWishlistStore((s) => s.toggle);
+  const isFav = useWishlistStore((s) => s.hasItem(product.id));
+  // Transient "Copied!" flag for the share button when the browser
+  // doesn't support the Web Share API and we fall back to clipboard.
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = async () => {
+    // Web Share API is the preferred flow on mobile browsers -- opens
+    // the OS share sheet. Fall back to copying the URL to the
+    // clipboard on desktop / browsers without navigator.share.
+    const url  = typeof window !== "undefined" ? window.location.href : "";
+    const title = productName || "";
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({ title, url });
+        return;
+      }
+    } catch { /* user cancelled -- silent */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    } catch { /* clipboard blocked -- silent */ }
+  };
   // Read the visitor's chosen display currency (auto-detected from
   // their country by /api/geo, or manually picked via the header
   // switcher). ProductCard already does this on the home + listing
@@ -159,16 +184,26 @@ export function ProductDetailClient({ product, productName }: Props) {
 
   return (
     <div className="pb-28">
-      {/* Breadcrumb */}
-      <div className="mb-4 flex items-center justify-end gap-2 text-sm text-[#6b7280]">
-        <Link href="/" className="hover:text-[#7C3AED]">الصفحة الرئيسية</Link>
-        <span>/</span>
+      {/* Breadcrumb.
+          On mobile the segments used to wrap MID-WORD (Arabic word
+          broken across two lines each), because each Link was
+          allowed to soft-wrap and the container was flex-nowrap +
+          truncate off. Each label is now `whitespace-nowrap` so it
+          stays intact, while the container is `flex-wrap` so the
+          longer trailing product-name can drop to its own line
+          cleanly. `text-right` keeps the row hugging the RTL start. */}
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-sm text-[#6b7280]">
+        <Link href="/" className="whitespace-nowrap hover:text-[#7C3AED]">الصفحة الرئيسية</Link>
+        <span className="whitespace-nowrap">/</span>
         {product.category && (
           <>
-            <Link href={`/collections/${product.category.slug}`} className="hover:text-[#7C3AED]">
+            <Link
+              href={`/collections/${product.category.slug}`}
+              className="whitespace-nowrap hover:text-[#7C3AED]"
+            >
               {product.category.nameAr ?? product.category.name?.ar ?? "الأقسام"}
             </Link>
-            <span>/</span>
+            <span className="whitespace-nowrap">/</span>
           </>
         )}
         <span className="font-medium text-[#1e1b4b]">{productName}</span>
@@ -187,11 +222,35 @@ export function ProductDetailClient({ product, productName }: Props) {
               {productName}
             </h1>
             <div className="flex shrink-0 gap-2">
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition-colors hover:bg-[#ddd6fe]">
-                <Heart className="h-4 w-4" />
+              {/* Wishlist toggle -- reads the same store the header
+                  wishlist badge does. Fills the heart red when active. */}
+              <button
+                type="button"
+                onClick={() => toggleFav(product as Product)}
+                aria-label={isFav ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+                aria-pressed={isFav}
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                  isFav
+                    ? "bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FECACA]"
+                    : "bg-[#EDE9FE] text-[#7C3AED] hover:bg-[#ddd6fe]"
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${isFav ? "fill-current" : ""}`} />
               </button>
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition-colors hover:bg-[#ddd6fe]">
-                <Share2 className="h-4 w-4" />
+              {/* Share -- Web Share API on mobile, clipboard on desktop.
+                  Shows a small "تم النسخ" tick for 1.5s after clipboard copy. */}
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label={shareCopied ? "تم نسخ الرابط" : "مشاركة المنتج"}
+                title={shareCopied ? "تم نسخ الرابط" : "مشاركة المنتج"}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition-colors hover:bg-[#ddd6fe]"
+              >
+                {shareCopied ? (
+                  <BadgeCheck className="h-4 w-4" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
@@ -329,26 +388,32 @@ export function ProductDetailClient({ product, productName }: Props) {
           </div>
         </div>
 
-        {/* Image column — RIGHT side on desktop (RTL start). */}
+        {/* Image column — RIGHT side on desktop (RTL start).
+            Frame removed: was `rounded-2xl bg-[#f5f3ff] p-6` which
+            drew a light lavender box around every artwork and forced
+            padding inset even for full-bleed key art. The image now
+            sits directly on the page background so it reads as the
+            hero it is. Empty-state placeholder still gets a soft
+            background so the "no image yet" square is visible. */}
         <div className="order-1 space-y-3 lg:order-1">
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f5f3ff]">
+          <div className="relative aspect-square overflow-hidden">
             {product.images?.[0]?.image?.url ? (
               <Image
                 src={product.images[0].image.url}
                 alt={productName}
                 fill
-                className="object-contain p-6"
+                className="object-contain"
                 priority
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-6xl">📦</div>
+              <div className="flex h-full items-center justify-center rounded-2xl bg-[#f5f3ff] text-6xl">📦</div>
             )}
           </div>
           {product.images?.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
               {product.images.slice(1, 5).map((img: any, i: number) => (
-                <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-[#f5f3ff]">
-                  <Image src={img.image?.url || ""} alt="" fill className="object-contain p-2" />
+                <div key={i} className="relative aspect-square overflow-hidden">
+                  <Image src={img.image?.url || ""} alt="" fill className="object-contain" />
                 </div>
               ))}
             </div>
