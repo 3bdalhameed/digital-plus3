@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "@/components/ui/link";
-import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, ShoppingBag, MessageCircle, Loader2 } from "lucide-react";
@@ -21,7 +20,7 @@ export function AccountContent({
 }: {
   logoUrl: string | null;
 }) {
-  const { t, dir, isEn } = useT();
+  const { t, dir } = useT();
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -46,24 +45,13 @@ export function AccountContent({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6" dir={dir}>
-      {/* Store logo */}
-      <div className="flex justify-center py-2">
-        {logoUrl ? (
-          <Image
-            src={logoUrl}
-            alt={isEn ? "Logo" : "الشعار"}
-            width={140}
-            height={48}
-            className="object-contain"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#9333EA]">
-            <span className="text-xl font-black text-white">+</span>
-          </div>
-        )}
-      </div>
-
+      {/* The duplicate in-page logo used to render here. Removed --
+          the header already shows the brand mark on every page, and
+          repeating it inside the account card left a broken/orphan
+          logo when the header's sticky styles applied differently
+          than the in-page one. `logoUrl` is still accepted as a prop
+          so the parent page + call sites don't need to change; if
+          another surface ends up needing it we drop it back in. */}
       <h1 className="text-2xl font-black text-brand-800">{t("myAccount")}</h1>
 
       <div className="brand-card flex items-center gap-4">
