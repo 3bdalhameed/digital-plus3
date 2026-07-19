@@ -155,9 +155,30 @@ export function ProductDetailClient({ product, productName }: Props) {
   // don't accidentally show "Out of stock". Only an explicit `false`
   // flips the button.
   const inStock = product.inStock !== false;
-  const rating = product.rating ?? 5;
-  const reviewCount = product.reviewCount ?? 4;
   const deliveryFields: any[] = product.deliveryFields || [];
+
+  // Live rating + review count. The previous code was `product.rating
+  // ?? 5` and `product.reviewCount ?? 4` -- placeholder defaults that
+  // showed 5 stars and "(4 reviews)" on every product that hadn't been
+  // rated yet. We fetch the real aggregate from /api/product-reviews
+  // (approved reviews only) so a brand-new product reads as 0 and the
+  // header updates the moment moderation approves a review. Starts at
+  // whatever the payload precomputed on the row so the first render
+  // isn't a jarring "0 reviews" before the fetch completes.
+  const [rating, setRating] = useState<number>(Number(product.rating ?? 0));
+  const [reviewCount, setReviewCount] = useState<number>(Number(product.reviewCount ?? 0));
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/product-reviews?productId=${product.id}&limit=1`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (typeof data?.count === "number")   setReviewCount(data.count);
+        if (typeof data?.average === "number") setRating(data.average);
+      })
+      .catch(() => { /* keep the prerender values */ });
+    return () => { cancelled = true; };
+  }, [product.id]);
   const relatedProducts: any[] = product.relatedProducts || [];
 
   // Display product name — pick the English one when the visitor is
@@ -319,10 +340,14 @@ export function ProductDetailClient({ product, productName }: Props) {
           {/* Rating + Price */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1">
+              {/* Rating comes back from /api/product-reviews as a float
+                  (e.g. 4.3). Round to the nearest whole star so the row
+                  reads clean; the exact value is still visible in the
+                  reviews list below. */}
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  className={`h-4 w-4 ${i < Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                 />
               ))}
               <span className="mr-1 text-xs text-[#6b7280]">{L.reviewsCount(reviewCount)}</span>
