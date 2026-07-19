@@ -516,7 +516,12 @@ export function ProductDetailClient({ product, productName }: Props) {
             hero it is. Empty-state placeholder still gets a soft
             background so the "no image yet" square is visible. */}
         <div className="order-1 space-y-3 lg:order-1">
-          <div className="relative aspect-square overflow-hidden">
+          {/* Soft rounding only -- `rounded-xl` (12px) keeps the artwork
+              feeling like a page hero rather than a heavily-framed card,
+              while smoothing the hard right-angle corners we had after
+              removing the lavender frame. Thumbnails get the same treatment
+              at rounded-lg so the corner language stays consistent. */}
+          <div className="relative aspect-square overflow-hidden rounded-xl">
             {product.images?.[0]?.image?.url ? (
               <Image
                 src={product.images[0].image.url}
@@ -526,13 +531,13 @@ export function ProductDetailClient({ product, productName }: Props) {
                 priority
               />
             ) : (
-              <div className="flex h-full items-center justify-center rounded-2xl bg-[#f5f3ff] text-6xl">📦</div>
+              <div className="flex h-full items-center justify-center bg-[#f5f3ff] text-6xl">📦</div>
             )}
           </div>
           {product.images?.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
               {product.images.slice(1, 5).map((img: any, i: number) => (
-                <div key={i} className="relative aspect-square overflow-hidden">
+                <div key={i} className="relative aspect-square overflow-hidden rounded-lg">
                   <Image src={img.image?.url || ""} alt="" fill className="object-contain" />
                 </div>
               ))}
