@@ -10,6 +10,14 @@ import { getOrderStatusLabel, getOrderStatusColor, formatPrice } from "@/lib/uti
 
 export const metadata = { title: "تفاصيل الطلب" };
 
+// Session-scoped page -- must not be served from any cache. Without
+// this, signing out and signing in as a different account (same
+// browser) shows the previous user's order until a hard refresh
+// because Next's Router Cache replays the prior RSC payload for the
+// same URL. See app/(shop)/orders/page.tsx for the paired change.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /** Compact stars row shared with the orders list rating column. */
 function StarsRow({ rating }: { rating: number }) {
   return (

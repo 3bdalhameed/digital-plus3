@@ -108,6 +108,19 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
   const { data: session } = useSession();
   const storeName = settings?.siteName || DEFAULT_NAME_AR;
   const logoUrl = settings?.logo?.url;
+
+  // Full-reload sign-out. `signOut({ callbackUrl })` does a client-side
+  // navigation, which leaves Next's Router Cache intact -- so pages
+  // like /orders (a Server Component that renders the previous user's
+  // data) get replayed from cache when a *different* account signs in
+  // on the same browser. Skipping NextAuth's internal redirect and
+  // using window.location forces the browser to blow away all client
+  // state before the next request. The login flow already does this
+  // (app/(auth)/login/page.tsx).
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    window.location.href = "/";
+  };
   const navLinks = navbarConfig?.links?.length ? navbarConfig.links : DEFAULT_NAV;
 
   // Fetch live exchange rates + auto-detect currency from IP geo on mount.
@@ -217,7 +230,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                 <User className="h-4 w-4" />
                 {session.user.name?.split(" ")[0] ?? s.accountFallback}
               </Link>
-              <button onClick={() => signOut({ callbackUrl: "/" })} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600">
+              <button onClick={handleSignOut} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600">
                 <LogOut className="h-4 w-4" />
                 {s.signOut}
               </button>
@@ -329,7 +342,7 @@ export function Header({ settings, navbarConfig }: HeaderProps) {
                     <User className="h-4 w-4" />
                     {session.user.name?.split(" ")[0] ?? s.accountFallback}
                   </Link>
-                  <button onClick={() => signOut({ callbackUrl: "/" })} className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label={s.signOut}>
+                  <button onClick={handleSignOut} className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label={s.signOut}>
                     <LogOut className="h-4 w-4" />
                   </button>
                 </div>
