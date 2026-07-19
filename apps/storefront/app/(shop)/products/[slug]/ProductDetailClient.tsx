@@ -222,7 +222,20 @@ export function ProductDetailClient({ product, productName }: Props) {
     favRemove:           isEn ? "Remove from wishlist": "إزالة من المفضلة",
     shareItem:           isEn ? "Share product"      : "مشاركة المنتج",
     shareCopied:         isEn ? "Link copied"        : "تم نسخ الرابط",
+    addedToCart:         isEn ? "Added to cart"      : "تمت الإضافة للسلة",
   };
+
+  // "Added to cart" toast state. Slides up from the bottom for 2s
+  // after a successful handleAdd; auto-hides via a timeout that gets
+  // reset on repeated adds so rapid clicks extend the toast instead
+  // of flickering. Cleaned up on unmount to avoid setState-after-
+  // unmount if the visitor navigates away while it's still showing.
+  const [addedToast, setAddedToast] = useState(false);
+  useEffect(() => {
+    if (!addedToast) return;
+    const t = setTimeout(() => setAddedToast(false), 2000);
+    return () => clearTimeout(t);
+  }, [addedToast]);
 
   const handleAdd = () => {
     // Belt-and-suspenders: the sticky-bar buttons are already
@@ -244,10 +257,39 @@ export function ProductDetailClient({ product, productName }: Props) {
     }
     setFieldErrors([]);
     for (let i = 0; i < qty; i++) addItem(product as Product, deliveryInfo);
+    // Re-open the toast even if it's already showing so a second
+    // click still gives visual acknowledgement; the effect above
+    // resets the 2s timer for us.
+    setAddedToast(false);
+    requestAnimationFrame(() => setAddedToast(true));
   };
 
   return (
     <div className="pb-28">
+      {/* "Added to cart" toast. Fixed-position pill that slides up
+          from the bottom for 2s after a successful handleAdd. Purple
+          gradient chip + green check on the start (RTL right) mirrors
+          the design mock. Sits above the sticky Add-to-cart bar so
+          it's visible even on a phone at the bottom of the page. */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className={`pointer-events-none fixed inset-x-0 z-[80] flex justify-center px-4 transition-all duration-300 ${
+          addedToast
+            ? "translate-y-0 opacity-100"
+            : "translate-y-6 opacity-0"
+        }`}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+        dir={isEn ? "ltr" : "rtl"}
+      >
+        <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_30px_rgba(124,58,237,0.35)] ring-1 ring-white/15">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white">
+            <BadgeCheck className="h-4 w-4 text-[#16A34A]" strokeWidth={2.5} />
+          </span>
+          <span>{L.addedToCart}</span>
+        </div>
+      </div>
+
       {/* Breadcrumb.
           On mobile the segments used to wrap MID-WORD (Arabic word
           broken across two lines each), because each Link was
