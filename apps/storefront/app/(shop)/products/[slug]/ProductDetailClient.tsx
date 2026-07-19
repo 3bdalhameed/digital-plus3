@@ -464,38 +464,46 @@ export function ProductDetailClient({ product, productName }: Props) {
             </div>
           )}
 
-          {/* Payment methods */}
-          <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white">
+          {/* Payment methods + trust block — merged into ONE gradient
+              card per the reference design. Payment pills carry small
+              brand-colored mark tiles instead of emojis so the block
+              reads like a real payment strip; a hairline divider
+              separates the payment list from the support / trusted
+              cards below. */}
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white shadow-[0_10px_30px_rgba(124,58,237,0.25)]">
             <div className="mb-3 text-right text-sm font-bold">{L.paymentMethodsTitle}</div>
             <div className="flex flex-wrap justify-end gap-2 text-xs">
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 {L.payVisa}</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 {L.payMastercard}</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">🅿️ {L.payApplePay}</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">{L.payGooglePay}</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💰 {L.payAmex}</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">🔒 {L.paySecure}</span>
+              <PaymentPill label={L.payVisa}       mark={<PayVisaMark />} />
+              <PaymentPill label={L.payMastercard} mark={<PayMastercardMark />} />
+              <PaymentPill label={L.payApplePay}   mark={<PayApplePayMark />} />
+              <PaymentPill label={L.payGooglePay}  mark={<PayGooglePayMark />} />
+              <PaymentPill label={L.payAmex}       mark={<PayAmexMark />} />
+              <PaymentPill label={L.paySecure}     mark={<ShieldCheck className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />} />
             </div>
-          </div>
 
-          {/* Trust features */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-[#e8e4f8] bg-white p-4">
-              <div className="flex items-center gap-2">
-                <Headphones className="h-5 w-5 text-[#7C3AED]" />
-                <span className="text-sm font-bold text-[#1e1b4b]">{L.supportTitle}</span>
+            {/* Hairline divider between payment methods and trust
+                strip. bg-white/20 reads as a soft rule against the
+                gradient without introducing a hard color. */}
+            <div className="my-5 h-px w-full bg-white/20" />
+
+            {/* Support + trusted-store row lives INSIDE the same card
+                now. Two columns on all breakpoints so the row is a
+                consistent height regardless of language length. */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-right">
+                <div className="mb-1 flex items-center justify-end gap-2">
+                  <span className="text-sm font-bold">{L.supportTitle}</span>
+                  <Headphones className="h-4 w-4 text-white/85" strokeWidth={2} />
+                </div>
+                <p className="text-[11px] leading-relaxed text-white/75">{L.supportBody}</p>
               </div>
-              <p className="mt-1 text-xs text-[#6b7280]">
-                {L.supportBody}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e8e4f8] bg-white p-4">
-              <div className="flex items-center gap-2">
-                <BadgeCheck className="h-5 w-5 text-[#7C3AED]" />
-                <span className="text-sm font-bold text-[#1e1b4b]">{L.trustedTitle}</span>
+              <div className="text-right">
+                <div className="mb-1 flex items-center justify-end gap-2">
+                  <span className="text-sm font-bold">{L.trustedTitle}</span>
+                  <BadgeCheck className="h-4 w-4 text-white/85" strokeWidth={2} />
+                </div>
+                <p className="text-[11px] leading-relaxed text-white/75">{L.trustedBody}</p>
               </div>
-              <p className="mt-1 text-xs text-[#6b7280]">
-                {L.trustedBody}
-              </p>
             </div>
           </div>
         </div>
@@ -1000,5 +1008,69 @@ function ProductReviews({
         </div>
       )}
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Payment method helpers
+   Small inline brand marks + a shared pill wrapper. Kept in this
+   file (rather than a shared components/) because only the product
+   page renders them today; if another surface needs them they can
+   be lifted out unchanged. Each mark is a tiny <span> or SVG so we
+   don't pull in an icon library or ship binary assets.
+   ────────────────────────────────────────────────────────────*/
+
+function PaymentPill({ label, mark }: { label: string; mark: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-white ring-1 ring-white/15 backdrop-blur-[2px]">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+        {mark}
+      </span>
+      <span className="text-[11px] font-semibold leading-none">{label}</span>
+    </span>
+  );
+}
+
+function PayVisaMark() {
+  return (
+    <span className="flex h-4 w-6 items-center justify-center rounded-[3px] bg-white text-[8px] font-black italic tracking-tight text-[#1A1F71]">
+      VISA
+    </span>
+  );
+}
+
+function PayMastercardMark() {
+  return (
+    <span className="relative flex h-4 w-6 items-center justify-center">
+      <span className="absolute left-0.5 h-3.5 w-3.5 rounded-full bg-[#EB001B] mix-blend-screen" />
+      <span className="absolute right-0.5 h-3.5 w-3.5 rounded-full bg-[#F79E1B] mix-blend-screen" />
+    </span>
+  );
+}
+
+function PayApplePayMark() {
+  return (
+    <span className="flex h-4 w-6 items-center justify-center rounded-[3px] bg-black text-[8px] font-bold text-white">
+       Pay
+    </span>
+  );
+}
+
+function PayGooglePayMark() {
+  return (
+    <span className="flex h-4 w-7 items-center justify-center rounded-[3px] bg-white text-[8px] font-bold">
+      <span className="text-[#4285F4]">G</span>
+      <span className="text-[#EA4335]">P</span>
+      <span className="text-[#FBBC04]">a</span>
+      <span className="text-[#34A853]">y</span>
+    </span>
+  );
+}
+
+function PayAmexMark() {
+  return (
+    <span className="flex h-4 w-8 items-center justify-center rounded-[3px] bg-[#2E77BC] text-[7px] font-black tracking-wider text-white">
+      AMEX
+    </span>
   );
 }
