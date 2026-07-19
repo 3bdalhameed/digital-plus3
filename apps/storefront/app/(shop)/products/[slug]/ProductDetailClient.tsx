@@ -29,7 +29,7 @@ export function ProductDetailClient({ product, productName }: Props) {
     // the OS share sheet. Fall back to copying the URL to the
     // clipboard on desktop / browsers without navigator.share.
     const url  = typeof window !== "undefined" ? window.location.href : "";
-    const title = productName || "";
+    const title = displayName || productName || "";
     try {
       if (typeof navigator !== "undefined" && (navigator as any).share) {
         await (navigator as any).share({ title, url });
@@ -160,6 +160,49 @@ export function ProductDetailClient({ product, productName }: Props) {
   const deliveryFields: any[] = product.deliveryFields || [];
   const relatedProducts: any[] = product.relatedProducts || [];
 
+  // Display product name — pick the English one when the visitor is
+  // reading the site in English (parent server component defaulted
+  // to Arabic because it doesn't know the client-persisted locale).
+  const displayName =
+    isEn
+      ? (product.nameEn ?? product.name?.en ?? productName)
+      : productName;
+
+  // UI copy dictionary. Every visible label on the product page runs
+  // through here so switching the locale modal to English flips the
+  // whole page (not just the surrounding chrome). Kept inline instead
+  // of the shared i18n dict because the strings are page-specific.
+  const L = {
+    breadcrumbHome:      isEn ? "Home"                : "الصفحة الرئيسية",
+    breadcrumbCategory:  isEn ? "Categories"          : "الأقسام",
+    digitalBadge:        isEn ? "Digital product: your order will be delivered electronically"
+                              : "منتج رقمي: سيتم تسليم طلبك إلكترونياً بصيغة رقمية",
+    viewDescription:     isEn ? "View description"   : "عرض الوصف",
+    reviewsCount:        (n: number) => isEn ? `(${n} reviews)` : `(${n} تقييمات)`,
+    purchaseCount:       isEn ? "Purchases"          : "عدد مرات الشراء",
+    paymentMethodsTitle: isEn ? "Available payment methods" : "طرق الدفع المتاحة",
+    payVisa:             isEn ? "Visa"               : "فيزا",
+    payMastercard:       isEn ? "Mastercard"         : "ماستركارد",
+    payApplePay:         isEn ? "Apple Pay"          : "آبل باي",
+    payGooglePay:        isEn ? "Google Pay"         : "G Pay جوجل باي",
+    payAmex:             isEn ? "American Express"   : "أمريكان إكسبريس",
+    paySecure:           isEn ? "Other 100% secure methods" : "طرق أخرى آمنة 100%",
+    supportTitle:        isEn ? "Great support"      : "دعم فني مميز",
+    supportBody:         isEn ? "Our team is here to help you around the clock." : "فريقنا جاهز لمساعدتك بكل الأوقات",
+    trustedTitle:        isEn ? "Trusted store"      : "متجر موثوق",
+    trustedBody:         isEn ? "Great customer experiences and top ratings."    : "تجارب عملاء ممتازة وتقييمات عالية",
+    tabDescription:      isEn ? "Description"        : "الوصف",
+    tabReviews:          isEn ? "Reviews"            : "التقييمات",
+    addToCart:           isEn ? "Add to cart"        : "أضف إلى السلة",
+    quantityLabel:       isEn ? "Quantity"           : "الكمية",
+    relatedTitle:        isEn ? "Related products"   : "منتجات مشابهة",
+    outOfStock:          isEn ? "Out of stock"       : "نفدت الكمية",
+    favAdd:              isEn ? "Add to wishlist"    : "إضافة إلى المفضلة",
+    favRemove:           isEn ? "Remove from wishlist": "إزالة من المفضلة",
+    shareItem:           isEn ? "Share product"      : "مشاركة المنتج",
+    shareCopied:         isEn ? "Link copied"        : "تم نسخ الرابط",
+  };
+
   const handleAdd = () => {
     // Belt-and-suspenders: the sticky-bar buttons are already
     // disabled when inStock=false, but a stale client render or a
@@ -193,7 +236,7 @@ export function ProductDetailClient({ product, productName }: Props) {
           longer trailing product-name can drop to its own line
           cleanly. `text-right` keeps the row hugging the RTL start. */}
       <div className="mb-4 flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-sm text-[#6b7280]">
-        <Link href="/" className="whitespace-nowrap hover:text-[#7C3AED]">الصفحة الرئيسية</Link>
+        <Link href="/" className="whitespace-nowrap hover:text-[#7C3AED]">{L.breadcrumbHome}</Link>
         <span className="whitespace-nowrap">/</span>
         {product.category && (
           <>
@@ -201,12 +244,14 @@ export function ProductDetailClient({ product, productName }: Props) {
               href={`/collections/${product.category.slug}`}
               className="whitespace-nowrap hover:text-[#7C3AED]"
             >
-              {product.category.nameAr ?? product.category.name?.ar ?? "الأقسام"}
+              {isEn
+                ? (product.category.nameEn ?? product.category.name?.en ?? product.category.nameAr ?? product.category.name?.ar ?? L.breadcrumbCategory)
+                : (product.category.nameAr ?? product.category.name?.ar ?? L.breadcrumbCategory)}
             </Link>
             <span className="whitespace-nowrap">/</span>
           </>
         )}
-        <span className="font-medium text-[#1e1b4b]">{productName}</span>
+        <span className="font-medium text-[#1e1b4b]">{displayName}</span>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -219,7 +264,7 @@ export function ProductDetailClient({ product, productName }: Props) {
           {/* Title + actions */}
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-xl font-black leading-snug text-[#1e1b4b] md:text-2xl">
-              {productName}
+              {displayName}
             </h1>
             <div className="flex shrink-0 gap-2">
               {/* Wishlist toggle -- reads the same store the header
@@ -227,7 +272,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               <button
                 type="button"
                 onClick={() => toggleFav(product as Product)}
-                aria-label={isFav ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+                aria-label={isFav ? L.favRemove : L.favAdd}
                 aria-pressed={isFav}
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
                   isFav
@@ -242,8 +287,8 @@ export function ProductDetailClient({ product, productName }: Props) {
               <button
                 type="button"
                 onClick={handleShare}
-                aria-label={shareCopied ? "تم نسخ الرابط" : "مشاركة المنتج"}
-                title={shareCopied ? "تم نسخ الرابط" : "مشاركة المنتج"}
+                aria-label={shareCopied ? L.shareCopied : L.shareItem}
+                title={shareCopied ? L.shareCopied : L.shareItem}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FE] text-[#7C3AED] transition-colors hover:bg-[#ddd6fe]"
               >
                 {shareCopied ? (
@@ -258,7 +303,7 @@ export function ProductDetailClient({ product, productName }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-[#f5f3ff] px-3 py-1 text-xs font-medium text-[#6b7280]">
-              📱 منتج رقمي: سيتم تسليم طلبك إلكترونياً بصيغة رقمية
+              📱 {L.digitalBadge}
             </span>
             <button
               onClick={() => {
@@ -267,7 +312,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               }}
               className="rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] px-3 py-1 text-xs font-bold text-white"
             >
-              عرض الوصف
+              {L.viewDescription}
             </button>
           </div>
 
@@ -280,7 +325,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                   className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                 />
               ))}
-              <span className="mr-1 text-xs text-[#6b7280]">({reviewCount} تقييمات)</span>
+              <span className="mr-1 text-xs text-[#6b7280]">{L.reviewsCount(reviewCount)}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-black text-[#7C3AED]">
@@ -298,7 +343,7 @@ export function ProductDetailClient({ product, productName }: Props) {
           <div className="flex items-center justify-between rounded-2xl border border-[#ddd6fe] bg-[#f5f3ff] px-4 py-3">
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4 text-[#7C3AED]" />
-              <span className="text-sm text-[#4c1d95]">عدد مرات الشراء</span>
+              <span className="text-sm text-[#4c1d95]">{L.purchaseCount}</span>
             </div>
             <span className="rounded-lg bg-[#7C3AED] px-3 py-1 text-xs font-black text-white">
               {purchaseCount}
@@ -354,14 +399,14 @@ export function ProductDetailClient({ product, productName }: Props) {
 
           {/* Payment methods */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white">
-            <div className="mb-3 text-right text-sm font-bold">طرق الدفع المتاحة</div>
+            <div className="mb-3 text-right text-sm font-bold">{L.paymentMethodsTitle}</div>
             <div className="flex flex-wrap justify-end gap-2 text-xs">
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 فيزا</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 ماستركارد</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">🅿️ آبل باي</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">G Pay جوجل باي</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">💰 أمريكان إكسبريس</span>
-              <span className="rounded-lg bg-white/15 px-3 py-1.5">🔒 طرق أخرى آمنة 100%</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 {L.payVisa}</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">💳 {L.payMastercard}</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">🅿️ {L.payApplePay}</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">{L.payGooglePay}</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">💰 {L.payAmex}</span>
+              <span className="rounded-lg bg-white/15 px-3 py-1.5">🔒 {L.paySecure}</span>
             </div>
           </div>
 
@@ -370,19 +415,19 @@ export function ProductDetailClient({ product, productName }: Props) {
             <div className="rounded-2xl border border-[#e8e4f8] bg-white p-4">
               <div className="flex items-center gap-2">
                 <Headphones className="h-5 w-5 text-[#7C3AED]" />
-                <span className="text-sm font-bold text-[#1e1b4b]">دعم فني مميز</span>
+                <span className="text-sm font-bold text-[#1e1b4b]">{L.supportTitle}</span>
               </div>
               <p className="mt-1 text-xs text-[#6b7280]">
-                فريقنا جاهز لمساعدتك بكل الأوقات
+                {L.supportBody}
               </p>
             </div>
             <div className="rounded-2xl border border-[#e8e4f8] bg-white p-4">
               <div className="flex items-center gap-2">
                 <BadgeCheck className="h-5 w-5 text-[#7C3AED]" />
-                <span className="text-sm font-bold text-[#1e1b4b]">متجر موثوق</span>
+                <span className="text-sm font-bold text-[#1e1b4b]">{L.trustedTitle}</span>
               </div>
               <p className="mt-1 text-xs text-[#6b7280]">
-                تجارب عملاء ممتازة وتقييمات عالية
+                {L.trustedBody}
               </p>
             </div>
           </div>
@@ -400,7 +445,7 @@ export function ProductDetailClient({ product, productName }: Props) {
             {product.images?.[0]?.image?.url ? (
               <Image
                 src={product.images[0].image.url}
-                alt={productName}
+                alt={displayName}
                 fill
                 className="object-contain"
                 priority
@@ -432,7 +477,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                 : "border border-[#ddd6fe] bg-white text-[#7C3AED]"
             }`}
           >
-            الوصف
+            {L.tabDescription}
           </button>
           <button
             onClick={() => setTab("reviews")}
@@ -442,7 +487,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                 : "border border-[#ddd6fe] bg-white text-[#7C3AED]"
             }`}
           >
-            التقييمات
+            {L.tabReviews}
           </button>
         </div>
 
@@ -609,7 +654,7 @@ export function ProductDetailClient({ product, productName }: Props) {
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <div className="mt-10">
-          <h2 className="mb-5 text-center text-lg font-black text-[#1e1b4b]">منتجات مشابهة</h2>
+          <h2 className="mb-5 text-center text-lg font-black text-[#1e1b4b]">{L.relatedTitle}</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {relatedProducts.map((related: any) => (
               <Link
@@ -660,7 +705,7 @@ export function ProductDetailClient({ product, productName }: Props) {
             >
               <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
               {inStock ? (
-                <span>أضف إلى السلة</span>
+                <span>{L.addToCart}</span>
               ) : (
                 <span dir="ltr">Out of stock</span>
               )}
@@ -668,7 +713,7 @@ export function ProductDetailClient({ product, productName }: Props) {
 
             {/* Quantity pill inline with the buttons on mobile */}
             <div className="flex shrink-0 items-center gap-1.5 text-white">
-              <span className="text-[11px] font-bold opacity-90">الكمية</span>
+              <span className="text-[11px] font-bold opacity-90">{L.quantityLabel}</span>
               <div className="flex items-center gap-0.5 rounded-full bg-white px-1 py-0.5">
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -721,7 +766,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               >
                 <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
                 {inStock ? (
-                  <span>أضف إلى السلة</span>
+                  <span>{L.addToCart}</span>
                 ) : (
                   <span dir="ltr">Out of stock</span>
                 )}
