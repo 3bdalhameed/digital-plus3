@@ -455,14 +455,14 @@ export function ProductDetailClient({ product, productName }: Props) {
                 consistent height regardless of language length. */}
             <div className="grid grid-cols-2 gap-4">
               <div className="text-right">
-                <div className="mb-1 flex items-center justify-end gap-2">
+                <div className="mb-1 flex items-center gap-2">
                   <span className="text-sm font-bold">{L.supportTitle}</span>
                   <Headphones className="h-4 w-4 text-white/85" strokeWidth={2} />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/75">{L.supportBody}</p>
               </div>
               <div className="text-right">
-                <div className="mb-1 flex items-center justify-end gap-2">
+                <div className="mb-1 flex items-center gap-2">
                   <span className="text-sm font-bold">{L.trustedTitle}</span>
                   <BadgeCheck className="h-4 w-4 text-white/85" strokeWidth={2} />
                 </div>
