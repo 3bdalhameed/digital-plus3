@@ -791,39 +791,37 @@ export function ProductDetailClient({ product, productName }: Props) {
             className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3"
             dir="rtl"
           >
-            {/* Single white-outlined pill holds EVERYTHING now -- the
-                "الكمية" label, the qty control, and both action
-                buttons. `justify-center` clusters them mid-bar instead
-                of pushing to the two edges so the block reads as one
-                unit rather than a split header/footer. `flex-1` lets
-                the pill claim the full bar width; content stays
-                center-aligned inside it. */}
-            <div className="flex flex-1 items-center justify-center gap-5 rounded-2xl border border-white/40 bg-transparent px-4 py-2">
-              {/* Label -- inside the pill now, RTL start */}
-              <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
-
-              {/* Quantity control -- inner white pill on the right */}
-              <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
-                <button
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
-                  aria-label="ناقص"
-                >
-                  <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
-                <span className="min-w-[1.5rem] text-center text-sm font-black text-[#5B21B6]">
-                  {qty}
-                </span>
-                <button
-                  onClick={() => setQty((q) => q + 1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
-                  aria-label="زائد"
-                >
-                  <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
+            {/* Single white-outlined pill holds EVERYTHING. Groups are
+                pushed to the two edges via justify-between: label + qty
+                cluster pinned to the RTL start (right), action buttons
+                pinned to the RTL end (left). Reverted the earlier
+                "centered" clustering per design feedback. */}
+            <div className="flex flex-1 items-center justify-between gap-3 rounded-2xl border border-white/40 bg-transparent px-4 py-2">
+              {/* Right-edge group: label + qty control */}
+              <div className="flex items-center gap-3">
+                <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
+                <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                    aria-label="ناقص"
+                  >
+                    <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </button>
+                  <span className="min-w-[1.5rem] text-center text-sm font-black text-[#5B21B6]">
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty((q) => q + 1)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                    aria-label="زائد"
+                  >
+                    <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
 
-              {/* Buttons -- on the left (RTL end) of the pill */}
+              {/* Left-edge group: action buttons */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={inStock ? handleAdd : undefined}
