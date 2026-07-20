@@ -436,7 +436,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               cards below. */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white shadow-[0_10px_30px_rgba(124,58,237,0.25)]">
             <div className="mb-3 text-right text-sm font-bold">{L.paymentMethodsTitle}</div>
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap justify-end gap-2 text-xs">
               <PaymentPill label={L.payVisa}       mark={<PayVisaMark />} />
               <PaymentPill label={L.payMastercard} mark={<PayMastercardMark />} />
               <PaymentPill label={L.payApplePay}   mark={<PayApplePayMark />} />
@@ -990,12 +990,17 @@ function ProductReviews({
    ────────────────────────────────────────────────────────────*/
 
 function PaymentPill({ label, mark }: { label: string; mark: React.ReactNode }) {
+  // Text first, then mark. In an RTL context (which the whole page
+  // inherits), flex renders the FIRST child at the start (right in
+  // RTL) so the label sits on the right of the pill and the brand
+  // mark sits at the left/trailing edge -- matches the reference
+  // where "فيزا [VISA]" reads text-then-icon.
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-white ring-1 ring-white/15 backdrop-blur-[2px]">
+      <span className="text-[11px] font-semibold leading-none">{label}</span>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center">
         {mark}
       </span>
-      <span className="text-[11px] font-semibold leading-none">{label}</span>
     </span>
   );
 }
