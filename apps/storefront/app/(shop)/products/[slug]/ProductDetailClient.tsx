@@ -791,19 +791,17 @@ export function ProductDetailClient({ product, productName }: Props) {
             className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3"
             dir="rtl"
           >
-            {/* "Quantity" label sits OUTSIDE the white pill on the
-                far right (RTL start), matching the reference where
-                the label is bare text on the gradient. */}
-            <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
+            {/* Single white-outlined pill holds EVERYTHING now -- the
+                "الكمية" label, the qty control, and both action
+                buttons. `justify-center` clusters them mid-bar instead
+                of pushing to the two edges so the block reads as one
+                unit rather than a split header/footer. `flex-1` lets
+                the pill claim the full bar width; content stays
+                center-aligned inside it. */}
+            <div className="flex flex-1 items-center justify-center gap-5 rounded-2xl border border-white/40 bg-transparent px-4 py-2">
+              {/* Label -- inside the pill now, RTL start */}
+              <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
 
-            {/* ONE big white-outlined pill that holds the quantity
-                control AND both action buttons, per the reference.
-                Was two separate containers before (buttons in their
-                own outlined pill + quantity standalone). Now: quantity
-                pill on the right (RTL start), buttons on the left
-                (RTL end), all inside a single rounded outline. `flex-1`
-                lets the pill claim the remaining bar width. */}
-            <div className="flex flex-1 items-center justify-between gap-3 rounded-2xl border border-white/40 bg-transparent px-3 py-2">
               {/* Quantity control -- inner white pill on the right */}
               <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
                 <button
