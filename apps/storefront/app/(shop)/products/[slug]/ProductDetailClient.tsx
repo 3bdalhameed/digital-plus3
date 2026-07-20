@@ -788,39 +788,23 @@ export function ProductDetailClient({ product, productName }: Props) {
                label INLINE beside the -/1/+ pill (not stacked above). */}
         <div className="hidden border-t border-white/10 bg-gradient-to-r from-[#7C3AED] to-[#9333EA] sm:block">
           <div
-            className="mx-auto flex max-w-[90rem] items-center justify-between gap-3 px-4 py-3"
+            className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3"
             dir="rtl"
           >
-            {/* Buttons container (DOM first in RTL flex-between → visual
-                right); pushed to the LEFT visually via order-2 so
-                quantity claims the right. */}
-            <div className="order-2 flex items-center gap-3 rounded-2xl border border-white/40 bg-transparent p-2">
-              <button
-                onClick={inStock ? handleAdd : undefined}
-                disabled={!inStock}
-                className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
-              >
-                <Zap className={`h-4 w-4 ${inStock ? "text-orange-500" : "text-[#9ca3af]"}`} strokeWidth={2.5} fill="currentColor" />
-                <span>اشتري الآن</span>
-              </button>
-              <button
-                onClick={inStock ? handleAdd : undefined}
-                disabled={!inStock}
-                className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
-              >
-                <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
-                {inStock ? (
-                  <span>{L.addToCart}</span>
-                ) : (
-                  <span dir="ltr">Out of stock</span>
-                )}
-              </button>
-            </div>
+            {/* "Quantity" label sits OUTSIDE the white pill on the
+                far right (RTL start), matching the reference where
+                the label is bare text on the gradient. */}
+            <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
 
-            {/* Quantity — order-1 pins it to the right (RTL start).
-                Label + pill on the same row. */}
-            <div className="order-1 flex shrink-0 items-center gap-2 text-white">
-              <span className="text-sm font-bold opacity-90">الكمية</span>
+            {/* ONE big white-outlined pill that holds the quantity
+                control AND both action buttons, per the reference.
+                Was two separate containers before (buttons in their
+                own outlined pill + quantity standalone). Now: quantity
+                pill on the right (RTL start), buttons on the left
+                (RTL end), all inside a single rounded outline. `flex-1`
+                lets the pill claim the remaining bar width. */}
+            <div className="flex flex-1 items-center justify-between gap-3 rounded-2xl border border-white/40 bg-transparent px-3 py-2">
+              {/* Quantity control -- inner white pill on the right */}
               <div className="flex items-center gap-1 rounded-full bg-white px-1.5 py-1">
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -838,6 +822,30 @@ export function ProductDetailClient({ product, productName }: Props) {
                   aria-label="زائد"
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Buttons -- on the left (RTL end) of the pill */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={inStock ? handleAdd : undefined}
+                  disabled={!inStock}
+                  className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
+                >
+                  <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
+                  {inStock ? (
+                    <span>{L.addToCart}</span>
+                  ) : (
+                    <span dir="ltr">Out of stock</span>
+                  )}
+                </button>
+                <button
+                  onClick={inStock ? handleAdd : undefined}
+                  disabled={!inStock}
+                  className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-base font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] hover:bg-[#FAF5FF] hover:scale-[1.02] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
+                >
+                  <Zap className={`h-4 w-4 ${inStock ? "text-orange-500" : "text-[#9ca3af]"}`} strokeWidth={2.5} fill="currentColor" />
+                  <span>اشتري الآن</span>
                 </button>
               </div>
             </div>
