@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, CartItem, CartState, AppliedDiscount } from "@my-store/types";
+import { useToastStore } from "@/lib/toast-store";
 
 // Debounced server sync so we don't hit the API on every keystroke
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -49,6 +50,12 @@ export const useCartStore = create<CartState>()(
 
         set({ items: next });
         syncCartToServer(next);
+        // Fire the global "Added to cart" toast for any surface that
+        // calls addItem -- product cards, related products carousel,
+        // product-detail sticky bar. Reading the store outside a
+        // React component is fine since we only need to trigger a
+        // side effect, not subscribe.
+        try { useToastStore.getState().cartAdded(); } catch { /* noop during SSR */ }
       },
 
       removeItem: (productId: string) => {

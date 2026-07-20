@@ -57,6 +57,12 @@ export function useDragScroll<T extends HTMLElement>(): RefObject<T> {
       el.classList.add("is-drag-scrolling");
     };
 
+    // Native "drag-image" on <img> children hijacks the pointer as
+    // soon as it moves a few px, killing our scroll drag. Kill it at
+    // the source so the whole rail is grabbable regardless of what
+    // pixel the user clicked on.
+    const onDragStart = (e: DragEvent) => e.preventDefault();
+
     const onMouseMove = (e: MouseEvent) => {
       if (!isDown) return;
       const dx = e.pageX - startX;
@@ -88,6 +94,7 @@ export function useDragScroll<T extends HTMLElement>(): RefObject<T> {
     el.addEventListener("mouseup", endDrag);
     el.addEventListener("mouseleave", endDrag);
     el.addEventListener("click", onClickCapture, true);
+    el.addEventListener("dragstart", onDragStart);
 
     return () => {
       el.removeEventListener("mousedown", onMouseDown);
@@ -95,6 +102,7 @@ export function useDragScroll<T extends HTMLElement>(): RefObject<T> {
       el.removeEventListener("mouseup", endDrag);
       el.removeEventListener("mouseleave", endDrag);
       el.removeEventListener("click", onClickCapture, true);
+      el.removeEventListener("dragstart", onDragStart);
     };
   }, []);
 
