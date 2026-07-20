@@ -436,7 +436,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               cards below. */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white shadow-[0_10px_30px_rgba(124,58,237,0.25)]">
             <div className="mb-3 text-right text-sm font-bold">{L.paymentMethodsTitle}</div>
-            <div className="flex flex-wrap justify-end gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-xs">
               <PaymentPill label={L.payVisa}       mark={<PayVisaMark />} />
               <PaymentPill label={L.payMastercard} mark={<PayMastercardMark />} />
               <PaymentPill label={L.payApplePay}   mark={<PayApplePayMark />} />
