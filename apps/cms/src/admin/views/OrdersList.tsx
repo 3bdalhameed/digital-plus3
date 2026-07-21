@@ -36,6 +36,13 @@ const STATUS: Record<string, { label: string; bg: string; color: string; dot: st
   cancelled: { label: 'ملغي',         bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '❌' },
 };
 
+// Order the status "folders" flow left→right through the lifecycle,
+// with the exception states last. Drives both the count fetch and
+// the filter chip row.
+const ORDERED_STATUSES = [
+  'pending', 'paid', 'in_progress', 'delivered', 'disputed', 'refunded', 'cancelled',
+] as const;
+
 const customerLabel = (c?: CustomerRef): string => {
   if (!c || typeof c === 'string') return '';
   return c.name || c.email || '';
@@ -109,25 +116,33 @@ const OrdersList: React.FC<{
     [history, location.pathname, location.search]
   );
 
-  const [stats, setStats] = useState({ total: 0, pending: 0, paid: 0, delivered: 0, issues: 0, revenue: 0 });
+  // Per-status counts so every filter "folder" can show a live badge.
+  // ORDERED_STATUSES drives both the count fetches and the chip row.
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState({ total: 0, issues: 0, revenue: 0 });
   useEffect(() => {
     const url = `${serverURL}/api/orders`;
+    const statusList = ORDERED_STATUSES;
     Promise.all([
       fetch(`${url}?limit=0&depth=0`, { credentials: 'include' }).then((r) => r.json()),
-      fetch(`${url}?limit=0&depth=0&where[status][equals]=pending`, { credentials: 'include' }).then((r) => r.json()),
-      fetch(`${url}?limit=0&depth=0&where[status][equals]=paid`,    { credentials: 'include' }).then((r) => r.json()),
-      fetch(`${url}?limit=0&depth=0&where[status][equals]=delivered`, { credentials: 'include' }).then((r) => r.json()),
-      fetch(`${url}?limit=200&depth=0&where[status][in][]=disputed&where[status][in][]=refunded&where[status][in][]=cancelled`, { credentials: 'include' }).then((r) => r.json()),
+      ...statusList.map((st) =>
+        fetch(`${url}?limit=0&depth=0&where[status][equals]=${st}`, { credentials: 'include' })
+          .then((r) => r.json())
+          .then((j) => [st, j.totalDocs ?? 0] as [string, number]),
+      ),
       fetch(`${url}?limit=500&depth=0&where[status][in][]=paid&where[status][in][]=delivered`, { credentials: 'include' }).then((r) => r.json()),
     ])
-      .then(([all, pen, p, d, iss, rev]) => {
+      .then((results) => {
+        const all = results[0] as any;
+        const rev = results[results.length - 1] as any;
+        const pairs = results.slice(1, -1) as [string, number][];
+        const byStatus: Record<string, number> = {};
+        for (const [st, c] of pairs) byStatus[st] = c;
         const revenue = (rev.docs || []).reduce((s: number, o: any) => s + (o.totalAmount ?? 0), 0);
+        setCounts(byStatus);
         setStats({
-          total:     all.totalDocs ?? 0,
-          pending:   pen.totalDocs ?? 0,
-          paid:      p.totalDocs ?? 0,
-          delivered: d.totalDocs ?? 0,
-          issues:    iss.totalDocs ?? 0,
+          total:   all.totalDocs ?? 0,
+          issues:  (byStatus.disputed ?? 0) + (byStatus.refunded ?? 0) + (byStatus.cancelled ?? 0),
           revenue,
         });
       })
@@ -155,10 +170,10 @@ const OrdersList: React.FC<{
 
       <div className="pl__stats">
         {[
-          { id: 'all',       label: 'كل الطلبات', count: stats.total,     emoji: '📋', color: '#7C3AED', param: null },
-          { id: 'pending',   label: 'قيد الانتظار', count: stats.pending,   emoji: '🕐', color: '#D97706', param: 'pending' },
-          { id: 'paid',      label: 'مدفوع',        count: stats.paid,      emoji: '✅', color: '#059669', param: 'paid' },
-          { id: 'delivered', label: 'تم التسليم',  count: stats.delivered, emoji: '📦', color: '#7C3AED', param: 'delivered' },
+          { id: 'all',         label: 'كل الطلبات',   count: stats.total,             emoji: '📋', color: '#7C3AED', param: null },
+          { id: 'pending',     label: 'قيد الانتظار', count: counts.pending ?? 0,     emoji: '🕐', color: '#D97706', param: 'pending' },
+          { id: 'in_progress', label: 'قيد التنفيذ',  count: counts.in_progress ?? 0, emoji: '⏳', color: '#4F46E5', param: 'in_progress' },
+          { id: 'delivered',   label: 'تم التسليم',  count: counts.delivered ?? 0,   emoji: '📦', color: '#7C3AED', param: 'delivered' },
         ].map((s) => {
           const active = currentStatusFilter === s.id || (s.id === 'all' && currentStatusFilter === 'all');
           return (
@@ -174,6 +189,41 @@ const OrdersList: React.FC<{
                 <span className="pl__stat-count">{s.count.toLocaleString('en-US')}</span>
                 <span className="pl__stat-label">{s.label}</span>
               </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Status "folders" — one filter chip per status, each with a
+          live count. Clicking filters the list to that status; the
+          active one is highlighted. "الكل" clears the filter. */}
+      <div className="pl__folders">
+        <button
+          type="button"
+          className={`pl__folder ${currentStatusFilter === 'all' ? 'pl__folder--active' : ''}`}
+          onClick={() => updateParam('where[status][equals]', null)}
+        >
+          <span className="pl__folder-label">الكل</span>
+          <span className="pl__folder-count">{stats.total.toLocaleString('en-US')}</span>
+        </button>
+        {ORDERED_STATUSES.map((st) => {
+          const meta = STATUS[st];
+          const active = currentStatusFilter === st;
+          return (
+            <button
+              key={st}
+              type="button"
+              className={`pl__folder ${active ? 'pl__folder--active' : ''}`}
+              onClick={() => updateParam('where[status][equals]', st)}
+              style={{
+                '--folder-bg': meta.bg,
+                '--folder-color': meta.color,
+                '--folder-dot': meta.dot,
+              } as React.CSSProperties}
+            >
+              <span className="pl__folder-emoji" aria-hidden>{meta.emoji}</span>
+              <span className="pl__folder-label">{meta.label}</span>
+              <span className="pl__folder-count">{(counts[st] ?? 0).toLocaleString('en-US')}</span>
             </button>
           );
         })}

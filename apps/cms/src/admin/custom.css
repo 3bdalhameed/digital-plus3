@@ -2410,6 +2410,53 @@ html:not([dir="rtl"]) .collapsible__header-wrap--has-drag-handle {
   color: var(--dp-text-secondary);
 }
 
+/* Status folders — one filter chip per status ─────────────── */
+.pl__folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dp-space-2);
+  margin-bottom: var(--dp-space-3);
+}
+.pl__folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--dp-border-subtle);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dp-text-secondary);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.pl__folder:hover { transform: translateY(-1px); border-color: var(--folder-dot, #c4b5fd); }
+.pl__folder:active { transform: translateY(0); }
+.pl__folder-emoji { font-size: 14px; line-height: 1; }
+.pl__folder-label { line-height: 1; }
+.pl__folder-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--dp-bg-subtle, #f3f4f6);
+  color: var(--dp-text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+/* Active folder adopts its status colour. */
+.pl__folder--active {
+  background: var(--folder-bg, #ede9fe);
+  border-color: var(--folder-color, #7C3AED);
+  color: var(--folder-color, #5B21B6);
+}
+.pl__folder--active .pl__folder-count {
+  background: var(--folder-color, #7C3AED);
+  color: #fff;
+}
+
 /* Search controls ─────────────────────────────────────────── */
 .pl__controls {
   display: flex;
