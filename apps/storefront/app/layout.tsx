@@ -23,7 +23,12 @@ export async function generateMetadata(): Promise<Metadata> {
       if (raw.startsWith("http")) {
         faviconUrl = raw;
       } else {
+        // Prefer PAYLOAD_PUBLIC_SERVER_URL (the browser-reachable
+        // CMS origin) over PAYLOAD_API_URL (potentially an internal
+        // Docker hostname). Otherwise the favicon <link> points at
+        // a URL the visitor's browser can't fetch.
         const cmsOrigin =
+          process.env.PAYLOAD_PUBLIC_SERVER_URL?.replace(/\/$/, "") ||
           process.env.PAYLOAD_API_URL?.replace(/\/api\/?$/, "") ||
           "http://localhost:3001";
         faviconUrl = `${cmsOrigin}${raw}`;
