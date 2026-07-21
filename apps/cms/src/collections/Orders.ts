@@ -237,79 +237,59 @@ export const Orders: CollectionConfig = {
       type: "text",
       admin: { position: "sidebar", readOnly: true },
     },
-    {
-      type: "row",
-      fields: [
-        {
-          name: "totalAmount",
-          label: "المبلغ الإجمالي",
-          type: "number",
-          required: true,
-          // Charged amount is what actually hit the payment gateway --
-          // editing it after the fact wouldn't move money, just make
-          // reporting lie. Read-only.
-          admin: { readOnly: true },
-        },
-        {
-          name: "currency",
-          label: "العملة",
-          type: "select",
-          defaultValue: "USD",
-          options: [
-            { label: "USD", value: "USD" },
-            { label: "JOD", value: "JOD" },
-            { label: "SAR", value: "SAR" },
-            { label: "AED", value: "AED" },
-          ],
-          admin: { readOnly: true },
-        },
-      ],
-    },
-    // Discount snapshot — kept visible + read-only. The amount was
-    // already subtracted from totalAmount at checkout; editing it here
-    // wouldn't reissue anything, just create a disagreement between
-    // stored numbers.
-    {
-      type: "row",
-      fields: [
-        { name: "discountCode",   label: "كود الخصم",     type: "text",   admin: { readOnly: true } },
-        { name: "discountAmount", label: "قيمة الخصم",   type: "number", admin: { readOnly: true } },
-      ],
-    },
     // ── Fields kept in the schema but HIDDEN from the edit form ──
     // These still exist on the DB row and are readable via the API
-    // (support scripts, evidence collection, refunds workflow), they
-    // just don't clutter the admin edit page. `admin.hidden: true`
-    // omits them from the form entirely -- no collapsible section,
-    // no wasted vertical space on a mobile screen.
+    // (support scripts, evidence collection, refunds workflow). They're
+    // now surfaced compactly in the OrderSummaryCards panel at the top
+    // of the page instead of as full form fields, so the edit form
+    // stays short and the numbers are read-only where it counts.
+    //
+    // totalAmount / currency: the charged amount + currency. Shown in
+    //   the summary "الإجمالي" row. Editing wouldn't move money.
+    // discountCode / discountAmount: the discount snapshot. Shown in
+    //   the summary's totals + a small "كود الخصم" chip.
+    // deliveryStatus / deliveredAt: digital-delivery state. Shown as a
+    //   small line in the summary sidebar.
+    {
+      name: "totalAmount",
+      label: "المبلغ الإجمالي",
+      type: "number",
+      required: true,
+      admin: { hidden: true, readOnly: true },
+    },
+    {
+      name: "currency",
+      label: "العملة",
+      type: "select",
+      defaultValue: "USD",
+      options: [
+        { label: "USD", value: "USD" },
+        { label: "JOD", value: "JOD" },
+        { label: "SAR", value: "SAR" },
+        { label: "AED", value: "AED" },
+      ],
+      admin: { hidden: true, readOnly: true },
+    },
+    { name: "discountCode",   label: "كود الخصم",   type: "text",   admin: { hidden: true, readOnly: true } },
+    { name: "discountAmount", label: "قيمة الخصم",  type: "number", admin: { hidden: true, readOnly: true } },
     { name: "paymentReference",       label: "مرجع الدفع",       type: "text",     admin: { hidden: true, readOnly: true } },
     { name: "airwallexPaymentIntentId", label: "Airwallex Intent ID", type: "text", admin: { hidden: true, readOnly: true } },
     { name: "termsAcceptedAt",        label: "وقت القبول",       type: "date",     admin: { hidden: true, readOnly: true } },
     { name: "termsAcceptedIP",        label: "عنوان IP",          type: "text",     admin: { hidden: true, readOnly: true } },
     { name: "termsAcceptedUserAgent", label: "User Agent",          type: "textarea", admin: { hidden: true, readOnly: true } },
     { name: "digitalDeliveryLog",     label: "سجل التسليم",       type: "json",     admin: { hidden: true, readOnly: true } },
-    // Delivery status stays visible but read-only + collapsed at the
-    // bottom -- admins usually care about it, but it's driven by the
-    // storefront's confirm flow rather than being edited by hand here.
     {
-      type: "collapsible",
-      label: "التسليم الرقمي",
-      admin: { initCollapsed: true },
-      fields: [
-        {
-          name: "deliveryStatus",
-          label: "حالة التسليم",
-          type: "select",
-          admin: { readOnly: true },
-          options: [
-            { label: "قيد الانتظار", value: "pending" },
-            { label: "تم الإرسال", value: "sent" },
-            { label: "تم التأكيد", value: "confirmed" },
-          ],
-        },
-        { name: "deliveredAt", label: "تاريخ التسليم", type: "date", admin: { readOnly: true } },
+      name: "deliveryStatus",
+      label: "حالة التسليم",
+      type: "select",
+      admin: { hidden: true, readOnly: true },
+      options: [
+        { label: "قيد الانتظار", value: "pending" },
+        { label: "تم الإرسال", value: "sent" },
+        { label: "تم التأكيد", value: "confirmed" },
       ],
     },
+    { name: "deliveredAt", label: "تاريخ التسليم", type: "date", admin: { hidden: true, readOnly: true } },
   ],
   timestamps: true,
 };

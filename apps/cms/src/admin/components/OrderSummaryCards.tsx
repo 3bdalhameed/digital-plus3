@@ -81,6 +81,18 @@ const OrderSummaryCards: React.FC = () => {
   const currency     = (get("currency") as string) || "USD";
   const createdAt    = get("createdAt") as string | undefined;
   const customerId   = get("customer") as any;
+  // Compact detail fields — pulled from the form (they're hidden as
+  // full fields now) and rendered as small rows in the summary.
+  const discountCode   = (get("discountCode") as string) || "";
+  const contactEmail   = (get("contactEmail") as string) || "";
+  const deliveryStatus = (get("deliveryStatus") as string) || "";
+  const deliveredAt    = get("deliveredAt") as string | undefined;
+
+  const DELIVERY_LABEL: Record<string, string> = {
+    pending:   "قيد الانتظار",
+    sent:      "تم الإرسال",
+    confirmed: "تم التأكيد",
+  };
 
   // ── Resolve relations (customer + product details) via API ──
   const [customer, setCustomer] = useState<any>(null);
@@ -188,7 +200,11 @@ const OrderSummaryCards: React.FC = () => {
               {discount > 0 && (
                 <div className="osc__totals-row">
                   <span className="osc__totals-label">الخصم</span>
-                  <span className="osc__totals-meta">—</span>
+                  <span className="osc__totals-meta">
+                    {discountCode ? (
+                      <span className="osc__code-chip" dir="ltr">{discountCode}</span>
+                    ) : "—"}
+                  </span>
                   <span className="osc__totals-value osc__totals-value--neg">-{fmtMoney(discount, currency)}</span>
                 </div>
               )}
@@ -227,6 +243,9 @@ const OrderSummaryCards: React.FC = () => {
 
                 <div className="osc__side-sub">معلومات التواصل</div>
                 {customer.email && <a className="osc__side-link" href={`mailto:${customer.email}`} dir="ltr">{customer.email}</a>}
+                {contactEmail && contactEmail.toLowerCase() !== (customer.email || "").toLowerCase() && (
+                  <a className="osc__side-link" href={`mailto:${contactEmail}`} dir="ltr">{contactEmail}</a>
+                )}
                 {customer.phone ? (
                   <div dir="ltr" className="osc__side-text">{customer.phone}</div>
                 ) : (
@@ -235,6 +254,35 @@ const OrderSummaryCards: React.FC = () => {
               </div>
             ) : (
               <div className="osc__empty">جاري التحميل…</div>
+            )}
+          </div>
+
+          {/* Compact order details — the fields we removed from the
+              edit form (currency / discount code / delivery state)
+              surfaced here as small read-only rows. */}
+          <div className="osc__card">
+            <div className="osc__side-section-head">تفاصيل الطلب</div>
+            <div className="osc__detail-row">
+              <span className="osc__detail-label">العملة</span>
+              <span className="osc__detail-value" dir="ltr">{currency}</span>
+            </div>
+            {discountCode && (
+              <div className="osc__detail-row">
+                <span className="osc__detail-label">كود الخصم</span>
+                <span className="osc__code-chip" dir="ltr">{discountCode}</span>
+              </div>
+            )}
+            <div className="osc__detail-row">
+              <span className="osc__detail-label">حالة التسليم</span>
+              <span className="osc__detail-value">
+                {deliveryStatus ? (DELIVERY_LABEL[deliveryStatus] ?? deliveryStatus) : "—"}
+              </span>
+            </div>
+            {deliveredAt && (
+              <div className="osc__detail-row">
+                <span className="osc__detail-label">تاريخ التسليم</span>
+                <span className="osc__detail-value">{fmtDate(deliveredAt)}</span>
+              </div>
             )}
           </div>
 
