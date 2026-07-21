@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { getOrder } from "@/lib/payload";
+import { prisma } from "@/lib/prisma";
 import { normalizeEmail } from "@/lib/normalize-email";
 
 /**
@@ -37,11 +39,23 @@ export async function POST(
       return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
     }
 
-    // Ownership check: order.customer.email must match session email.
-    // Both sides normalized so mixed-case doesn't lock a customer out
-    // of confirming their own order.
-    const orderEmail = normalizeEmail((order as any)?.customer?.email);
-    if (!orderEmail || orderEmail !== sessionEmail) {
+    // Ownership check: the order must belong to the signed-in customer.
+    // getOrder() doesn't return the customer email (it's a slim
+    // items-focused view), so we can't just compare `order.customer.email`
+    // -- doing that returned undefined and this endpoint 403'd every
+    // legit "confirm order" click. Query orders_rels directly against
+    // the session email instead: one round trip, indexed lookup.
+    const orderId = Number(params.id);
+    const ownerRows = await prisma.$queryRaw<{ ok: number }[]>(Prisma.sql`
+      SELECT 1 AS ok
+        FROM orders_rels r
+        JOIN customers c ON c.id = r.customers_id
+       WHERE r.parent_id = ${orderId}
+         AND r.path = 'customer'
+         AND lower(c.email) = lower(${sessionEmail})
+       LIMIT 1
+    `);
+    if (ownerRows.length === 0) {
       return NextResponse.json({ error: "لا يمكنك تعديل هذا الطلب" }, { status: 403 });
     }
 
