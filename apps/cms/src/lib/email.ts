@@ -3,8 +3,6 @@ const STATUS_AR: Record<string, string> = {
   paid:        "مدفوع",
   in_progress: "قيد التنفيذ",
   delivered:   "تم التسليم",
-  disputed:    "متنازع عليه",
-  refunded:    "مسترد",
   cancelled:   "ملغي",
 };
 
@@ -13,8 +11,6 @@ const STATUS_ICON: Record<string, string> = {
   paid:        "✅",
   in_progress: "⏳",
   delivered:   "📦",
-  disputed:    "⚠️",
-  refunded:    "🔄",
   cancelled:   "❌",
 };
 
@@ -23,8 +19,6 @@ const STATUS_COLOR: Record<string, string> = {
   paid:        "#10b981",
   in_progress: "#4f46e5",
   delivered:   "#7C3AED",
-  disputed:    "#ef4444",
-  refunded:    "#6b7280",
   cancelled:   "#ef4444",
 };
 
@@ -65,8 +59,6 @@ const DEFAULT_MESSAGES: Record<string, string> = {
   in_progress: "طلبك قيد التنفيذ الآن، وسنعلمك فور اكتماله.",
   delivered:   "تم تسليم طلبك. نتمنى أن تستمتع بمشترياتك!",
   cancelled:   "تم إلغاء طلبك. تواصل معنا إذا كان لديك أي استفسار.",
-  refunded:    "تم استرداد مبلغ طلبك. سيصلك المبلغ خلال 3-5 أيام عمل.",
-  disputed:    "تم تسجيل نزاع على طلبك. سيتواصل معك فريق الدعم قريباً.",
 };
 
 /** Substitute {name} {orderNumber} {status} {oldStatus} {icon} in a
@@ -134,8 +126,6 @@ export async function sendOrderStatusChangeEmail({
     in_progress: tpl.msgInProgress,
     delivered:   tpl.msgDelivered,
     cancelled:   tpl.msgCancelled,
-    refunded:    tpl.msgRefunded,
-    disputed:    tpl.msgDisputed,
   };
   const rawMessage =
     (cmsMsgKey[newStatus]?.trim()) ||

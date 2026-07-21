@@ -88,8 +88,6 @@ export function getOrderStatusLabel(status: string, isEn = false): string {
     paid: "مدفوع",
     in_progress: "قيد التنفيذ",
     delivered: "تم التسليم",
-    disputed: "متنازع عليه",
-    refunded: "مسترد",
     cancelled: "ملغي",
   };
   const en: Record<string, string> = {
@@ -97,8 +95,6 @@ export function getOrderStatusLabel(status: string, isEn = false): string {
     paid: "Paid",
     in_progress: "In progress",
     delivered: "Delivered",
-    disputed: "Disputed",
-    refunded: "Refunded",
     cancelled: "Cancelled",
   };
   return (isEn ? en[status] : ar[status]) || status;
@@ -111,8 +107,6 @@ export function getOrderStatusColor(status: string): string {
     paid: "bg-blue-100 text-blue-800",
     in_progress: "bg-indigo-100 text-indigo-800",
     delivered: "bg-green-100 text-green-800",
-    disputed: "bg-red-100 text-red-800",
-    refunded: "bg-gray-100 text-gray-800",
     cancelled: "bg-gray-100 text-gray-600",
   };
   return map[status] || "bg-gray-100 text-gray-800";

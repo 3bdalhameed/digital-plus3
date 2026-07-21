@@ -71,8 +71,6 @@ export const EmailTemplates: GlobalConfig = {
         { name: "msgInProgress", label: "قيد التنفيذ",  type: "textarea" },
         { name: "msgDelivered",  label: "تم التسليم",   type: "textarea" },
         { name: "msgCancelled",  label: "ملغي",          type: "textarea" },
-        { name: "msgRefunded",   label: "مسترد",         type: "textarea" },
-        { name: "msgDisputed",   label: "متنازع عليه",  type: "textarea" },
         {
           name: "msgDefault",
           label: "نص افتراضي (لأي حالة أخرى)",

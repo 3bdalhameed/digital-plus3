@@ -16,9 +16,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
   paid:        { bg: "#DCFCE7", color: "#166534", label: "مدفوع" },
   in_progress: { bg: "#E0E7FF", color: "#3730A3", label: "قيد التنفيذ" },
   delivered:   { bg: "#EDE9FE", color: "#5B21B6", label: "تم التسليم" },
-  disputed:  { bg: "#FEE2E2", color: "#991B1B", label: "متنازع عليه" },
-  refunded:  { bg: "#F3F4F6", color: "#374151", label: "مسترد" },
-  cancelled: { bg: "#FEE2E2", color: "#991B1B", label: "ملغي" },
+  cancelled:   { bg: "#FEE2E2", color: "#991B1B", label: "ملغي" },
 };
 
 const fmtMoney = (n?: number | null, currency?: string | null) => {

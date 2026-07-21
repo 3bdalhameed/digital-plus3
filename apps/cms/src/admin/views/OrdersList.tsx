@@ -9,7 +9,7 @@ type Order = {
   id: string;
   orderNumber?: string;
   customer?: CustomerRef;
-  status?: 'pending' | 'paid' | 'in_progress' | 'delivered' | 'disputed' | 'refunded' | 'cancelled';
+  status?: 'pending' | 'paid' | 'in_progress' | 'delivered' | 'cancelled';
   confirmedBy?: 'customer' | 'auto' | 'admin' | null;
   totalAmount?: number;
   currency?: string;
@@ -31,16 +31,14 @@ const STATUS: Record<string, { label: string; bg: string; color: string; dot: st
   paid:        { label: 'مدفوع',        bg: '#DCFCE7', color: '#166534', dot: '#10B981', emoji: '✅' },
   in_progress: { label: 'قيد التنفيذ',  bg: '#E0E7FF', color: '#3730A3', dot: '#4F46E5', emoji: '⏳' },
   delivered:   { label: 'تم التسليم',  bg: '#EDE9FE', color: '#5B21B6', dot: '#7C3AED', emoji: '📦' },
-  disputed:  { label: 'متنازع عليه', bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '⚠️' },
-  refunded:  { label: 'مسترد',        bg: '#F1F5F9', color: '#475569', dot: '#64748B', emoji: '🔄' },
-  cancelled: { label: 'ملغي',         bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '❌' },
+  cancelled:   { label: 'ملغي',         bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '❌' },
 };
 
 // Order the status "folders" flow left→right through the lifecycle,
-// with the exception states last. Drives both the count fetch and
-// the filter chip row.
+// with cancelled last. Drives both the count fetch and the filter
+// chip row.
 const ORDERED_STATUSES = [
-  'pending', 'paid', 'in_progress', 'delivered', 'disputed', 'refunded', 'cancelled',
+  'pending', 'paid', 'in_progress', 'delivered', 'cancelled',
 ] as const;
 
 const customerLabel = (c?: CustomerRef): string => {
@@ -142,7 +140,7 @@ const OrdersList: React.FC<{
         setCounts(byStatus);
         setStats({
           total:   all.totalDocs ?? 0,
-          issues:  (byStatus.disputed ?? 0) + (byStatus.refunded ?? 0) + (byStatus.cancelled ?? 0),
+          issues:  byStatus.cancelled ?? 0,
           revenue,
         });
       })
@@ -245,11 +243,11 @@ const OrdersList: React.FC<{
             <button
               type="button"
               className="pl__highlight pl__highlight--warning"
-              onClick={() => updateParam('where[status][in]', 'disputed,refunded,cancelled')}
+              onClick={() => updateParam('where[status][equals]', 'cancelled')}
             >
               <span className="pl__highlight-icon" aria-hidden>⚠️</span>
               <div className="pl__highlight-text">
-                <span className="pl__highlight-label">طلبات تحتاج مراجعة</span>
+                <span className="pl__highlight-label">طلبات ملغاة</span>
                 <span className="pl__highlight-value">{stats.issues.toLocaleString('en-US')}</span>
               </div>
             </button>

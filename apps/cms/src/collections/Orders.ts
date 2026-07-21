@@ -211,8 +211,6 @@ export const Orders: CollectionConfig = {
         { label: "مدفوع", value: "paid" },
         { label: "قيد التنفيذ", value: "in_progress" },
         { label: "تم التسليم", value: "delivered" },
-        { label: "متنازع عليه", value: "disputed" },
-        { label: "مسترد", value: "refunded" },
         { label: "ملغي", value: "cancelled" },
       ],
       admin: { position: "sidebar" },

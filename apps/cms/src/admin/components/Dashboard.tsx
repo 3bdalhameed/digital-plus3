@@ -16,12 +16,11 @@ const C = {
 
 /* ─── Status badge config ─── */
 const STATUS: Record<string, { bg: string; color: string; label: string; icon: string }> = {
-  pending:   { bg: C.amberPale, color: C.amberDark, label: 'قيد الانتظار', icon: '🕐' },
-  paid:      { bg: C.greenPale, color: C.greenDark,  label: 'مدفوع',        icon: '✅' },
-  delivered: { bg: C.purplePale,color: C.purpleDeep, label: 'تم التسليم',  icon: '📦' },
-  disputed:  { bg: C.redPale,   color: C.redDark,    label: 'متنازع عليه', icon: '⚠️' },
-  refunded:  { bg: '#F3F4F6',   color: '#374151',    label: 'مسترد',        icon: '🔄' },
-  cancelled: { bg: C.redPale,   color: C.redDark,    label: 'ملغي',         icon: '❌' },
+  pending:     { bg: C.amberPale, color: C.amberDark,  label: 'قيد الانتظار', icon: '🕐' },
+  paid:        { bg: C.greenPale, color: C.greenDark,  label: 'مدفوع',        icon: '✅' },
+  in_progress: { bg: '#E0E7FF',   color: '#3730A3',    label: 'قيد التنفيذ',  icon: '⏳' },
+  delivered:   { bg: C.purplePale,color: C.purpleDeep, label: 'تم التسليم',  icon: '📦' },
+  cancelled:   { bg: C.redPale,   color: C.redDark,    label: 'ملغي',         icon: '❌' },
 }
 
 /* ─── Tiny helpers ─── */
@@ -142,11 +141,11 @@ const Dashboard: React.FC = () => {
         j(`${base}/customers?limit=0&depth=0`),
         j(`${base}/products?limit=0&depth=0`),
         j(`${base}/support-tickets?limit=0&depth=0&where[status][not_equals]=resolved`),
-        j(`${base}/orders?limit=10&depth=0&where[status][in][]=disputed&where[status][in][]=pending&sort=-createdAt`),
+        j(`${base}/orders?limit=10&depth=0&where[status][equals]=pending&sort=-createdAt`),
       ])
       if (cancelled) return
 
-      const pendingList = (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending' || o.status === 'disputed')
+      const pendingList = (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending')
       const nextStats: Stats = {
         orders:       recentOrders.totalDocs ?? 0,
         customers:    customers.totalDocs ?? 0,
@@ -158,7 +157,7 @@ const Dashboard: React.FC = () => {
         // Stats shape but always 0; we'll wire a server-side sum later.
         revenue: 0,
         pendingCount: (dispOrders.docs ?? []).filter((o: any) => o.status === 'pending').length,
-        disputedCount:(dispOrders.docs ?? []).filter((o: any) => o.status === 'disputed').length,
+        disputedCount: 0,
       }
       const mapOrder = (o: any): Order => ({
         id: o.id, orderNumber: o.orderNumber ?? `#${String(o.id).slice(0,8)}`,
@@ -211,8 +210,8 @@ const Dashboard: React.FC = () => {
         <div style={{ fontSize:60, opacity:0.88, position:'relative', zIndex:1, filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.25))' }}>📊</div>
       </div>
 
-      {/* ══ Alerts (pending / disputed) ══ */}
-      {!loading && (stats.pendingCount > 0 || stats.disputedCount > 0) && (
+      {/* ══ Alerts (pending) ══ */}
+      {!loading && stats.pendingCount > 0 && (
         <div style={{
           background:'#FFFBEB', border:'1.5px solid #FDE68A', borderRadius:12,
           padding:'12px 20px', marginBottom:20, display:'flex', alignItems:'center', gap:12,
@@ -221,7 +220,7 @@ const Dashboard: React.FC = () => {
           <span style={{ fontSize:22 }}>⚠️</span>
           <div style={{ textAlign:'right' }}>
             <span style={{ fontWeight:700, color:'#92400E', fontSize:14 }}>
-              تنبيه: لديك{stats.pendingCount > 0 ? ` ${stats.pendingCount} طلب قيد الانتظار` : ''}{stats.pendingCount > 0 && stats.disputedCount > 0 ? ' و' : ''}{stats.disputedCount > 0 ? ` ${stats.disputedCount} طلب متنازع عليه` : ''}
+              تنبيه: لديك {stats.pendingCount} طلب قيد الانتظار
             </span>
           </div>
           <a href="/admin/collections/orders" style={{ marginInlineStart:'auto', background:'#FDE68A', color:'#92400E', padding:'5px 14px', borderRadius:7, fontSize:12, fontWeight:700, textDecoration:'none' }}>
@@ -317,7 +316,7 @@ const Dashboard: React.FC = () => {
 
         {/* ── Needs Attention ── */}
         <Card>
-          <SectionHeader title="⚠️ تحتاج إجراء" link="/admin/collections/orders?where[status][in][]=pending&where[status][in][]=disputed" linkLabel="عرض الكل" />
+          <SectionHeader title="⚠️ تحتاج إجراء" link="/admin/collections/orders?where[status][equals]=pending" linkLabel="عرض الكل" />
           {loading ? (
             [1,2,3].map(i => (
               <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'13px 24px', borderBottom:`1px solid ${C.border}`, gap:12 }}>
