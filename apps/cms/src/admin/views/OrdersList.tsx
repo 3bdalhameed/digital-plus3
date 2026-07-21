@@ -9,7 +9,7 @@ type Order = {
   id: string;
   orderNumber?: string;
   customer?: CustomerRef;
-  status?: 'pending' | 'paid' | 'delivered' | 'disputed' | 'refunded' | 'cancelled';
+  status?: 'pending' | 'paid' | 'in_progress' | 'delivered' | 'disputed' | 'refunded' | 'cancelled';
   confirmedBy?: 'customer' | 'auto' | 'admin' | null;
   totalAmount?: number;
   currency?: string;
@@ -27,9 +27,10 @@ const CONFIRMED_BY: Record<string, { label: string; bg: string; color: string; e
 };
 
 const STATUS: Record<string, { label: string; bg: string; color: string; dot: string; emoji: string }> = {
-  pending:   { label: 'قيد الانتظار', bg: '#FEF3C7', color: '#854D0E', dot: '#D97706', emoji: '🕐' },
-  paid:      { label: 'مدفوع',        bg: '#DCFCE7', color: '#166534', dot: '#10B981', emoji: '✅' },
-  delivered: { label: 'تم التسليم',  bg: '#EDE9FE', color: '#5B21B6', dot: '#7C3AED', emoji: '📦' },
+  pending:     { label: 'قيد الانتظار', bg: '#FEF3C7', color: '#854D0E', dot: '#D97706', emoji: '🕐' },
+  paid:        { label: 'مدفوع',        bg: '#DCFCE7', color: '#166534', dot: '#10B981', emoji: '✅' },
+  in_progress: { label: 'قيد التنفيذ',  bg: '#E0E7FF', color: '#3730A3', dot: '#4F46E5', emoji: '⏳' },
+  delivered:   { label: 'تم التسليم',  bg: '#EDE9FE', color: '#5B21B6', dot: '#7C3AED', emoji: '📦' },
   disputed:  { label: 'متنازع عليه', bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '⚠️' },
   refunded:  { label: 'مسترد',        bg: '#F1F5F9', color: '#475569', dot: '#64748B', emoji: '🔄' },
   cancelled: { label: 'ملغي',         bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626', emoji: '❌' },

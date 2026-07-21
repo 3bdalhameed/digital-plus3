@@ -30,6 +30,7 @@ import { Settings } from "./globals/Settings";
 import { NavbarConfig } from "./globals/NavbarConfig";
 import { FooterConfig } from "./globals/FooterConfig";
 import { PoliciesContent } from "./globals/PoliciesContent";
+import { EmailTemplates } from "./globals/EmailTemplates";
 
 dotenv.config();
 
@@ -328,7 +329,7 @@ export default buildConfig({
     DiscountCodes,
   ],
 
-  globals: [HomePage, Settings, NavbarConfig, FooterConfig, PoliciesContent],
+  globals: [HomePage, Settings, NavbarConfig, FooterConfig, PoliciesContent, EmailTemplates],
 
   cors: [process.env.STOREFRONT_URL || "http://localhost:3000"],
   csrf: [process.env.STOREFRONT_URL || "http://localhost:3000"],
@@ -368,6 +369,44 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "orders_confirmed_by_col",
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmed_by VARCHAR"
   );
+  // Orders: new "in_progress" (قيد التنفيذ) status between paid and
+  // delivered, for when the team is actively fulfilling the order.
+  // ALTER TYPE ADD VALUE IF NOT EXISTS is idempotent + auto-commits
+  // (run() doesn't wrap in a tx, so the new value is usable right away).
+  await run(
+    "orders_status_in_progress",
+    `ALTER TYPE enum_orders_status ADD VALUE IF NOT EXISTS 'in_progress'`
+  );
+  // Orders: optional secondary contact email the customer can add at
+  // checkout so support can reach them somewhere other than their
+  // account email.
+  await run(
+    "orders_contact_email_col",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_email VARCHAR"
+  );
+
+  // Email Templates global — Payload runs with push:false so the table
+  // for a brand-new global has to be created by hand. Single-row table
+  // (Payload globals are one row); every content column is nullable so
+  // the email module can fall back to hardcoded defaults when blank.
+  await run("email_templates_table", `
+    CREATE TABLE IF NOT EXISTS email_templates (
+      id SERIAL PRIMARY KEY,
+      order_status_subject VARCHAR,
+      order_status_header_title VARCHAR,
+      order_status_footer VARCHAR,
+      order_status_cta_label VARCHAR,
+      msg_paid TEXT,
+      msg_in_progress TEXT,
+      msg_delivered TEXT,
+      msg_cancelled TEXT,
+      msg_refunded TEXT,
+      msg_disputed TEXT,
+      msg_default TEXT,
+      updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL,
+      created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT now() NOT NULL
+    )
+  `);
 
   // ── Email case-normalization (one-time; idempotent) ───────────────
   // Every write path in the storefront was inconsistent about the case

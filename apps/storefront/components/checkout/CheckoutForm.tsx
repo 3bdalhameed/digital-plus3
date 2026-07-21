@@ -53,6 +53,10 @@ export function CheckoutForm() {
     dontClose:       isEn ? "Please don't close this page." : "يرجى عدم إغلاق هذه الصفحة",
     mustAcceptTerms: isEn ? "You must accept the Terms & Conditions" : "يجب الموافقة على الشروط والأحكام",
     pageTitle:       isEn ? "Checkout"                : "إتمام الشراء",
+    contactEmailLabel: isEn ? "Additional contact email (optional)" : "بريد إلكتروني إضافي للتواصل (اختياري)",
+    contactEmailPh:    isEn ? "you@example.com"       : "you@example.com",
+    contactEmailHint:  isEn ? "We'll use it to reach you about this order if needed." : "سنستخدمه للتواصل معك بخصوص هذا الطلب عند الحاجة.",
+    invalidContactEmail: isEn ? "Please enter a valid email or leave it empty." : "يرجى إدخال بريد صحيح أو تركه فارغاً.",
   };
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -60,6 +64,9 @@ export function CheckoutForm() {
   const [error, setError] = useState<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("test");
   const [contactPhone, setContactPhone] = useState("");
+  // Optional secondary email for support to reach the customer at,
+  // independent of the payment method. Stored on the order.
+  const [contactEmail, setContactEmail] = useState("");
 
   // Guest-checkout state. Only used when there's no NextAuth session.
   // Once `guestToken` is set the user is treated as "verified" and can
@@ -144,6 +151,12 @@ export function CheckoutForm() {
       setError("يرجى إدخال رقم التواصل");
       return;
     }
+    // Secondary email is optional, but if provided it must look valid.
+    const trimmedContactEmail = contactEmail.trim();
+    if (trimmedContactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedContactEmail)) {
+      setError(L.invalidContactEmail);
+      return;
+    }
 
     // Fire-and-forget evidence log — terms acceptance now happens on
     // the same step as payment confirmation, so log it here just
@@ -182,6 +195,10 @@ export function CheckoutForm() {
     if (appliedDiscount) {
       commonBody.discountCode   = appliedDiscount.code;
       commonBody.discountAmount = Number(appliedDiscount.amount);
+    }
+    // Optional secondary contact email → stored on the order.
+    if (trimmedContactEmail) {
+      commonBody.contactEmail = trimmedContactEmail;
     }
     // Guests attach the token they got from /api/auth/otp/verify. The
     // server checks NextAuth session first and falls through to this.
@@ -567,6 +584,26 @@ export function CheckoutForm() {
               </p>
             </div>
           )}
+
+          {/* Optional secondary contact email — always shown, not tied
+              to a payment method. Stored on the order so support (and
+              the status-change email) can reach the customer here too. */}
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-medium text-brand-800">
+              {L.contactEmailLabel}
+            </label>
+            <input
+              type="email"
+              dir="ltr"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder={L.contactEmailPh}
+              className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {L.contactEmailHint}
+            </p>
+          </div>
 
           {/* Terms acceptance — inline. Was a separate step before the
               2-step collapse; keeping the same checkbox + phrasing +

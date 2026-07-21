@@ -1,28 +1,31 @@
 const STATUS_AR: Record<string, string> = {
-  pending:   "قيد الانتظار",
-  paid:      "مدفوع",
-  delivered: "تم التسليم",
-  disputed:  "متنازع عليه",
-  refunded:  "مسترد",
-  cancelled:  "ملغي",
+  pending:     "قيد الانتظار",
+  paid:        "مدفوع",
+  in_progress: "قيد التنفيذ",
+  delivered:   "تم التسليم",
+  disputed:    "متنازع عليه",
+  refunded:    "مسترد",
+  cancelled:   "ملغي",
 };
 
 const STATUS_ICON: Record<string, string> = {
-  pending:   "🕐",
-  paid:      "✅",
-  delivered: "📦",
-  disputed:  "⚠️",
-  refunded:  "🔄",
-  cancelled:  "❌",
+  pending:     "🕐",
+  paid:        "✅",
+  in_progress: "⏳",
+  delivered:   "📦",
+  disputed:    "⚠️",
+  refunded:    "🔄",
+  cancelled:   "❌",
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending:   "#f59e0b",
-  paid:      "#10b981",
-  delivered: "#7C3AED",
-  disputed:  "#ef4444",
-  refunded:  "#6b7280",
-  cancelled:  "#ef4444",
+  pending:     "#f59e0b",
+  paid:        "#10b981",
+  in_progress: "#4f46e5",
+  delivered:   "#7C3AED",
+  disputed:    "#ef4444",
+  refunded:    "#6b7280",
+  cancelled:   "#ef4444",
 };
 
 async function sendViaResend(opts: {
@@ -55,6 +58,31 @@ async function sendViaResend(opts: {
   }
 }
 
+/** Default customer-facing message per status (used when the CMS
+ *  Email Templates global leaves the field blank). */
+const DEFAULT_MESSAGES: Record<string, string> = {
+  paid:        "تم استلام دفعتك بنجاح! سيتم تسليم طلبك قريباً.",
+  in_progress: "طلبك قيد التنفيذ الآن، وسنعلمك فور اكتماله.",
+  delivered:   "تم تسليم طلبك. نتمنى أن تستمتع بمشترياتك!",
+  cancelled:   "تم إلغاء طلبك. تواصل معنا إذا كان لديك أي استفسار.",
+  refunded:    "تم استرداد مبلغ طلبك. سيصلك المبلغ خلال 3-5 أيام عمل.",
+  disputed:    "تم تسجيل نزاع على طلبك. سيتواصل معك فريق الدعم قريباً.",
+};
+
+/** Substitute {name} {orderNumber} {status} {oldStatus} {icon} in a
+ *  CMS-authored template string. */
+function fillTemplate(
+  tpl: string,
+  vars: { name: string; orderNumber: string; status: string; oldStatus: string; icon: string },
+): string {
+  return tpl
+    .replace(/\{name\}/g, vars.name)
+    .replace(/\{orderNumber\}/g, vars.orderNumber)
+    .replace(/\{status\}/g, vars.status)
+    .replace(/\{oldStatus\}/g, vars.oldStatus)
+    .replace(/\{icon\}/g, vars.icon);
+}
+
 export async function sendOrderStatusChangeEmail({
   customerEmail,
   customerName,
@@ -63,6 +91,7 @@ export async function sendOrderStatusChangeEmail({
   newStatus,
   orderId,
   payload,
+  contactEmail,
 }: {
   customerEmail: string;
   customerName: string;
@@ -71,6 +100,9 @@ export async function sendOrderStatusChangeEmail({
   newStatus: string;
   orderId: string | number;
   payload: any;
+  /** Optional secondary email the customer added at checkout. Gets a
+   *  copy of the customer notification alongside their account email. */
+  contactEmail?: string | null;
 }): Promise<void> {
   const storeUrl  = process.env.STOREFRONT_URL || "http://localhost:3000";
   const cmsUrl    = process.env.PAYLOAD_PUBLIC_SERVER_URL || "http://localhost:3001";
@@ -78,6 +110,44 @@ export async function sendOrderStatusChangeEmail({
   const icon      = STATUS_ICON[newStatus] ?? "📋";
   const color     = STATUS_COLOR[newStatus] ?? "#7C3AED";
   const oldLabel  = STATUS_AR[oldStatus] ?? oldStatus;
+
+  // Pull editable copy from the CMS Email Templates global. Every
+  // field is optional -- fall back to the hardcoded defaults below
+  // when blank so a fresh install still sends complete emails.
+  let tpl: any = {};
+  try {
+    tpl = (await payload.findGlobal({ slug: "email-templates", overrideAccess: true })) ?? {};
+  } catch (e) {
+    console.error("[email] failed to load email-templates global:", e);
+  }
+
+  const vars = { name: customerName, orderNumber, status: label, oldStatus: oldLabel, icon };
+
+  const headerTitle = tpl.orderStatusHeaderTitle?.trim() || "تحديث حالة طلبك";
+  const footerText  = tpl.orderStatusFooter?.trim() || "فريق الدعم جاهز لمساعدتك على مدار الساعة";
+  const ctaLabel    = tpl.orderStatusCtaLabel?.trim() || "عرض تفاصيل الطلب";
+
+  // Per-status message: CMS override wins, else built-in default, else
+  // a generic line.
+  const cmsMsgKey: Record<string, string | undefined> = {
+    paid:        tpl.msgPaid,
+    in_progress: tpl.msgInProgress,
+    delivered:   tpl.msgDelivered,
+    cancelled:   tpl.msgCancelled,
+    refunded:    tpl.msgRefunded,
+    disputed:    tpl.msgDisputed,
+  };
+  const rawMessage =
+    (cmsMsgKey[newStatus]?.trim()) ||
+    (tpl.msgDefault?.trim()) ||
+    DEFAULT_MESSAGES[newStatus] ||
+    "تم تحديث حالة طلبك.";
+  const message = fillTemplate(rawMessage, vars);
+
+  const subject =
+    (tpl.orderStatusSubject?.trim()
+      ? fillTemplate(tpl.orderStatusSubject.trim(), vars)
+      : `${icon} تحديث طلبك ${orderNumber} — ${label}`);
 
   // ── Customer email ────────────────────────────────────────────────────────
   const customerHtml = `
@@ -89,7 +159,7 @@ export async function sendOrderStatusChangeEmail({
 
     <div style="background:linear-gradient(135deg,#7C3AED,#A855F7);padding:28px 32px;text-align:center;">
       <div style="font-size:40px;margin-bottom:8px;">${icon}</div>
-      <h1 style="color:white;margin:0;font-size:20px;font-weight:700;">تحديث حالة طلبك</h1>
+      <h1 style="color:white;margin:0;font-size:20px;font-weight:700;">${headerTitle}</h1>
       <p style="color:#EDE9FE;margin:8px 0 0;font-size:14px;">مرحباً ${customerName}</p>
     </div>
 
@@ -106,32 +176,34 @@ export async function sendOrderStatusChangeEmail({
       </div>
 
       <p style="color:#4b5563;font-size:14px;text-align:center;margin:0 0 28px;">
-        ${newStatus === "paid"      ? "تم استلام دفعتك بنجاح! سيتم تسليم طلبك قريباً." :
-          newStatus === "delivered" ? "تم تسليم طلبك. نتمنى أن تستمتع بمشترياتك!" :
-          newStatus === "cancelled" ? "تم إلغاء طلبك. تواصل معنا إذا كان لديك أي استفسار." :
-          newStatus === "refunded"  ? "تم استرداد مبلغ طلبك. سيصلك المبلغ خلال 3-5 أيام عمل." :
-          newStatus === "disputed"  ? "تم تسجيل نزاع على طلبك. سيتواصل معك فريق الدعم قريباً." :
-          "تم تحديث حالة طلبك."}
+        ${message}
       </p>
 
       <div style="text-align:center;">
         <a href="${storeUrl}/orders"
            style="display:inline-block;background:linear-gradient(135deg,#7C3AED,#A855F7);color:white;text-decoration:none;padding:13px 32px;border-radius:12px;font-weight:700;font-size:15px;">
-          عرض تفاصيل الطلب
+          ${ctaLabel}
         </a>
       </div>
     </div>
 
     <div style="background:#F3F0FF;padding:18px 32px;text-align:center;">
-      <p style="color:#6D28D9;margin:0;font-size:13px;">فريق الدعم جاهز لمساعدتك على مدار الساعة</p>
+      <p style="color:#6D28D9;margin:0;font-size:13px;">${footerText}</p>
     </div>
   </div>
 </body>
 </html>`;
 
+  // Send to the account email plus the optional secondary contact
+  // email, deduped + normalized.
+  const recipients = [...new Set(
+    [customerEmail, contactEmail]
+      .map((e) => e?.trim().toLowerCase())
+      .filter((e): e is string => !!e && e.includes("@")),
+  )];
   await sendViaResend({
-    to: customerEmail,
-    subject: `${icon} تحديث طلبك ${orderNumber} — ${label}`,
+    to: recipients.length ? recipients : customerEmail,
+    subject,
     html: customerHtml,
   });
 

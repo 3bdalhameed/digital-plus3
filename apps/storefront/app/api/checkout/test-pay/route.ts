@@ -37,6 +37,7 @@ const schema = z.object({
   guestName:      z.string().max(120).optional(),
   discountCode:   z.string().max(64).optional(),
   discountAmount: z.coerce.number().min(0).optional(),
+  contactEmail:   z.string().email().max(160).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { items, currency, guestToken, guestName, discountCode } = parsed.data;
+    const { items, currency, guestToken, guestName, discountCode, contactEmail } = parsed.data;
     // Server recomputes the subtotal from the line items -- the client's
     // totalAmount is ignored so a tampered `discountAmount: 999999`
     // request can't undercharge.
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
       customerEmail: identity.customerEmail,
       customerName:  identity.customerName,
       discountCode,
+      contactEmail,
       items: items.map((i) => ({
         productId: i.productId,
         quantity:  i.quantity,

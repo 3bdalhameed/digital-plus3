@@ -240,6 +240,10 @@ export async function createOrderForCustomer(input: {
    *  expired codes are treated as "no discount" (the order still goes
    *  through) so a stale client cache doesn't 500 the whole checkout. */
   discountCode?:     string;
+  /** Optional secondary contact email the customer entered at checkout.
+   *  Stored on the order so support + the status-change email can reach
+   *  them here too. Not validated for ownership -- it's just a contact. */
+  contactEmail?:     string;
 }): Promise<{ orderId: number; customerId: number; totalAmount: number; discountAmount: number; discountCode: string | null }> {
   const now = new Date().toISOString();
   return prismaOrders.$transaction(async (tx) => {
@@ -268,6 +272,7 @@ export async function createOrderForCustomer(input: {
           order_number, status, total_amount, currency,
           payment_reference,
           discount_code, discount_amount,
+          contact_email,
           terms_accepted_at, terms_accepted_i_p, terms_accepted_user_agent,
           updated_at, created_at
         )
@@ -279,6 +284,7 @@ export async function createOrderForCustomer(input: {
           ${input.paymentReference ?? null},
           ${discountResult.code ?? null},
           ${discountResult.amount || null},
+          ${input.contactEmail?.trim().toLowerCase() || null},
           ${now}::timestamptz,
           ${input.ip},
           ${input.userAgent},

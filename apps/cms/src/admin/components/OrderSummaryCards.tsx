@@ -12,9 +12,10 @@ import { useFormFields } from "payload/components/forms";
    ──────────────────────────────────────────────────────────── */
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  pending:   { bg: "#FEF3C7", color: "#854D0E", label: "قيد الانتظار" },
-  paid:      { bg: "#DCFCE7", color: "#166534", label: "مدفوع" },
-  delivered: { bg: "#EDE9FE", color: "#5B21B6", label: "تم التسليم" },
+  pending:     { bg: "#FEF3C7", color: "#854D0E", label: "قيد الانتظار" },
+  paid:        { bg: "#DCFCE7", color: "#166534", label: "مدفوع" },
+  in_progress: { bg: "#E0E7FF", color: "#3730A3", label: "قيد التنفيذ" },
+  delivered:   { bg: "#EDE9FE", color: "#5B21B6", label: "تم التسليم" },
   disputed:  { bg: "#FEE2E2", color: "#991B1B", label: "متنازع عليه" },
   refunded:  { bg: "#F3F4F6", color: "#374151", label: "مسترد" },
   cancelled: { bg: "#FEE2E2", color: "#991B1B", label: "ملغي" },

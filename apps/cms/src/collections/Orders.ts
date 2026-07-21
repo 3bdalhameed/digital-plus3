@@ -97,6 +97,7 @@ export const Orders: CollectionConfig = {
             newStatus: doc.status,
             orderId: doc.id,
             payload: req.payload,
+            contactEmail: doc.contactEmail ?? null,
           });
         } catch (e) {
           console.error("[order status email] failed:", e);
@@ -135,6 +136,19 @@ export const Orders: CollectionConfig = {
       // history + review eligibility. Support can still see who it
       // belongs to; they just can't rewire it from this screen.
       admin: { readOnly: true },
+    },
+    {
+      // Optional secondary email the customer entered at checkout so
+      // support can reach them somewhere other than their account
+      // email. Read-only here -- it's the customer's input, not an
+      // admin-managed field.
+      name: "contactEmail",
+      label: "بريد تواصل إضافي",
+      type: "email",
+      admin: {
+        readOnly: true,
+        description: "بريد اختياري أدخله العميل عند الدفع للتواصل",
+      },
     },
     {
       name: "items",
@@ -195,6 +209,7 @@ export const Orders: CollectionConfig = {
       options: [
         { label: "قيد الانتظار", value: "pending" },
         { label: "مدفوع", value: "paid" },
+        { label: "قيد التنفيذ", value: "in_progress" },
         { label: "تم التسليم", value: "delivered" },
         { label: "متنازع عليه", value: "disputed" },
         { label: "مسترد", value: "refunded" },
