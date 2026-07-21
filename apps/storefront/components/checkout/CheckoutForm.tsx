@@ -52,6 +52,7 @@ export function CheckoutForm() {
     processing:      isEn ? "Processing payment..."   : "جاري معالجة الدفع...",
     dontClose:       isEn ? "Please don't close this page." : "يرجى عدم إغلاق هذه الصفحة",
     mustAcceptTerms: isEn ? "You must accept the Terms & Conditions" : "يجب الموافقة على الشروط والأحكام",
+    pageTitle:       isEn ? "Checkout"                : "إتمام الشراء",
   };
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -268,6 +269,10 @@ export function CheckoutForm() {
 
   return (
     <div className="space-y-6">
+      {/* Page heading -- moved out of the server page shell so it
+          flips with the visitor's locale. */}
+      <h1 className="text-2xl font-black text-brand-800">{L.pageTitle}</h1>
+
       {/* Progress — collapsed from 3 steps to 2. Terms acceptance is
           now inline on the payment step (checkbox above the confirm
           button) so we no longer need a separate terms step. */}
@@ -355,7 +360,7 @@ export function CheckoutForm() {
               </>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-brand-800">المجموع</span>
+              <span className="text-lg font-bold text-brand-800">{L.total}</span>
               <span className="text-xl font-extrabold text-brand-600" style={{ fontFeatureSettings: '"tnum"' }}>
                 {formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}
               </span>

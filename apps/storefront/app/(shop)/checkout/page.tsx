@@ -1,7 +1,7 @@
 import dynamicImport from "next/dynamic";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "إتمام الشراء" };
+export const metadata = { title: "إتمام الشراء | Checkout" };
 
 const CheckoutForm = dynamicImport(
   () =>
@@ -11,10 +11,15 @@ const CheckoutForm = dynamicImport(
   { ssr: false }
 );
 
+/**
+ * Server shell for the checkout. The visible page heading used to
+ * live here as a hardcoded Arabic string; moved into CheckoutForm so
+ * it can flip with the visitor's locale-store setting (server can't
+ * read localStorage).
+ */
 export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-8 text-2xl font-black text-brand-800">إتمام الشراء</h1>
       <CheckoutForm />
     </div>
   );
