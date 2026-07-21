@@ -386,13 +386,17 @@ function SeamlessMarquee({
     // swap (mobile vs desktop) without us re-deriving it.
     const unit = () => el.scrollWidth / copies;
 
-    // Start one copy in so we can wrap in either direction seamlessly.
-    el.scrollLeft = unit();
-
     // Auto-advance: one full copy scrolls past every `duration` seconds.
     let raf = 0;
     let paused = false;
     let last = performance.now();
+    // Track the scroll position as a FLOAT here. Assigning
+    // `el.scrollLeft += 0.3` each frame is a no-op because browsers
+    // round scrollLeft to an integer on read-back, so a slow marquee
+    // never advances. Accumulating in `pos` and writing the whole
+    // value each frame sidesteps the rounding. -1 = "not initialised
+    // yet" (waiting for layout so scrollWidth is non-zero).
+    let pos = -1;
 
     // Drag-to-scroll state (same shape as lib/use-drag-scroll).
     let isDown = false;
@@ -401,21 +405,23 @@ function SeamlessMarquee({
     let moved = false;
     const DRAG_THRESHOLD = 6;
 
-    const wrap = () => {
-      const u = unit();
-      if (u <= 0) return;
-      while (el.scrollLeft >= u * 2) el.scrollLeft -= u;
-      while (el.scrollLeft < u) el.scrollLeft += u;
-    };
-
     const step = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      if (!paused && !isDown) {
-        const u = unit();
-        const pxPerSec = u / duration;
-        el.scrollLeft += (reverse ? -1 : 1) * pxPerSec * dt;
-        wrap();
+      const u = unit();
+      if (u > 0) {
+        if (pos < 0) pos = u; // first frame after layout: start one copy in
+        if (paused || isDown) {
+          // Hover-paused or user is dragging -- resync from the DOM so
+          // auto-advance continues smoothly from wherever they left it.
+          pos = el.scrollLeft;
+        } else {
+          pos += (reverse ? -1 : 1) * (u / duration) * dt;
+        }
+        // Keep pos in [u, 2u) so there's always a copy on each side.
+        while (pos >= u * 2) pos -= u;
+        while (pos < u) pos += u;
+        el.scrollLeft = pos;
       }
       raf = requestAnimationFrame(step);
     };
@@ -436,8 +442,15 @@ function SeamlessMarquee({
       if (!isDown) return;
       const dx = e.pageX - startX;
       if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
+      // Set scrollLeft directly; the RAF loop wraps + resyncs `pos`
+      // from here (isDown branch) so the seam stays invisible and
+      // auto-advance resumes from the dragged position on release.
       el.scrollLeft = startScroll - dx;
-      wrap();
+      const u = unit();
+      if (u > 0) {
+        while (el.scrollLeft >= u * 2) { el.scrollLeft -= u; startScroll -= u; }
+        while (el.scrollLeft < u)     { el.scrollLeft += u; startScroll += u; }
+      }
       if (moved) e.preventDefault();
     };
     const endDrag = () => {
