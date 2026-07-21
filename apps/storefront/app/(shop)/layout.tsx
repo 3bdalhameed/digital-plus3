@@ -33,7 +33,18 @@ export default async function ShopLayout({
         url={settings?.whatsappUrl}
         phone={settings?.whatsappNumber}
       />
-      <ExitIntentPopup />
+      <ExitIntentPopup
+        cms={{
+          enabled:       (settings as any)?.exitPopupEnabled,
+          couponCode:    (settings as any)?.exitPopupCouponCode,
+          headlineAr:    (settings as any)?.exitPopupHeadlineAr,
+          headlineEn:    (settings as any)?.exitPopupHeadlineEn,
+          subheadlineAr: (settings as any)?.exitPopupSubheadlineAr,
+          subheadlineEn: (settings as any)?.exitPopupSubheadlineEn,
+          bodyAr:        (settings as any)?.exitPopupBodyAr,
+          bodyEn:        (settings as any)?.exitPopupBodyEn,
+        }}
+      />
     </>
   );
 }

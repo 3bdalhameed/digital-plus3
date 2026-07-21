@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { X, Copy, Check } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 /**
  * Exit-intent popup, modelled after the Shopify Easy-Popups app the old
@@ -13,32 +14,63 @@ import { X, Copy, Check } from "lucide-react";
  *
  * Shows at most once per browser session (sessionStorage flag).
  *
- * Defaults reproduce the live popup's copy + "PLUS7" coupon; tweak the
- * props or wire them to a CMS global if you want admin-editable values.
+ * Copy is fully editable in CMS Site Settings ("نافذة نية المغادرة")
+ * -- coupon code, headline / subheadline / body all have Ar+En slots.
+ * Storefront picks the language from useLocaleStore; each field falls
+ * back to a hardcoded default if the CMS field is blank so a
+ * half-configured setup still shows something reasonable.
  */
+export type ExitPopupSettings = {
+  enabled?: boolean;
+  couponCode?: string;
+  headlineAr?: string;
+  headlineEn?: string;
+  subheadlineAr?: string;
+  subheadlineEn?: string;
+  bodyAr?: string;
+  bodyEn?: string;
+};
+
 export function ExitIntentPopup({
-  couponCode = "PLUS7",
-  headline = "🛑 لحظة قبل ما تغلق الشاشة!",
-  subheadline = "🤝 لا تذهب بدون عرض حصري قبل المغادرة",
-  body = "استخدم كود الخصم التالي عند الشراء واحصل على خصم فوري على كل المنتجات الرقمية في المتجر.",
+  cms,
   storageKey = "dp-exit-popup-shown-v1",
 }: {
-  couponCode?: string;
-  headline?: string;
-  subheadline?: string;
-  body?: string;
+  cms?: ExitPopupSettings;
   storageKey?: string;
-}) {
+} = {}) {
+  const { isEn } = useT();
+
+  const enabled = cms?.enabled ?? true;
+  const couponCode = cms?.couponCode || "PLUS7";
+  const headline = isEn
+    ? (cms?.headlineEn || "🛑 Wait — before you go!")
+    : (cms?.headlineAr || "🛑 لحظة قبل ما تغلق الشاشة!");
+  const subheadline = isEn
+    ? (cms?.subheadlineEn || "🤝 Don't leave without your exclusive offer")
+    : (cms?.subheadlineAr || "🤝 لا تذهب بدون عرض حصري قبل المغادرة");
+  const body = isEn
+    ? (cms?.bodyEn || "Use this discount code at checkout and get an instant discount on every digital product in the store.")
+    : (cms?.bodyAr || "استخدم كود الخصم التالي عند الشراء واحصل على خصم فوري على كل المنتجات الرقمية في المتجر.");
+
+  const L = {
+    close:      isEn ? "Close"           : "إغلاق",
+    couponLbl:  isEn ? "Discount code"   : "كود الخصم",
+    copyBtn:    isEn ? "Copy code"       : "نسخ الكود",
+    copiedBtn:  isEn ? "Code copied"     : "تم نسخ الكود",
+    dismiss:    isEn ? "No, thanks"      : "لا، شكراً",
+  };
+
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const trigger = useCallback(() => {
+    if (!enabled) return;
     try {
       if (sessionStorage.getItem(storageKey)) return;
       sessionStorage.setItem(storageKey, "1");
     } catch {}
     setOpen(true);
-  }, [storageKey]);
+  }, [storageKey, enabled]);
 
   useEffect(() => {
     // Don't trigger on the first 4 seconds — gives the page a chance to load
@@ -101,7 +133,7 @@ export function ExitIntentPopup({
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-[dp-fade_180ms_ease-out]"
       style={{ backdropFilter: "blur(2px)", background: "rgba(15, 11, 35, 0.55)" }}
       onClick={() => setOpen(false)}
-      dir="rtl"
+      dir={isEn ? "ltr" : "rtl"}
     >
       <style>{`
         @keyframes dp-fade { from { opacity: 0 } to { opacity: 1 } }
@@ -117,7 +149,7 @@ export function ExitIntentPopup({
         <div className="relative overflow-hidden bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#9333EA] px-6 pt-6 pb-12 text-center text-white">
           <button
             onClick={() => setOpen(false)}
-            aria-label="إغلاق"
+            aria-label={L.close}
             className="absolute top-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/30"
           >
             <X className="h-4 w-4" strokeWidth={2.5} />
@@ -148,7 +180,7 @@ export function ExitIntentPopup({
           {/* Coupon box */}
           <div className="relative mt-5 overflow-hidden rounded-2xl border-2 border-dashed border-[#7C3AED]/40 bg-gradient-to-br from-[#F5F3FF] via-[#EDE9FE] to-[#F5F3FF] p-4">
             <span className="block text-xs font-bold tracking-widest text-[#7C3AED]/70">
-              كود الخصم
+              {L.couponLbl}
             </span>
             <div className="mt-1 flex items-center justify-center gap-2" dir="ltr">
               <span className="text-3xl font-black tracking-[0.15em] text-[#1e1b4b]" style={{ fontFeatureSettings: '"tnum"' }}>
@@ -171,12 +203,12 @@ export function ExitIntentPopup({
             {copied ? (
               <>
                 <Check className="h-4 w-4" strokeWidth={3} />
-                <span>تم نسخ الكود</span>
+                <span>{L.copiedBtn}</span>
               </>
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                <span>نسخ الكود</span>
+                <span>{L.copyBtn}</span>
               </>
             )}
           </button>
@@ -185,7 +217,7 @@ export function ExitIntentPopup({
             onClick={() => setOpen(false)}
             className="mt-3 text-xs text-[#9ca3af] underline-offset-2 hover:text-[#6b7280] hover:underline"
           >
-            لا، شكراً
+            {L.dismiss}
           </button>
         </div>
       </div>
