@@ -20,14 +20,20 @@ const fromStorefront = (req: any) =>
   internalSecret &&
   req.headers?.["x-internal-secret"] === internalSecret;
 
-/** Orders: admins + orders role can write; support is read-only */
+/** Orders: admins + orders role can write; support is read-only.
+ *  The storefront is allowed to read/create/update via the internal
+ *  secret header -- ownership is verified in the storefront route
+ *  before it PATCHes here, so the "customer confirms their order"
+ *  flow can flip status=paid -> delivered without an admin session.
+ *  Prior version only allowed fromStorefront on read + create; the
+ *  omission on update was silently 502'ing every confirm click. */
 export const ordersAccess = {
   read: (({ req }) =>
     fromStorefront(req) || has(req.user, "super_admin", "admin", "orders", "support")) as Access,
   create: (({ req }) =>
     fromStorefront(req) || has(req.user, "super_admin", "admin", "orders")) as Access,
-  update: (({ req: { user } }) =>
-    has(user, "super_admin", "admin", "orders")) as Access,
+  update: (({ req }) =>
+    fromStorefront(req) || has(req.user, "super_admin", "admin", "orders")) as Access,
   delete: (({ req: { user } }) => has(user, "super_admin", "admin")) as Access,
 };
 
