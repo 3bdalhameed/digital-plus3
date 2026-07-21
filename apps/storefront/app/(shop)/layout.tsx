@@ -4,31 +4,8 @@ import { PreviewBanner } from "@/components/layout/PreviewBanner";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { getSettings, getNavbarConfig } from "@/lib/payload";
+import { resolveMediaUrl } from "@/lib/media-url";
 import type { SiteSettings, NavbarConfig } from "@my-store/types";
-
-/**
- * Payload returns media URLs as either absolute (when
- * PAYLOAD_PUBLIC_SERVER_URL is set on the CMS side) or as a
- * relative "/media/xxx.png". The storefront runs on a different
- * origin from the CMS, so relative URLs 404 from the browser.
- *
- * Prefix with the PUBLIC CMS origin whenever we get back a bare
- * path. PAYLOAD_API_URL is the internal Docker hostname
- * (http://cms:3001/api) used by server-side fetches; the browser
- * can't reach that. PAYLOAD_PUBLIC_SERVER_URL is the URL an end
- * user's browser CAN reach (https://cms.digital-plus3.com) -- try
- * that first, only fall back to PAYLOAD_API_URL for local dev
- * where they're often the same.
- */
-function resolveMediaUrl(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith("http")) return url;
-  const publicOrigin =
-    process.env.PAYLOAD_PUBLIC_SERVER_URL?.replace(/\/$/, "") ||
-    process.env.PAYLOAD_API_URL?.replace(/\/api\/?$/, "") ||
-    "http://localhost:3001";
-  return `${publicOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
-}
 
 export default async function ShopLayout({
   children,

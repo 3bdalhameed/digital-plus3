@@ -2,20 +2,8 @@ import Image from "next/image";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { getSettings, getNavbarConfig } from "@/lib/payload";
+import { resolveMediaUrl } from "@/lib/media-url";
 import type { SiteSettings, NavbarConfig } from "@my-store/types";
-
-async function getLogoUrl(settings: SiteSettings | null): Promise<string | null> {
-  try {
-    const raw = (settings as any)?.logo?.url as string | undefined;
-    if (!raw) return null;
-    if (raw.startsWith("http")) return raw;
-    const cmsOrigin =
-      process.env.PAYLOAD_API_URL?.replace("/api", "") || "http://localhost:3001";
-    return `${cmsOrigin}${raw}`;
-  } catch {
-    return null;
-  }
-}
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   let settings: SiteSettings | null = null;
@@ -28,11 +16,22 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     ]);
   } catch {}
 
-  const logoUrl = await getLogoUrl(settings);
+  // Same normalization as the shop + account layouts -- the browser
+  // can't reach PAYLOAD_API_URL (internal Docker hostname), so resolve
+  // media through PAYLOAD_PUBLIC_SERVER_URL via the shared helper.
+  const logoUrl = resolveMediaUrl((settings as any)?.logo?.url) ?? null;
+  const settingsForHeader: SiteSettings | null = settings
+    ? ({
+        ...settings,
+        logo: settings.logo
+          ? { ...(settings.logo as any), url: resolveMediaUrl((settings.logo as any)?.url) }
+          : settings.logo,
+      } as SiteSettings)
+    : null;
 
   return (
     <>
-      <Header settings={settings} navbarConfig={navbarConfig} />
+      <Header settings={settingsForHeader} navbarConfig={navbarConfig} />
 
       <main className="flex min-h-[calc(100vh-200px)] items-center justify-center bg-brand-50 px-4 py-10">
         <div className="w-full max-w-md">

@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/layout/Providers";
 import { getSettings } from "@/lib/payload";
+import { resolveMediaUrl } from "@/lib/media-url";
 import "@/styles/globals.css";
 
 /**
  * Metadata is computed per-request so the tab favicon reflects
  * whatever the admin uploaded under Site Settings -> Favicon in the
- * CMS. Payload's absolute URL is preferred; if only a relative path
- * comes back we prefix the CMS origin so the browser can fetch it
- * cross-origin from the storefront domain. Falls back to null (no
- * favicon set) rather than throwing so a CMS outage doesn't 500
- * every storefront page.
+ * CMS. `resolveMediaUrl` picks the browser-reachable public origin
+ * and prefixes when Payload returns a bare "/media/xxx.png".
  */
 export async function generateMetadata(): Promise<Metadata> {
   let faviconUrl: string | null = null;
@@ -18,22 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const settings = await getSettings();
     siteName = (settings as any)?.siteName ?? null;
-    const raw = (settings as any)?.favicon?.url as string | undefined;
-    if (raw) {
-      if (raw.startsWith("http")) {
-        faviconUrl = raw;
-      } else {
-        // Prefer PAYLOAD_PUBLIC_SERVER_URL (the browser-reachable
-        // CMS origin) over PAYLOAD_API_URL (potentially an internal
-        // Docker hostname). Otherwise the favicon <link> points at
-        // a URL the visitor's browser can't fetch.
-        const cmsOrigin =
-          process.env.PAYLOAD_PUBLIC_SERVER_URL?.replace(/\/$/, "") ||
-          process.env.PAYLOAD_API_URL?.replace(/\/api\/?$/, "") ||
-          "http://localhost:3001";
-        faviconUrl = `${cmsOrigin}${raw}`;
-      }
-    }
+    faviconUrl = resolveMediaUrl((settings as any)?.favicon?.url) ?? null;
   } catch { /* no favicon — use default */ }
 
   const defaultTitle = siteName || "متجري — منتجات رقمية موثوقة";
