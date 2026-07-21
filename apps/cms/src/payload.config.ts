@@ -860,6 +860,27 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   for (const col of socialCols) {
     await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
   }
+  // Settings — exit-intent popup columns. Added at the same time
+  // the storefront ExitIntentPopup component was rewired to read
+  // its copy from CMS Site Settings. Without these, Payload's
+  // /api/globals/settings PATCH 500's because the field validators
+  // point at columns that don't exist in the DB.
+  await run(
+    "settings_exit_popup_enabled",
+    "ALTER TABLE settings ADD COLUMN IF NOT EXISTS exit_popup_enabled boolean DEFAULT true",
+  );
+  const exitPopupTextCols = [
+    "exit_popup_coupon_code",
+    "exit_popup_headline_ar", "exit_popup_headline_en",
+    "exit_popup_subheadline_ar", "exit_popup_subheadline_en",
+  ];
+  for (const col of exitPopupTextCols) {
+    await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} varchar`);
+  }
+  const exitPopupTextareaCols = ["exit_popup_body_ar", "exit_popup_body_en"];
+  for (const col of exitPopupTextareaCols) {
+    await run(`settings_${col}`, `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ${col} text`);
+  }
 
   // Reviews — table + FK indexes + partial unique key so a given
   // (order, product, customer) triple can only be reviewed once.
