@@ -336,9 +336,14 @@ function CategoryGridSection({ title, titleEn, categories, columns }: any) {
 }
 
 /* ═══════════════════════════════════════
-   SHARED — zero-gap seamless marquee
-   gap=0 makes -50% mathematically exact:
-   -50% of (2 copies) = exactly 1 copy → invisible seam.
+   SHARED — seamless marquee, now scroll-based + grabbable
+   Instead of a CSS keyframe transform, the track is a real
+   horizontal scroll container that a requestAnimationFrame loop
+   nudges each frame. Because it's a scroller, the user can grab it
+   anywhere and drag it manually -- the auto-advance pauses while
+   they hold, resumes on release. The seam stays invisible because
+   we render N identical copies and wrap scrollLeft by exactly one
+   copy width, same trick as the animation version.
 ═══════════════════════════════════════ */
 function SeamlessMarquee({
   children,
@@ -356,21 +361,119 @@ function SeamlessMarquee({
   speed?: number;
   pauseOnHover?: boolean;
   gap?: number;
-  /** Flip the marquee's scroll direction without touching the keyframes. */
+  /** Auto-advance toward the marquee's end instead of its start. */
   reverse?: boolean;
 }) {
   const duration = typeof speed === "number" && speed > 0 ? speed : 25;
   const n = children.length;
-  // useId must run on every render — keep above the early return.
   const rawId = useId();
   const id = rawId.replace(/:/g, "");
-  if (n === 0) return null;
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Use the smaller of the two widths for the repeat math so the mobile
   // breakpoint still has enough copies to loop seamlessly.
   const minUnit = Math.min(itemWidth, mobileItemWidth ?? itemWidth) + gap;
-  const repeats = Math.max(Math.ceil(5760 / (n * minUnit)), 2);
-  const copies = repeats % 2 === 0 ? repeats : repeats + 1;
+  // At least 3 copies so there's always content on both sides of the
+  // viewport when scrollLeft wraps.
+  const copies = Math.max(Math.ceil(5760 / (n * minUnit)), 3);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || n === 0) return;
+
+    // One "unit" = the width of a single copy of the children set.
+    // Measured from the DOM so it accounts for the responsive width
+    // swap (mobile vs desktop) without us re-deriving it.
+    const unit = () => el.scrollWidth / copies;
+
+    // Start one copy in so we can wrap in either direction seamlessly.
+    el.scrollLeft = unit();
+
+    // Auto-advance: one full copy scrolls past every `duration` seconds.
+    let raf = 0;
+    let paused = false;
+    let last = performance.now();
+
+    // Drag-to-scroll state (same shape as lib/use-drag-scroll).
+    let isDown = false;
+    let startX = 0;
+    let startScroll = 0;
+    let moved = false;
+    const DRAG_THRESHOLD = 6;
+
+    const wrap = () => {
+      const u = unit();
+      if (u <= 0) return;
+      while (el.scrollLeft >= u * 2) el.scrollLeft -= u;
+      while (el.scrollLeft < u) el.scrollLeft += u;
+    };
+
+    const step = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      if (!paused && !isDown) {
+        const u = unit();
+        const pxPerSec = u / duration;
+        el.scrollLeft += (reverse ? -1 : 1) * pxPerSec * dt;
+        wrap();
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+
+    const onEnter = () => { if (pauseOnHover) paused = true; };
+    const onLeave = () => { paused = false; endDrag(); };
+
+    const onDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      isDown = true;
+      moved = false;
+      startX = e.pageX;
+      startScroll = el.scrollLeft;
+      el.classList.add("is-drag-scrolling");
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      const dx = e.pageX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) moved = true;
+      el.scrollLeft = startScroll - dx;
+      wrap();
+      if (moved) e.preventDefault();
+    };
+    const endDrag = () => {
+      isDown = false;
+      el.classList.remove("is-drag-scrolling");
+    };
+    const onClickCapture = (e: MouseEvent) => {
+      if (!moved) return;
+      e.preventDefault();
+      e.stopPropagation();
+      moved = false;
+    };
+    const onDragStart = (e: DragEvent) => e.preventDefault();
+
+    el.addEventListener("mouseenter", onEnter);
+    el.addEventListener("mouseleave", onLeave);
+    el.addEventListener("mousedown", onDown);
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseup", endDrag);
+    el.addEventListener("click", onClickCapture, true);
+    el.addEventListener("dragstart", onDragStart);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("mouseenter", onEnter);
+      el.removeEventListener("mouseleave", onLeave);
+      el.removeEventListener("mousedown", onDown);
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseup", endDrag);
+      el.removeEventListener("click", onClickCapture, true);
+      el.removeEventListener("dragstart", onDragStart);
+    };
+    // Re-init if the copy count or direction changes.
+  }, [copies, duration, reverse, pauseOnHover, n]);
+
+  if (n === 0) return null;
 
   const itemClass = `marquee-item-${id}`;
   const track = Array.from({ length: copies }).flatMap((_, ci) =>
@@ -381,25 +484,20 @@ function SeamlessMarquee({
     ))
   );
 
-  // CSS variable + media query so the width swap doesn't need JS or
-  // cause hydration mismatch.
-  const css = `.${itemClass}{width:${itemWidth}px}` +
-    (mobileItemWidth ? `@media(max-width:640px){.${itemClass}{width:${mobileItemWidth}px}}` : "");
+  const railClass = `marquee-rail-${id}`;
+  const css =
+    `.${itemClass}{width:${itemWidth}px}` +
+    (mobileItemWidth ? `@media(max-width:640px){.${itemClass}{width:${mobileItemWidth}px}}` : "") +
+    `.${railClass}::-webkit-scrollbar{display:none}`;
 
   return (
-    <div className="overflow-x-clip" style={{ direction: "ltr" }}>
+    <div
+      ref={scrollRef}
+      className={`${railClass} overflow-x-auto select-none cursor-grab active:cursor-grabbing`}
+      style={{ direction: "ltr", scrollbarWidth: "none", msOverflowStyle: "none" }}
+    >
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <div
-        style={{
-          display: "flex",
-          width: "max-content",
-          willChange: "transform",
-          animation: `seamless-marquee ${duration}s linear infinite`,
-          animationDirection: reverse ? "reverse" : "normal",
-        }}
-        onMouseEnter={e => { if (pauseOnHover) (e.currentTarget as HTMLElement).style.animationPlayState = "paused"; }}
-        onMouseLeave={e => { if (pauseOnHover) (e.currentTarget as HTMLElement).style.animationPlayState = "running"; }}
-      >
+      <div style={{ display: "flex", width: "max-content" }}>
         {track}
       </div>
     </div>
