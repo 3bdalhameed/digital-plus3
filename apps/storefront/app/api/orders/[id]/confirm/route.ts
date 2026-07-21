@@ -20,9 +20,6 @@ import { normalizeEmail } from "@/lib/normalize-email";
  */
 export const dynamic = "force-dynamic";
 
-const CMS = process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
-const INTERNAL_SECRET = process.env.PAYLOAD_INTERNAL_SECRET || "";
-
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -72,25 +69,27 @@ export async function POST(
       );
     }
 
-    // Flip status to delivered via Payload. The internal secret grants
-    // write access (see cms/src/access.ts fromStorefront helper).
-    // confirmedBy='customer' distinguishes this from the 7-day auto-
-    // sweep which sets 'auto' -- support can tell them apart in the
-    // admin list view.
-    const res = await fetch(`${CMS}/orders/${params.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": INTERNAL_SECRET,
-      },
-      body: JSON.stringify({ status: "delivered", confirmedBy: "customer" }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(`[confirm-order] Payload PATCH failed ${res.status}`, body);
-      return NextResponse.json({ error: "فشل تأكيد الطلب" }, { status: 502 });
-    }
+    // Flip status directly via Prisma against the shared DB.
+    //
+    // The previous version PATCHed Payload over HTTP so its beforeChange
+    // / afterChange hooks (status-change email) would fire, but that
+    // fetch was returning 502 in production -- either the internal
+    // PAYLOAD_API_URL wasn't reachable from this container, or the
+    // request was timing out at the edge (Cloudflare returned its own
+    // text/html 502 with retry-after:60). The customer's "confirm my
+    // order" click has to work regardless of the CMS's HTTP surface,
+    // so we do the UPDATE ourselves. Downside: the status-change
+    // notification email doesn't fire from this path -- the 7-day
+    // sweep + admin-panel edits still route through Payload and get
+    // the email; this manual path silently confirms.
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE orders
+         SET status         = 'delivered'::"enum_orders_status",
+             confirmed_by   = 'customer',
+             updated_at     = NOW()
+       WHERE id = ${orderId}
+         AND status = 'paid'
+    `);
 
     return NextResponse.json({ ok: true, status: "delivered", changed: true });
   } catch (err: any) {
