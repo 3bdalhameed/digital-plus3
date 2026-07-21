@@ -24,6 +24,35 @@ export function CheckoutForm() {
   const { data: session, status } = useSession();
   const { items, totalPrice, totalAfterDiscount, appliedDiscount, clearCart } = useCartStore();
   const { currency: userCurrency, rates, lang } = useLocaleStore();
+  const isEn = lang === "en";
+  const L = {
+    stepReview:      isEn ? "Review"                  : "مراجعة",
+    stepPayment:     isEn ? "Payment & confirmation"  : "الدفع والتأكيد",
+    reviewTitle:     isEn ? "Order review"            : "مراجعة الطلب",
+    quantity:        isEn ? "Quantity"                : "الكمية",
+    subtotal:        isEn ? "Subtotal"                : "المجموع الفرعي",
+    discount:        isEn ? "Discount"                : "خصم",
+    total:           isEn ? "Total"                   : "المجموع",
+    continueToPay:   isEn ? "Continue to payment"     : "متابعة إلى الدفع",
+    choosePayment:   isEn ? "Choose payment method"   : "اختر طريقة الدفع",
+    testMode:        isEn ? "Test mode"               : "وضع الاختبار",
+    testModeBody:    isEn ? "Order will be created directly without going through the payment gateway." : "سيتم إنشاء الطلب مباشرة دون مرور على بوابة الدفع",
+    cliqTitle:       isEn ? "CliQ — Jordan"           : "CliQ — الأردن",
+    manualBody:      isEn ? "A support rep will contact you via WhatsApp to complete payment." : "سيتواصل معك أحد ممثلي الدعم عبر واتساب لإتمام الدفع",
+    vodafoneTitle:   isEn ? "Vodafone Cash — Egypt"   : "فودافون كاش — مصر",
+    contactLabel:    isEn ? "Contact number (WhatsApp)" : "رقم التواصل (واتساب)",
+    contactHint:     isEn ? "Support will use this number to send payment instructions." : "سيتم استخدام هذا الرقم من قبل الدعم لإرسال تعليمات الدفع",
+    termsHeading:    isEn ? "Terms & Conditions"      : "الشروط والأحكام",
+    agreeTo:         isEn ? "I agree to the "         : "أوافق على ",
+    termsLink:       isEn ? "Terms & Conditions"      : "الشروط والأحكام",
+    andWord:         isEn ? " and the "               : " و ",
+    refundLink:      isEn ? "Refund Policy"           : "سياسة الاسترداد",
+    disclaimer:      isEn ? ". I understand that digital products are non-refundable after delivery and use." : ". أفهم أن المنتجات الرقمية غير قابلة للاسترداد بعد التسليم والاستخدام.",
+    confirmOrder:    isEn ? "Confirm order"           : "تأكيد الطلب",
+    processing:      isEn ? "Processing payment..."   : "جاري معالجة الدفع...",
+    dontClose:       isEn ? "Please don't close this page." : "يرجى عدم إغلاق هذه الصفحة",
+    mustAcceptTerms: isEn ? "You must accept the Terms & Conditions" : "يجب الموافقة على الشروط والأحكام",
+  };
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -107,7 +136,7 @@ export function CheckoutForm() {
     // Client-side guards — server re-validates, but a friendly inline
     // error avoids a round-trip.
     if (!termsAccepted) {
-      setError("يجب الموافقة على الشروط والأحكام");
+      setError(L.mustAcceptTerms);
       return;
     }
     if ((method === "qlic" || method === "vodafone") && !contactPhone.trim()) {
@@ -260,8 +289,8 @@ export function CheckoutForm() {
                   step === s ? "font-bold text-brand-600" : "text-gray-400"
                 }
               >
-                {s === "review" && "مراجعة"}
-                {s === "payment" && "الدفع والتأكيد"}
+                {s === "review" && L.stepReview}
+                {s === "payment" && L.stepPayment}
               </span>
               {i < 1 && <div className="mx-2 h-px w-8 bg-brand-200" />}
             </div>
@@ -279,7 +308,7 @@ export function CheckoutForm() {
       {step === "review" && (
         <div className="brand-card">
           <h2 className="mb-4 text-lg font-bold text-brand-800">
-            مراجعة الطلب
+            {L.reviewTitle}
           </h2>
           <div className="space-y-3">
             {items.map((item) => (
@@ -292,7 +321,7 @@ export function CheckoutForm() {
                     {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
                   </p>
                   <p className="text-xs text-gray-500">
-                    الكمية: {item.quantity}
+                    {L.quantity}: {item.quantity}
                   </p>
                 </div>
                 <span className="text-sm font-bold text-brand-600">
@@ -312,13 +341,13 @@ export function CheckoutForm() {
             {appliedDiscount && (
               <>
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>المجموع الفرعي</span>
+                  <span>{L.subtotal}</span>
                   <span style={{ fontFeatureSettings: '"tnum"' }}>
                     {formatPrice(totalPrice(), "USD", userCurrency, rates, lang)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-green-600">
-                  <span>خصم ({appliedDiscount.code})</span>
+                  <span>{L.discount} ({appliedDiscount.code})</span>
                   <span style={{ fontFeatureSettings: '"tnum"' }}>
                     −{formatPrice(appliedDiscount.amount, "USD", userCurrency, rates, lang)}
                   </span>
@@ -447,7 +476,7 @@ export function CheckoutForm() {
             disabled={!isVerified}
             className="brand-btn mt-6 w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
-            متابعة إلى الدفع
+            {L.continueToPay}
           </button>
         </div>
       )}
@@ -455,7 +484,7 @@ export function CheckoutForm() {
       {/* Step: Payment */}
       {step === "payment" && (
         <div className="brand-card">
-          <h2 className="mb-4 text-lg font-bold text-brand-800">اختر طريقة الدفع</h2>
+          <h2 className="mb-4 text-lg font-bold text-brand-800">{L.choosePayment}</h2>
 
           <div className="space-y-3">
             {/* Test / default flow — kept behind a small dev-mode badge
@@ -470,9 +499,9 @@ export function CheckoutForm() {
                 className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
               />
               <div className="flex-1">
-                <p className="text-sm font-bold text-brand-800">وضع الاختبار</p>
+                <p className="text-sm font-bold text-brand-800">{L.testMode}</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  سيتم إنشاء الطلب مباشرة دون مرور على بوابة الدفع
+                  {L.testModeBody}
                 </p>
               </div>
             </label>
@@ -488,9 +517,9 @@ export function CheckoutForm() {
                 className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
               />
               <div className="flex-1">
-                <p className="text-sm font-bold text-brand-800">CliQ — الأردن</p>
+                <p className="text-sm font-bold text-brand-800">{L.cliqTitle}</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  سيتواصل معك أحد ممثلي الدعم عبر واتساب لإتمام الدفع
+                  {L.manualBody}
                 </p>
               </div>
             </label>
@@ -506,9 +535,9 @@ export function CheckoutForm() {
                 className="mt-1 h-5 w-5 text-brand-500 focus:ring-brand-500"
               />
               <div className="flex-1">
-                <p className="text-sm font-bold text-brand-800">فودافون كاش — مصر</p>
+                <p className="text-sm font-bold text-brand-800">{L.vodafoneTitle}</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  سيتواصل معك أحد ممثلي الدعم عبر واتساب لإتمام الدفع
+                  {L.manualBody}
                 </p>
               </div>
             </label>
@@ -518,7 +547,7 @@ export function CheckoutForm() {
           {(method === "qlic" || method === "vodafone") && (
             <div className="mt-5">
               <label className="mb-2 block text-sm font-medium text-brand-800">
-                رقم التواصل (واتساب) <span className="text-red-500">*</span>
+                {L.contactLabel} <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -529,7 +558,7 @@ export function CheckoutForm() {
                 className="w-full rounded-xl border-2 border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
               />
               <p className="mt-1 text-xs text-gray-500">
-                سيتم استخدام هذا الرقم من قبل الدعم لإرسال تعليمات الدفع
+                {L.contactHint}
               </p>
             </div>
           )}
@@ -540,7 +569,7 @@ export function CheckoutForm() {
           <div className="mt-6 rounded-xl border border-brand-100 bg-brand-50 p-4">
             <div className="mb-3 flex items-center gap-2">
               <Shield className="h-4 w-4 text-brand-500" />
-              <span className="text-sm font-bold text-brand-800">الشروط والأحكام</span>
+              <span className="text-sm font-bold text-brand-800">{L.termsHeading}</span>
             </div>
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -550,23 +579,23 @@ export function CheckoutForm() {
                 className="mt-0.5 h-5 w-5 rounded border-brand-300 text-brand-500 focus:ring-brand-500"
               />
               <span className="text-xs leading-relaxed text-gray-600">
-                أوافق على{" "}
+                {L.agreeTo}
                 <Link
                   href="/policies/terms"
                   target="_blank"
                   className="font-bold text-brand-500 underline"
                 >
-                  الشروط والأحكام
-                </Link>{" "}
-                و{" "}
+                  {L.termsLink}
+                </Link>
+                {L.andWord}
                 <Link
                   href="/policies/refund"
                   target="_blank"
                   className="font-bold text-brand-500 underline"
                 >
-                  سياسة الاسترداد
+                  {L.refundLink}
                 </Link>
-                . أفهم أن المنتجات الرقمية غير قابلة للاسترداد بعد التسليم والاستخدام.
+                {L.disclaimer}
               </span>
             </label>
           </div>
@@ -579,7 +608,7 @@ export function CheckoutForm() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              `تأكيد الطلب — ${formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}`
+              `${L.confirmOrder} — ${formatPrice(totalAfterDiscount(), "USD", userCurrency, rates, lang)}`
             )}
           </button>
         </div>
@@ -590,10 +619,10 @@ export function CheckoutForm() {
         <div className="brand-card py-12 text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-brand-500" />
           <h2 className="mt-4 text-lg font-bold text-brand-800">
-            جاري معالجة الدفع...
+            {L.processing}
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            يرجى عدم إغلاق هذه الصفحة
+            {L.dontClose}
           </p>
         </div>
       )}

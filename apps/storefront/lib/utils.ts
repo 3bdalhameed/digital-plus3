@@ -80,9 +80,10 @@ export function getRelativeTime(date: string | Date): string {
   return d.toLocaleDateString("ar-u-nu-latn");
 }
 
-/** Order status label in Arabic */
-export function getOrderStatusLabel(status: string): string {
-  const map: Record<string, string> = {
+/** Order status label -- Arabic by default, English when isEn=true.
+ *  Existing callers that don't pass isEn keep getting Arabic. */
+export function getOrderStatusLabel(status: string, isEn = false): string {
+  const ar: Record<string, string> = {
     pending: "قيد الانتظار",
     paid: "مدفوع",
     delivered: "تم التسليم",
@@ -90,7 +91,15 @@ export function getOrderStatusLabel(status: string): string {
     refunded: "مسترد",
     cancelled: "ملغي",
   };
-  return map[status] || status;
+  const en: Record<string, string> = {
+    pending: "Pending",
+    paid: "Paid",
+    delivered: "Delivered",
+    disputed: "Disputed",
+    refunded: "Refunded",
+    cancelled: "Cancelled",
+  };
+  return (isEn ? en[status] : ar[status]) || status;
 }
 
 /** Order status color */

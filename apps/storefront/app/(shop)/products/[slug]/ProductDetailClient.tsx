@@ -222,6 +222,22 @@ export function ProductDetailClient({ product, productName }: Props) {
     favRemove:           isEn ? "Remove from wishlist": "إزالة من المفضلة",
     shareItem:           isEn ? "Share product"      : "مشاركة المنتج",
     shareCopied:         isEn ? "Link copied"        : "تم نسخ الرابط",
+    modalClose:          isEn ? "Close"              : "إغلاق",
+    modalThanks:         isEn ? "Thank you!"         : "شكراً لك!",
+    modalReceived:       isEn ? "Your review has been received and will appear after moderation." : "تم استلام تقييمك وسيظهر بعد المراجعة.",
+    modalChecking:       isEn ? "Checking..."        : "جاري التحقق...",
+    modalAlreadyRated:   isEn ? "You've reviewed this product" : "لقد قيّمت هذا المنتج",
+    modalThanksSharing:  isEn ? "Thanks for sharing your experience." : "شكراً على مشاركتك تجربتك.",
+    modalTitle:          isEn ? "Write a review"     : "اكتب تقييماً",
+    modalSubtitle:       isEn ? "Share your experience with this product" : "شاركنا تجربتك مع هذا المنتج",
+    modalYourRating:     isEn ? "Your rating *"      : "تقييمك *",
+    modalYourName:       isEn ? "Your name (optional)" : "اسمك (اختياري)",
+    modalNamePh:         isEn ? "e.g. Alex"          : "أحمد",
+    modalYourReview:     isEn ? "Your review *"      : "تقييمك *",
+    modalReviewPh:       isEn ? "Tell us about your experience..." : "اخبرنا عن تجربتك...",
+    modalSubmit:         isEn ? "Submit review"      : "إرسال التقييم",
+    modalSending:        isEn ? "Sending..."         : "جاري الإرسال...",
+    starsAria:           (n: number) => isEn ? `${n} stars` : `${n} نجوم`,
   };
   // "Added to cart" toast is now global -- see
   // components/layout/CartToast.tsx mounted in Providers. Every call
@@ -580,7 +596,7 @@ export function ProductDetailClient({ product, productName }: Props) {
             <button
               onClick={() => setReviewOpen(false)}
               className="absolute top-3 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F3FF] text-[#6b7280] transition-colors hover:bg-[#EDE9FE] hover:text-[#7C3AED]"
-              aria-label="إغلاق"
+              aria-label={L.modalClose}
             >
               <X className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -591,22 +607,22 @@ export function ProductDetailClient({ product, productName }: Props) {
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DCFCE7]">
                   <BadgeCheck className="h-8 w-8 text-[#16A34A]" strokeWidth={2.5} />
                 </div>
-                <h3 className="text-lg font-black text-[#1e1b4b]">شكراً لك!</h3>
+                <h3 className="text-lg font-black text-[#1e1b4b]">{L.modalThanks}</h3>
                 <p className="text-sm text-[#6b7280]">
-                  تم استلام تقييمك وسيظهر بعد المراجعة.
+                  {L.modalReceived}
                 </p>
               </div>
             ) : !reviewStatus.checked ? (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
                 <Loader2 className="h-6 w-6 animate-spin text-[#7C3AED]" />
-                <p className="text-xs text-[#6b7280]">جاري التحقق...</p>
+                <p className="text-xs text-[#6b7280]">{L.modalChecking}</p>
               </div>
             ) : reviewStatus.existingRating ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DCFCE7]">
                   <BadgeCheck className="h-8 w-8 text-[#16A34A]" strokeWidth={2.5} />
                 </div>
-                <h3 className="text-lg font-black text-[#1e1b4b]">لقد قيّمت هذا المنتج</h3>
+                <h3 className="text-lg font-black text-[#1e1b4b]">{L.modalAlreadyRated}</h3>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Star
@@ -620,16 +636,16 @@ export function ProductDetailClient({ product, productName }: Props) {
                     />
                   ))}
                 </div>
-                <p className="text-xs text-[#6b7280]">شكراً على مشاركتك تجربتك.</p>
+                <p className="text-xs text-[#6b7280]">{L.modalThanksSharing}</p>
               </div>
             ) : (
               <>
-                <h3 className="mb-1 text-lg font-black text-[#1e1b4b]">اكتب تقييماً</h3>
-                <p className="mb-5 text-xs text-[#6b7280]">شاركنا تجربتك مع هذا المنتج</p>
+                <h3 className="mb-1 text-lg font-black text-[#1e1b4b]">{L.modalTitle}</h3>
+                <p className="mb-5 text-xs text-[#6b7280]">{L.modalSubtitle}</p>
 
                 {/* Star rating selector */}
                 <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
-                  تقييمك *
+                  {L.modalYourRating}
                 </label>
                 <div className="mb-4 flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -638,7 +654,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                       type="button"
                       onClick={() => setReviewRating(i)}
                       className="p-1 transition-transform hover:scale-110 active:scale-95"
-                      aria-label={`${i} نجوم`}
+                      aria-label={L.starsAria(i)}
                     >
                       <Star
                         className={`h-8 w-8 ${
@@ -654,24 +670,24 @@ export function ProductDetailClient({ product, productName }: Props) {
 
                 {/* Name (optional) */}
                 <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
-                  اسمك (اختياري)
+                  {L.modalYourName}
                 </label>
                 <input
                   type="text"
                   value={reviewName}
                   onChange={(e) => setReviewName(e.target.value)}
-                  placeholder="أحمد"
+                  placeholder={L.modalNamePh}
                   className="mb-4 w-full rounded-xl border border-[#ddd6fe] bg-white px-4 py-2.5 text-sm text-[#1e1b4b] outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
                 />
 
                 {/* Review text */}
                 <label className="mb-2 block text-xs font-bold text-[#1e1b4b]">
-                  تقييمك *
+                  {L.modalYourReview}
                 </label>
                 <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="اخبرنا عن تجربتك..."
+                  placeholder={L.modalReviewPh}
                   rows={4}
                   className="mb-5 w-full resize-none rounded-xl border border-[#ddd6fe] bg-white px-4 py-2.5 text-sm text-[#1e1b4b] outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
                 />
@@ -687,7 +703,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                   disabled={!reviewRating || !reviewText.trim() || reviewSubmitting}
                   className="w-full rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#9333EA] py-3 text-sm font-black text-white shadow-md transition-all hover:scale-[1.01] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {reviewSubmitting ? "جاري الإرسال..." : "إرسال التقييم"}
+                  {reviewSubmitting ? L.modalSending : L.modalSubmit}
                 </button>
               </>
             )}

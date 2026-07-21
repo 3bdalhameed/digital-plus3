@@ -117,7 +117,7 @@ export function OrdersView({ orders }: { orders: any[] }) {
                 <span
                   className={`hidden shrink-0 rounded-full px-3 py-1 text-[11px] font-bold sm:inline-block ${getOrderStatusColor(order.status)}`}
                 >
-                  {getOrderStatusLabel(order.status)}
+                  {getOrderStatusLabel(order.status, isEn)}
                 </span>
 
                 {/* Right: total + chevron */}
@@ -136,7 +136,7 @@ export function OrdersView({ orders }: { orders: any[] }) {
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-[11px] font-bold ${getOrderStatusColor(order.status)}`}
                 >
-                  {getOrderStatusLabel(order.status)}
+                  {getOrderStatusLabel(order.status, isEn)}
                 </span>
                 {canRate && (
                   <span className="ms-2 text-[11px] text-gray-500">

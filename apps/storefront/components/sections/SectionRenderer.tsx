@@ -262,7 +262,7 @@ function FeaturedProductsSection({ title, titleEn, subtitle, products, titleIcon
               href={showMoreHref(products, showMoreSubcategory)}
               className="inline-flex items-center rounded-full border border-[#7C3AED] bg-white px-7 py-2 text-sm font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED] hover:text-white sm:text-base"
             >
-              عرض المزيد
+              {lang === "en" ? "See more" : "عرض المزيد"}
             </Link>
           </div>
         </ProductCarousel>
