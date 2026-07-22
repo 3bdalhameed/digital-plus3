@@ -11,6 +11,18 @@ import { formatPrice } from "@/lib/utils";
 import { lexicalToHtml } from "@/lib/lexical";
 import type { Product } from "@my-store/types";
 
+/**
+ * Per-unit delivery-field key. When the visitor buys more than one of
+ * a product, each copy needs its own delivery inputs (an email/number
+ * asked once per unit). Unit 0 keeps the bare field id (so a single
+ * quantity behaves exactly as before and lines up with the cart's
+ * back-compat key); units 1+ get a "#<n>" suffix. Must match the cart
+ * page's unitKey so values carry across.
+ */
+function unitKey(fieldId: string, unit: number): string {
+  return unit === 0 ? fieldId : `${fieldId}#${unit}`;
+}
+
 interface Props {
   product: any;
   productName: string;
@@ -250,11 +262,15 @@ export function ProductDetailClient({ product, productName }: Props) {
     // race with an admin toggle could still fire this — refuse.
     if (product.inStock === false) return;
     const errors: string[] = [];
-    for (let idx = 0; idx < deliveryFields.length; idx++) {
-      const field = deliveryFields[idx];
-      const key = field.id || String(idx);
-      if (field.required && !deliveryInfo[key]?.trim()) {
-        errors.push(key);
+    // Validate the required delivery fields for EVERY copy the visitor
+    // is buying, not just once.
+    for (let u = 0; u < qty; u++) {
+      for (let idx = 0; idx < deliveryFields.length; idx++) {
+        const field = deliveryFields[idx];
+        const key = unitKey(field.id || String(idx), u);
+        if (field.required && !deliveryInfo[key]?.trim()) {
+          errors.push(key);
+        }
       }
     }
     if (errors.length > 0) {
@@ -397,50 +413,78 @@ export function ProductDetailClient({ product, productName }: Props) {
             </span>
           </div>
 
-          {/* Dynamic Delivery Fields */}
+          {/* Dynamic Delivery Fields — one group PER COPY when the
+              visitor is buying more than one. Each copy is a soft card
+              with a numbered gradient badge so it's obvious the same
+              info is being collected separately for every unit. */}
           {deliveryFields.length > 0 && (
             <div id="delivery-fields" className="space-y-4">
-              {deliveryFields.map((field: any, idx: number) => {
-                const key = field.id || String(idx);
-                const hasError = fieldErrors.includes(key);
-                const inputClass = `w-full rounded-xl border px-4 py-3 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe] bg-white ${hasError ? "border-red-400" : "border-[#e8e4f8]"}`;
+              {Array.from({ length: Math.max(1, qty) }).map((_, u) => (
+                <div
+                  key={u}
+                  className={
+                    qty > 1
+                      ? "rounded-2xl border border-[#e8e4f8] bg-gradient-to-br from-white to-[#faf7ff] p-4 shadow-sm"
+                      : ""
+                  }
+                >
+                  {qty > 1 && (
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#9c65fa] to-[#7C3AED] text-xs font-black text-white">
+                        {u + 1}
+                      </span>
+                      <span className="text-sm font-bold text-[#5B21B6]">
+                        {isEn ? `Copy ${u + 1} of ${qty}` : `النسخة ${u + 1} من ${qty}`}
+                      </span>
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    {deliveryFields.map((field: any, idx: number) => {
+                      const key = unitKey(field.id || String(idx), u);
+                      const hasError = fieldErrors.includes(key);
+                      const inputClass = `w-full rounded-xl border px-4 py-3 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe] bg-white ${hasError ? "border-red-400" : "border-[#e8e4f8]"}`;
+                      const setValue = (val: string) =>
+                        setDeliveryInfo((prev) => ({ ...prev, [key]: val }));
 
-                return (
-                  <div key={key}>
-                    <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
-                      {field.labelAr}
-                      {field.required && <span className="text-red-500"> *</span>}
-                    </label>
-                    {field.helpText && (
-                      <p className="mb-1 text-xs text-[#6b7280]">{field.helpText}</p>
-                    )}
-                    {field.fieldType === "select" ? (
-                      <select
-                        value={deliveryInfo[key] || ""}
-                        onChange={(e) => setDeliveryInfo((prev) => ({ ...prev, [key]: e.target.value }))}
-                        className={inputClass}
-                      >
-                        <option value="">-- الرجاء التحديد --</option>
-                        {(field.selectOptions || "").split(",").map((opt: string) => opt.trim()).filter(Boolean).map((opt: string) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type={field.fieldType === "tel" ? "tel" : field.fieldType === "email" ? "email" : "text"}
-                        value={deliveryInfo[key] || ""}
-                        onChange={(e) => setDeliveryInfo((prev) => ({ ...prev, [key]: e.target.value }))}
-                        placeholder={field.placeholder || ""}
-                        className={inputClass}
-                        dir={field.fieldType === "tel" || field.fieldType === "email" ? "ltr" : undefined}
-                      />
-                    )}
-                    {hasError && (
-                      <p className="mt-1 text-xs text-red-500">هذا الحقل مطلوب</p>
-                    )}
+                      return (
+                        <div key={key}>
+                          <label className="mb-2 block text-sm font-medium text-[#1e1b4b]">
+                            {isEn && field.labelEn ? field.labelEn : field.labelAr}
+                            {field.required && <span className="text-red-500"> *</span>}
+                          </label>
+                          {field.helpText && (
+                            <p className="mb-1 text-xs text-[#6b7280]">{field.helpText}</p>
+                          )}
+                          {field.fieldType === "select" ? (
+                            <select
+                              value={deliveryInfo[key] || ""}
+                              onChange={(e) => setValue(e.target.value)}
+                              className={inputClass}
+                            >
+                              <option value="">{isEn ? "-- Please select --" : "-- الرجاء التحديد --"}</option>
+                              {(field.selectOptions || "").split(",").map((opt: string) => opt.trim()).filter(Boolean).map((opt: string) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={field.fieldType === "tel" ? "tel" : field.fieldType === "email" ? "email" : "text"}
+                              value={deliveryInfo[key] || ""}
+                              onChange={(e) => setValue(e.target.value)}
+                              placeholder={field.placeholder || ""}
+                              className={inputClass}
+                              dir={field.fieldType === "tel" || field.fieldType === "email" ? "ltr" : undefined}
+                            />
+                          )}
+                          {hasError && (
+                            <p className="mt-1 text-xs text-red-500">{isEn ? "This field is required" : "هذا الحقل مطلوب"}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
 
