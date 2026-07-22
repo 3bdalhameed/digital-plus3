@@ -285,16 +285,29 @@ export async function sendAbandonedCartEmail(opts: {
   name: string;
   items: Array<{ name: string; quantity: number }>;
   which: 1 | 2;
+  /** Optional CMS Email Templates global. Any blank field falls back
+   *  to the built-in default below. */
+  tpl?: any;
 }): Promise<boolean> {
   const storeUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
   const first = opts.name?.trim() || "عزيزنا العميل";
+  const tpl = opts.tpl ?? {};
+
+  // {name} substitution for the CMS-authored fields.
+  const fill = (s?: string) => (s || "").replace(/\{name\}/g, first);
+  const pick = (v: string | undefined, fallback: string) => {
+    const t = fill(v)?.trim();
+    return t || fallback;
+  };
 
   const headline = opts.which === 2
-    ? "سلتك لا تزال بانتظارك ⏳"
-    : "نسيت شيئاً في سلتك؟ 🛒";
+    ? pick(tpl.cartReminderSecondHeadline, "سلتك لا تزال بانتظارك ⏳")
+    : pick(tpl.cartReminderFirstHeadline, "نسيت شيئاً في سلتك؟ 🛒");
   const sub = opts.which === 2
-    ? "منتجاتك قد تنفد قريباً — أكمل طلبك الآن قبل فوات الفرصة."
-    : "لقد تركت بعض المنتجات في سلتك. أكمل طلبك في أي وقت.";
+    ? pick(tpl.cartReminderSecondBody, "منتجاتك قد تنفد قريباً — أكمل طلبك الآن قبل فوات الفرصة.")
+    : pick(tpl.cartReminderFirstBody, "لقد تركت بعض المنتجات في سلتك. أكمل طلبك في أي وقت.");
+  const ctaLabel = pick(tpl.cartReminderCtaLabel, "إكمال الطلب");
+  const footerText = pick(tpl.cartReminderFooter, "فريق الدعم جاهز لمساعدتك على مدار الساعة");
 
   const rows = opts.items
     .map(
@@ -323,20 +336,24 @@ export async function sendAbandonedCartEmail(opts: {
       <div style="text-align:center;margin-top:28px;">
         <a href="${storeUrl}/cart"
            style="display:inline-block;background:linear-gradient(135deg,#9c65fa,#7C3AED);color:white;text-decoration:none;padding:13px 34px;border-radius:12px;font-weight:700;font-size:15px;">
-          إكمال الطلب
+          ${ctaLabel}
         </a>
       </div>
     </div>
     <div style="background:#F3F0FF;padding:18px 32px;text-align:center;">
-      <p style="color:#6D28D9;margin:0;font-size:13px;">فريق الدعم جاهز لمساعدتك على مدار الساعة</p>
+      <p style="color:#6D28D9;margin:0;font-size:13px;">${footerText}</p>
     </div>
   </div>
 </body>
 </html>`;
 
+  const subject = opts.which === 2
+    ? pick(tpl.cartReminderSecondSubject, "⏳ سلتك بانتظارك — أكمل طلبك")
+    : pick(tpl.cartReminderFirstSubject, "🛒 نسيت شيئاً في سلتك؟");
+
   return sendViaResend({
     to: opts.email,
-    subject: opts.which === 2 ? "⏳ سلتك بانتظارك — أكمل طلبك" : "🛒 نسيت شيئاً في سلتك؟",
+    subject,
     html,
   });
 }

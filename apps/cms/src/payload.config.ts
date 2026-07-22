@@ -127,7 +127,7 @@ export default buildConfig({
       // sometime in [3h, 4h). Independent of the order sweep above so a
       // failure in one doesn't stop the other.
       try {
-        const c = await runAbandonedCartReminders(payload.db);
+        const c = await runAbandonedCartReminders(payload);
         if (c.sent3h || c.sent6h) {
           payload.logger.info({ msg: "[maint] cart reminders", ...c });
         }
@@ -394,6 +394,20 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
     "abandoned_carts_reminder_6h_col",
     "ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS reminder_6h_sent_at TIMESTAMP(3) WITH TIME ZONE"
   );
+  // Email Templates — abandoned-cart reminder copy columns. Payload's
+  // push:false means new global fields need their columns created by
+  // hand or the /api/globals/email-templates save 500s.
+  const cartTplTextCols = [
+    "cart_reminder_cta_label", "cart_reminder_footer",
+    "cart_reminder_first_subject", "cart_reminder_second_subject",
+    "cart_reminder_first_headline", "cart_reminder_second_headline",
+  ];
+  for (const col of cartTplTextCols) {
+    await run(`email_templates_${col}`, `ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS ${col} varchar`);
+  }
+  for (const col of ["cart_reminder_first_body", "cart_reminder_second_body"]) {
+    await run(`email_templates_${col}`, `ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS ${col} text`);
+  }
   // Orders: new "in_progress" (قيد التنفيذ) status between paid and
   // delivered, for when the team is actively fulfilling the order.
   // ALTER TYPE ADD VALUE IF NOT EXISTS is idempotent + auto-commits
@@ -1047,9 +1061,20 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
  * Resend accepts it, so a transient email failure just retries next
  * hour.
  */
-async function runAbandonedCartReminders(db: any): Promise<{ sent3h: number; sent6h: number }> {
+async function runAbandonedCartReminders(payload: any): Promise<{ sent3h: number; sent6h: number }> {
+  const db = payload.db;
   const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
   if (!pool?.query) throw new Error("DB pool not found on payload.db");
+
+  // Load the editable copy from the CMS Email Templates global. Every
+  // field is optional -- sendAbandonedCartEmail falls back to its
+  // built-in defaults when blank.
+  let tpl: any = {};
+  try {
+    tpl = (await payload.findGlobal({ slug: "email-templates", overrideAccess: true })) ?? {};
+  } catch (e) {
+    payload.logger?.error?.({ msg: "[maint] failed to load email-templates", error: (e as any)?.message });
+  }
 
   // Normalize a stored cart_data row into a light {name, quantity}
   // list for the email. cart_data is the storefront zustand cart:
@@ -1088,6 +1113,7 @@ async function runAbandonedCartReminders(db: any): Promise<{ sent3h: number; sen
         name: r.user_name,
         items: toItems(r.cart_data),
         which: tier,
+        tpl,
       });
       if (ok) {
         await pool.query(

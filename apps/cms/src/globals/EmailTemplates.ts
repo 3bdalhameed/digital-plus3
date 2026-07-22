@@ -78,5 +78,48 @@ export const EmailTemplates: GlobalConfig = {
         },
       ],
     },
+    {
+      type: "collapsible",
+      label: "بريد تذكير السلة المتروكة",
+      admin: {
+        description:
+          "يُرسل للعميل الذي ترك منتجات في السلة: تذكير بعد 3 ساعات وآخر بعد 6 ساعات. المتغير المتاح: {name}. اترك الحقل فارغاً لاستخدام النص الافتراضي.",
+      },
+      fields: [
+        {
+          name: "cartReminderCtaLabel",
+          label: "نص زر إكمال الطلب",
+          type: "text",
+          admin: { description: "الافتراضي: إكمال الطلب" },
+        },
+        {
+          name: "cartReminderFooter",
+          label: "نص التذييل",
+          type: "text",
+          admin: { description: "الافتراضي: فريق الدعم جاهز لمساعدتك على مدار الساعة" },
+        },
+        {
+          type: "row",
+          fields: [
+            { name: "cartReminderFirstSubject",  label: "عنوان تذكير 3 ساعات",  type: "text" },
+            { name: "cartReminderSecondSubject", label: "عنوان تذكير 6 ساعات",  type: "text" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            { name: "cartReminderFirstHeadline",  label: "ترويسة تذكير 3 ساعات", type: "text" },
+            { name: "cartReminderSecondHeadline", label: "ترويسة تذكير 6 ساعات", type: "text" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            { name: "cartReminderFirstBody",  label: "نص تذكير 3 ساعات", type: "textarea" },
+            { name: "cartReminderSecondBody", label: "نص تذكير 6 ساعات", type: "textarea" },
+          ],
+        },
+      ],
+    },
   ],
 };
