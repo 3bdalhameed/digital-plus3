@@ -1029,7 +1029,7 @@ function PaymentPill({ label, mark }: { label: string; mark: React.ReactNode }) 
   // mark sits at the left/trailing edge -- matches the reference
   // where "فيزا [VISA]" reads text-then-icon.
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3.5 py-2 text-white ring-1 ring-white/20 backdrop-blur-[2px]">
+    <span className="inline-flex items-center gap-2 rounded-full bg-[rgb(254_254_254/0.12)] px-3.5 py-2 text-white ring-1 ring-[rgb(254_254_254/0.12)] backdrop-blur-[2px]">
       <span className="text-[11px] font-semibold leading-none">{label}</span>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center">
         {mark}
