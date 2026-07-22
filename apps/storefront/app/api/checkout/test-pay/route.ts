@@ -29,6 +29,10 @@ const schema = z.object({
       name:      z.string(),
       quantity:  z.coerce.number().min(1),
       unitPrice: z.coerce.number().min(0),
+      // Per-item activation email (optional). Persisted to the order
+      // item's delivery_info so support knows where to activate each
+      // product when the cart has more than one.
+      activationEmail: z.string().email().max(160).optional(),
     })
   ).min(1),
   totalAmount:    z.coerce.number().min(0),
@@ -94,6 +98,7 @@ export async function POST(req: NextRequest) {
         productId: i.productId,
         quantity:  i.quantity,
         unitPrice: i.unitPrice,
+        deliveryInfo: i.activationEmail ? { activationEmail: i.activationEmail } : null,
       })),
     });
 

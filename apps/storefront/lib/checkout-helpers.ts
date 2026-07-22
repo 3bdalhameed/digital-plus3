@@ -194,6 +194,11 @@ export type CheckoutItem = {
   productId: number;
   quantity:  number;
   unitPrice: number;
+  /** Per-item data captured at checkout (e.g. the activation email the
+   *  customer wants THIS product delivered to). Stored on the order
+   *  item's delivery_info JSON so support can see which email goes with
+   *  which product. */
+  deliveryInfo?: Record<string, any> | null;
 };
 
 /**
@@ -296,14 +301,19 @@ export async function createOrderForCustomer(input: {
     );
     const orderId = order.id;
 
-    // Batch orders_items into ONE multi-row INSERT.
+    // Batch orders_items into ONE multi-row INSERT. delivery_info holds
+    // any per-item data captured at checkout (activation email, etc.),
+    // stored as JSONB so the CMS order form + support can read it.
     if (input.items.length > 0) {
       const itemRows = input.items.map((item, i) => {
         const itemId = crypto.randomBytes(12).toString("hex");
-        return Prisma.sql`(${i + 1}, ${orderId}, ${itemId}, ${item.quantity}, ${item.unitPrice}, ${item.unitPrice * item.quantity})`;
+        const di = item.deliveryInfo && Object.keys(item.deliveryInfo).length > 0
+          ? JSON.stringify(item.deliveryInfo)
+          : null;
+        return Prisma.sql`(${i + 1}, ${orderId}, ${itemId}, ${item.quantity}, ${item.unitPrice}, ${item.unitPrice * item.quantity}, ${di}::jsonb)`;
       });
       await tx.$executeRaw(Prisma.sql`
-        INSERT INTO orders_items (_order, _parent_id, id, quantity, unit_price, total_price)
+        INSERT INTO orders_items (_order, _parent_id, id, quantity, unit_price, total_price, delivery_info)
         VALUES ${Prisma.join(itemRows)}
       `);
 

@@ -57,6 +57,9 @@ export function CheckoutForm() {
     contactEmailPh:    isEn ? "you@example.com"       : "you@example.com",
     contactEmailHint:  isEn ? "We'll use it to reach you about this order if needed." : "سنستخدمه للتواصل معك بخصوص هذا الطلب عند الحاجة.",
     invalidContactEmail: isEn ? "Please enter a valid email or leave it empty." : "يرجى إدخال بريد صحيح أو تركه فارغاً.",
+    activationEmailsTitle: isEn ? "Activation email per product (optional)" : "بريد التفعيل لكل منتج (اختياري)",
+    activationEmailsHint:  isEn ? "Since your cart has more than one product, you can send each product's activation to a different email." : "بما أن سلتك تحتوي على أكثر من منتج، يمكنك إرسال تفعيل كل منتج إلى بريد مختلف.",
+    activationEmailPh:     isEn ? "activation email for this product" : "بريد تفعيل هذا المنتج",
   };
   const [step, setStep] = useState<CheckoutStep>("review");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -67,6 +70,11 @@ export function CheckoutForm() {
   // Optional secondary email for support to reach the customer at,
   // independent of the payment method. Stored on the order.
   const [contactEmail, setContactEmail] = useState("");
+  // Per-product activation email, keyed by product id. Only surfaced
+  // when the cart has more than one product so the customer can send
+  // each product's activation to a different email. Stored on the
+  // matching order item's delivery_info.
+  const [itemEmails, setItemEmails] = useState<Record<string, string>>({});
 
   // Guest-checkout state. Only used when there's no NextAuth session.
   // Once `guestToken` is set the user is treated as "verified" and can
@@ -152,10 +160,21 @@ export function CheckoutForm() {
       return;
     }
     // Secondary email is optional, but if provided it must look valid.
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const trimmedContactEmail = contactEmail.trim();
-    if (trimmedContactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedContactEmail)) {
+    if (trimmedContactEmail && !emailRe.test(trimmedContactEmail)) {
       setError(L.invalidContactEmail);
       return;
+    }
+    // Per-item activation emails are optional too; validate any that
+    // were filled in.
+    const multiItem = items.length > 1;
+    for (const it of items) {
+      const e = (itemEmails[String(it.product.id)] || "").trim();
+      if (e && !emailRe.test(e)) {
+        setError(L.invalidContactEmail);
+        return;
+      }
     }
 
     // Fire-and-forget evidence log — terms acceptance now happens on
@@ -186,6 +205,11 @@ export function CheckoutForm() {
         name:      (i.product as any).nameAr ?? i.product.name?.ar ?? "",
         quantity:  Number(i.quantity),
         unitPrice: Number(i.product.price),
+        // Only send a per-item activation email when the cart has >1
+        // product and this item's field was filled.
+        ...(multiItem && (itemEmails[String(i.product.id)] || "").trim()
+          ? { activationEmail: itemEmails[String(i.product.id)].trim() }
+          : {}),
       })),
       totalAmount: Number(totalAfterDiscount()),
       currency:    items[0]?.product.currency || "USD",
@@ -333,31 +357,55 @@ export function CheckoutForm() {
             {L.reviewTitle}
           </h2>
           <div className="space-y-3">
-            {items.map((item) => (
+            {items.map((item) => {
+              const pid = String(item.product.id);
+              return (
               <div
                 key={item.product.id}
-                className="flex items-center justify-between rounded-xl bg-brand-50 p-3"
+                className="rounded-xl bg-brand-50 p-3"
               >
-                <div>
-                  <p className="text-sm font-bold text-brand-800">
-                    {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {L.quantity}: {item.quantity}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-brand-800">
+                      {(item.product as any).nameAr ?? item.product.name?.ar ?? ""}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {L.quantity}: {item.quantity}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-brand-600">
+                    {formatPrice(
+                      item.product.price * item.quantity,
+                      item.product.currency,
+                      userCurrency,
+                      rates,
+                      lang
+                    )}
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-brand-600">
-                  {formatPrice(
-                    item.product.price * item.quantity,
-                    item.product.currency,
-                    userCurrency,
-                    rates,
-                    lang
-                  )}
-                </span>
+
+                {/* Per-product activation email — only when the cart
+                    has more than one product. */}
+                {items.length > 1 && (
+                  <input
+                    type="email"
+                    dir="ltr"
+                    value={itemEmails[pid] || ""}
+                    onChange={(e) =>
+                      setItemEmails((prev) => ({ ...prev, [pid]: e.target.value }))
+                    }
+                    placeholder={L.activationEmailPh}
+                    className="mt-2 w-full rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs text-brand-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-100"
+                  />
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
+
+          {items.length > 1 && (
+            <p className="mt-3 text-xs text-gray-500">{L.activationEmailsHint}</p>
+          )}
           <div className="mt-4 border-t border-brand-100 pt-4 space-y-3">
             <DiscountCodeInput customerEmail={session?.user?.email || guestEmail || undefined} />
             {appliedDiscount && (
