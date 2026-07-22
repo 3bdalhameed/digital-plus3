@@ -815,9 +815,10 @@ export function ProductDetailClient({ product, productName }: Props) {
             {/* Single white-outlined pill holds EVERYTHING. Groups are
                 pushed to the two edges via justify-between: label + qty
                 cluster pinned to the RTL start (right), action buttons
-                pinned to the RTL end (left). Reverted the earlier
-                "centered" clustering per design feedback. */}
-            <div className="flex flex-1 items-center justify-between gap-3 rounded-2xl border border-white/40 bg-transparent px-4 py-2">
+                pinned to the RTL end (left). Equal 5rem left/right
+                padding keeps the corner buttons symmetric; thicker
+                border-2 per design feedback. */}
+            <div className="flex flex-1 items-center justify-between gap-3 rounded-2xl border-2 border-white/50 bg-transparent px-20 py-2">
               {/* Right-edge group: label + qty control */}
               <div className="flex items-center gap-3">
                 <span className="shrink-0 text-sm font-bold text-white/90">الكمية</span>
