@@ -450,15 +450,15 @@ export function ProductDetailClient({ product, productName }: Props) {
               reads like a real payment strip; a hairline divider
               separates the payment list from the support / trusted
               cards below. */}
-          <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]">
+          <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#9c65fa] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]">
             <div className="mb-4 text-right text-sm font-black">{L.paymentMethodsTitle}</div>
             <div className="flex flex-wrap justify-end gap-2.5 text-xs">
-              <PaymentPill label={L.payVisa}       mark={<PayVisaMark />} />
-              <PaymentPill label={L.payMastercard} mark={<PayMastercardMark />} />
-              <PaymentPill label={L.payApplePay}   mark={<PayApplePayMark />} />
-              <PaymentPill label={L.payGooglePay}  mark={<PayGooglePayMark />} />
-              <PaymentPill label={L.payAmex}       mark={<PayAmexMark />} />
-              <PaymentPill label={L.paySecure}     mark={<ShieldCheck className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />} />
+              <PaymentPill label={L.payVisa}       mark={<i className="fa-brands fa-cc-visa text-[15px] leading-none" />} />
+              <PaymentPill label={L.payMastercard} mark={<i className="fa-brands fa-cc-mastercard text-[15px] leading-none" />} />
+              <PaymentPill label={L.payApplePay}   mark={<i className="fa-brands fa-apple-pay text-[16px] leading-none" />} />
+              <PaymentPill label={L.payGooglePay}  mark={<i className="fa-brands fa-google-pay text-[16px] leading-none" />} />
+              <PaymentPill label={L.payAmex}       mark={<i className="fa-brands fa-cc-amex text-[15px] leading-none" />} />
+              <PaymentPill label={L.paySecure}     mark={<i className="fa-solid fa-shield-halved text-[13px] leading-none" />} />
             </div>
 
             {/* Hairline divider between payment methods and trust
@@ -1033,46 +1033,3 @@ function PaymentPill({ label, mark }: { label: string; mark: React.ReactNode }) 
   );
 }
 
-function PayVisaMark() {
-  return (
-    <span className="flex h-4 w-6 items-center justify-center rounded-[3px] bg-white text-[8px] font-black italic tracking-tight text-[#1A1F71]">
-      VISA
-    </span>
-  );
-}
-
-function PayMastercardMark() {
-  return (
-    <span className="relative flex h-4 w-6 items-center justify-center">
-      <span className="absolute left-0.5 h-3.5 w-3.5 rounded-full bg-[#EB001B] mix-blend-screen" />
-      <span className="absolute right-0.5 h-3.5 w-3.5 rounded-full bg-[#F79E1B] mix-blend-screen" />
-    </span>
-  );
-}
-
-function PayApplePayMark() {
-  return (
-    <span className="flex h-4 w-6 items-center justify-center rounded-[3px] bg-black text-[8px] font-bold text-white">
-       Pay
-    </span>
-  );
-}
-
-function PayGooglePayMark() {
-  return (
-    <span className="flex h-4 w-7 items-center justify-center rounded-[3px] bg-white text-[8px] font-bold">
-      <span className="text-[#4285F4]">G</span>
-      <span className="text-[#EA4335]">P</span>
-      <span className="text-[#FBBC04]">a</span>
-      <span className="text-[#34A853]">y</span>
-    </span>
-  );
-}
-
-function PayAmexMark() {
-  return (
-    <span className="flex h-4 w-8 items-center justify-center rounded-[3px] bg-[#2E77BC] text-[7px] font-black tracking-wider text-white">
-      AMEX
-    </span>
-  );
-}

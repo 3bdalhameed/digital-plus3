@@ -49,6 +49,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        {/* Font Awesome — provides the fa-brands payment icons
+            (fa-cc-visa, fa-cc-mastercard, fa-apple-pay, fa-google-pay,
+            fa-cc-amex) + fa-solid used on the product payment card. */}
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3w6A=="
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+        />
       </head>
       <body className="min-h-screen font-ibm antialiased">
         <Providers>{children}</Providers>
