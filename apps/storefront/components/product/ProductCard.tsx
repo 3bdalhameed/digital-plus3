@@ -123,15 +123,29 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {/* Add-to-cart button — full-width purple */}
-        <button
-          onClick={() => addItem(product)}
-          className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#7C3AED] px-2 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-[#6D28D9] hover:shadow-md active:scale-95 sm:gap-2.5 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
-          dir="rtl"
-        >
-          <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0 sm:h-5 sm:w-5" />
-          <span>{lang === "en" ? "Add to Cart" : "أضف إلى السلة"}</span>
-        </button>
+        {/* Add-to-cart button — full-width purple. Out-of-stock
+            products (inStock === false) show a disabled grey
+            "Out of stock" button instead, matching the product
+            detail page so the two surfaces can't disagree. */}
+        {product.inStock === false ? (
+          <button
+            type="button"
+            disabled
+            className="mt-auto flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg bg-gray-200 px-2 py-1.5 text-[11px] font-bold text-gray-500 sm:gap-2.5 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
+            dir="rtl"
+          >
+            <span>{lang === "en" ? "Out of stock" : "نفدت الكمية"}</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => addItem(product)}
+            className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#7C3AED] px-2 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-[#6D28D9] hover:shadow-md active:scale-95 sm:gap-2.5 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
+            dir="rtl"
+          >
+            <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0 sm:h-5 sm:w-5" />
+            <span>{lang === "en" ? "Add to Cart" : "أضف إلى السلة"}</span>
+          </button>
+        )}
       </div>
     </div>
   );

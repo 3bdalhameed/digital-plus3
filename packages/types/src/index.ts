@@ -49,6 +49,9 @@ export interface Product {
   comparePrice?: number;
   currency: string;
   status: ProductStatus;
+  /** Whether the product can be added to the cart. Defaults to true;
+   *  only an explicit false disables purchase + shows "Out of stock". */
+  inStock?: boolean;
   refundable: boolean;
   refundPolicy?: string;
   usageProofType: UsageProofType;

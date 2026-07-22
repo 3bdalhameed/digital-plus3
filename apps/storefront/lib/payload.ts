@@ -170,6 +170,7 @@ async function getProductsFiltered(params: {
     currency: string;
     status: string;
     type: string;
+    in_stock: boolean | null;
     image_url: string | null;
     delivery_fields: any;
   };
@@ -187,7 +188,7 @@ async function getProductsFiltered(params: {
   // Common SELECT + LEFT JOIN for image — reused in all branches.
   const selectCols = Prisma.sql`
     SELECT p.id, p.slug, p.name_ar, p.name_en, p.price, p.compare_price, p.currency, p.status, p.type,
-           m.url AS image_url, p.delivery_fields
+           p.in_stock, m.url AS image_url, p.delivery_fields
     FROM products p
     LEFT JOIN products_rels pr_img ON pr_img.parent_id = p.id AND pr_img.path = 'images.0.image'
     LEFT JOIN media m ON m.id = pr_img.media_id`;
@@ -268,6 +269,7 @@ async function getProductsFiltered(params: {
     currency: row.currency as Product["currency"],
     status: row.status as Product["status"],
     type: row.type as Product["type"],
+    inStock: row.in_stock !== false,
     images: row.image_url ? [{ image: { url: row.image_url } }] : [],
     deliveryFields: Array.isArray(row.delivery_fields) ? row.delivery_fields : [],
   } as unknown as Product));
