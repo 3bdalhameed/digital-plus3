@@ -752,16 +752,21 @@ export function ProductDetailClient({ product, productName }: Props) {
           - Desktop: full-width bar with centered button group and stacked
             quantity on the end side. */}
       <div className="fixed inset-x-0 bottom-0 z-40 sm:bottom-0">
-        {/* Mobile floating pill */}
-        <div className="mx-3 mb-3 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] shadow-[0_10px_30px_rgba(91,33,182,0.35)] sm:hidden">
-          <div className="flex items-center justify-between gap-2 px-2 py-2" dir="rtl">
+        {/* Mobile floating bar — matches the reference: a purple
+            gradient rounded card with ONE white-outlined pill inside
+            wrapping the add-to-cart button (RTL start / right) and the
+            quantity control + "الكمية" label (RTL end / left). */}
+        <div className="mx-3 mb-3 rounded-[26px] bg-gradient-to-r from-[#7C3AED] to-[#9333EA] p-2 shadow-[0_10px_30px_rgba(91,33,182,0.35)] sm:hidden">
+          <div
+            className="flex items-center justify-between gap-2 rounded-[20px] border border-white/40 px-2 py-1.5"
+            dir="rtl"
+          >
             {/* Add to cart pill — flips to "Out of stock" (LTR) when
-                inStock=false. Disabled state uses cursor-not-allowed +
-                muted text so it reads as a status, not a button. */}
+                inStock=false. */}
             <button
               onClick={inStock ? handleAdd : undefined}
               disabled={!inStock}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
+              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-black shadow-sm transition-all ${inStock ? "text-[#5B21B6] active:scale-95" : "cursor-not-allowed text-[#6b7280]"}`}
             >
               <ShoppingCart className={`h-4 w-4 ${inStock ? "text-[#7C3AED]" : "text-[#9ca3af]"}`} strokeWidth={2.5} />
               {inStock ? (
@@ -771,28 +776,28 @@ export function ProductDetailClient({ product, productName }: Props) {
               )}
             </button>
 
-            {/* Quantity pill inline with the buttons on mobile */}
+            {/* Quantity — label outside the white pill, on the gradient. */}
             <div className="flex shrink-0 items-center gap-1.5 text-white">
-              <span className="text-[11px] font-bold opacity-90">{L.quantityLabel}</span>
               <div className="flex items-center gap-0.5 rounded-full bg-white px-1 py-0.5">
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
                   aria-label="ناقص"
                 >
-                  <Minus className="h-3 w-3" strokeWidth={2.5} />
+                  <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </button>
-                <span className="min-w-[1.25rem] text-center text-xs font-black text-[#5B21B6]">
+                <span className="min-w-[1.4rem] text-center text-sm font-black text-[#5B21B6]">
                   {qty}
                 </span>
                 <button
                   onClick={() => setQty((q) => q + 1)}
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#7C3AED] transition-colors hover:bg-[#EDE9FE]"
                   aria-label="زائد"
                 >
-                  <Plus className="h-3 w-3" strokeWidth={2.5} />
+                  <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </button>
               </div>
+              <span className="text-xs font-bold opacity-90">{L.quantityLabel}</span>
             </div>
           </div>
         </div>

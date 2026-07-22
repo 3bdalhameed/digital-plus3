@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Star, Loader2, X, CheckCircle } from "lucide-react";
 
@@ -35,6 +36,14 @@ export function RateProductButton({
   const [error,  setError]  = useState<string | null>(null);
   const [done,   setDone]   = useState(false);
   const [, startTransition] = useTransition();
+
+  // Portal target. The modal is `position: fixed`, but the order
+  // cards on /orders use transform (hover/expand), which makes a
+  // fixed descendant resolve against the card instead of the
+  // viewport -- clipping the modal inside the card. Rendering into
+  // document.body via a portal escapes any transformed ancestor.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const displayed = hover || rating;
 
@@ -101,9 +110,9 @@ export function RateProductButton({
         <span>قيّم المنتج</span>
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
           onClick={() => {
             if (busy) return;
             setOpen(false);
@@ -198,7 +207,8 @@ export function RateProductButton({
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
