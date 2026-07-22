@@ -2543,6 +2543,46 @@ html:not([dir="rtl"]) .pl__search-clear { left: auto; right: 10px; }
   color: var(--dp-text-primary);
 }
 
+/* Filter dropdown (subcategory) next to the search box */
+.pl__filter-select {
+  flex: 0 0 auto;
+  position: relative;
+}
+.pl__filter-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1.5px solid var(--dp-border-default);
+  border-radius: var(--dp-radius-md);
+  background: var(--dp-surface-card);
+  color: var(--dp-text-primary);
+  padding: 10px 16px 10px 34px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  min-width: 180px;
+  max-width: 260px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+html:not([dir="rtl"]) .pl__filter-select select { padding: 10px 34px 10px 16px; }
+.pl__filter-select select:focus {
+  border-color: var(--dp-brand-600);
+  box-shadow: var(--dp-shadow-focus);
+}
+/* Chevron */
+.pl__filter-select::after {
+  content: "▾";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dp-text-muted);
+  pointer-events: none;
+  font-size: 12px;
+}
+html:not([dir="rtl"]) .pl__filter-select::after { left: auto; right: 12px; }
+
 /* Cards grid ──────────────────────────────────────────────── */
 .pl__grid {
   display: grid;

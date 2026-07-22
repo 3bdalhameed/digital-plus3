@@ -79,8 +79,18 @@ const ProductsList: React.FC<{
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const currentSearch = params.get('search') || '';
   const currentStatusFilter = params.get('where[status][equals]') || 'all';
+  const currentSubcategoryFilter = params.get('where[subcategory][equals]') || '';
 
   const [searchInput, setSearchInput] = useState(currentSearch);
+
+  /* ─── Subcategories for the filter dropdown ─────────────────── */
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; nameAr?: string; nameEn?: string }>>([]);
+  useEffect(() => {
+    fetch(`${serverURL}/api/subcategories?limit=200&depth=0&sort=nameAr`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((j) => setSubcategories(j.docs ?? []))
+      .catch((err) => console.error('[ProductsList] subcategories fetch failed', err));
+  }, [serverURL]);
 
   /* Debounce search input → URL */
   useEffect(() => {
@@ -245,6 +255,24 @@ const ProductsList: React.FC<{
               ×
             </button>
           )}
+        </div>
+
+        {/* Subcategory filter — narrows the grid to one subcategory.
+            Uses Payload's where[subcategory][equals]=<id> query param
+            so it composes with the status filter + search + pagination. */}
+        <div className="pl__filter-select">
+          <select
+            value={currentSubcategoryFilter}
+            onChange={(e) => updateParam('where[subcategory][equals]', e.target.value || null)}
+            aria-label="تصفية حسب القسم الفرعي"
+          >
+            <option value="">كل الأقسام الفرعية</option>
+            {subcategories.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nameAr || s.nameEn || s.id}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
