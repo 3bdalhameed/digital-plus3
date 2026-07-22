@@ -456,7 +456,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               `justify-start` are logical, so they follow the dir. */}
           <div
             dir={isEn ? "ltr" : "rtl"}
-            className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#9c65fa] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]"
+            className="overflow-hidden rounded-[28px] bg-gradient-to-l from-[#9c65fa] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]"
           >
             <div className="mb-4 text-start text-sm font-black">{L.paymentMethodsTitle}</div>
             <div className="flex flex-wrap justify-start gap-2.5 text-xs">
