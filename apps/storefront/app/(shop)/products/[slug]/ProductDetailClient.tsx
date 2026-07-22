@@ -450,9 +450,9 @@ export function ProductDetailClient({ product, productName }: Props) {
               reads like a real payment strip; a hairline divider
               separates the payment list from the support / trusted
               cards below. */}
-          <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] p-5 text-white shadow-[0_10px_30px_rgba(124,58,237,0.25)]">
-            <div className="mb-3 text-right text-sm font-bold">{L.paymentMethodsTitle}</div>
-            <div className="flex flex-wrap gap-2 text-xs">
+          <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]">
+            <div className="mb-4 text-right text-sm font-black">{L.paymentMethodsTitle}</div>
+            <div className="flex flex-wrap justify-end gap-2.5 text-xs">
               <PaymentPill label={L.payVisa}       mark={<PayVisaMark />} />
               <PaymentPill label={L.payMastercard} mark={<PayMastercardMark />} />
               <PaymentPill label={L.payApplePay}   mark={<PayApplePayMark />} />
@@ -468,19 +468,21 @@ export function ProductDetailClient({ product, productName }: Props) {
 
             {/* Support + trusted-store row lives INSIDE the same card
                 now. Two columns on all breakpoints so the row is a
-                consistent height regardless of language length. */}
+                consistent height regardless of language length. Each
+                heading pairs a small solid star/headset glyph with the
+                title on the RTL start, matching the reference. */}
             <div className="grid grid-cols-2 gap-4">
               <div className="text-right">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="text-sm font-bold">{L.supportTitle}</span>
-                  <Headphones className="h-4 w-4 text-white/85" strokeWidth={2} />
+                <div className="mb-1 flex items-center justify-end gap-2">
+                  <span className="text-sm font-black">{L.supportTitle}</span>
+                  <Headphones className="h-4 w-4 shrink-0 text-white" strokeWidth={2.25} />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/75">{L.supportBody}</p>
               </div>
               <div className="text-right">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="text-sm font-bold">{L.trustedTitle}</span>
-                  <BadgeCheck className="h-4 w-4 text-white/85" strokeWidth={2} />
+                <div className="mb-1 flex items-center justify-end gap-2">
+                  <span className="text-sm font-black">{L.trustedTitle}</span>
+                  <Star className="h-4 w-4 shrink-0 fill-white text-white" strokeWidth={2.25} />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/75">{L.trustedBody}</p>
               </div>
@@ -1022,7 +1024,7 @@ function PaymentPill({ label, mark }: { label: string; mark: React.ReactNode }) 
   // mark sits at the left/trailing edge -- matches the reference
   // where "فيزا [VISA]" reads text-then-icon.
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-white ring-1 ring-white/15 backdrop-blur-[2px]">
+    <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3.5 py-2 text-white ring-1 ring-white/20 backdrop-blur-[2px]">
       <span className="text-[11px] font-semibold leading-none">{label}</span>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center">
         {mark}
