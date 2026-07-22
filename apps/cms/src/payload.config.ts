@@ -31,6 +31,7 @@ import { NavbarConfig } from "./globals/NavbarConfig";
 import { FooterConfig } from "./globals/FooterConfig";
 import { PoliciesContent } from "./globals/PoliciesContent";
 import { EmailTemplates } from "./globals/EmailTemplates";
+import { sendAbandonedCartEmail } from "./lib/email";
 
 dotenv.config();
 
@@ -120,6 +121,18 @@ export default buildConfig({
         }
       } catch (e: any) {
         payload.logger.error({ msg: "[maint] 7-day sweep failed", error: e?.message ?? String(e) });
+      }
+      // Abandoned-cart reminders: 3h + 6h nudges. Runs on the same
+      // hourly cadence, so a cart abandoned at T gets its 3h reminder
+      // sometime in [3h, 4h). Independent of the order sweep above so a
+      // failure in one doesn't stop the other.
+      try {
+        const c = await runAbandonedCartReminders(payload.db);
+        if (c.sent3h || c.sent6h) {
+          payload.logger.info({ msg: "[maint] cart reminders", ...c });
+        }
+      } catch (e: any) {
+        payload.logger.error({ msg: "[maint] cart reminders failed", error: e?.message ?? String(e) });
       }
     };
     // Fire once shortly after boot (so ops can watch a fresh deploy
@@ -368,6 +381,18 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
   await run(
     "orders_confirmed_by_col",
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmed_by VARCHAR"
+  );
+
+  // Abandoned-cart reminder tracking. Two timestamp columns record
+  // when each reminder email was sent so the hourly sweep never
+  // double-sends. NULL = not yet sent.
+  await run(
+    "abandoned_carts_reminder_3h_col",
+    "ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS reminder_3h_sent_at TIMESTAMP(3) WITH TIME ZONE"
+  );
+  await run(
+    "abandoned_carts_reminder_6h_col",
+    "ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS reminder_6h_sent_at TIMESTAMP(3) WITH TIME ZONE"
   );
   // Orders: new "in_progress" (قيد التنفيذ) status between paid and
   // delivered, for when the team is actively fulfilling the order.
@@ -1006,6 +1031,80 @@ async function runMigrations(db: any): Promise<Record<string, string>> {
  *                     enforces this, we also filter with NOT EXISTS
  *                     so we skip the failed-insert cost).
  */
+/**
+ * Abandoned-cart reminder sweep. Sends a 3h reminder then a 6h
+ * reminder to signed-in shoppers who left items in the cart without
+ * checking out.
+ *
+ * Timing is measured from the cart's last activity (updated_at), so an
+ * active shopper who keeps changing the cart doesn't get nudged. The
+ * reminder_3h_sent_at / reminder_6h_sent_at columns guard against
+ * double-sends, and the 6h reminder only fires once the 3h one has
+ * gone out (sequential).
+ *
+ * Runs on the hourly maintenance cadence, so each reminder lands
+ * within an hour of its threshold. Each send is stamped only after
+ * Resend accepts it, so a transient email failure just retries next
+ * hour.
+ */
+async function runAbandonedCartReminders(db: any): Promise<{ sent3h: number; sent6h: number }> {
+  const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
+  if (!pool?.query) throw new Error("DB pool not found on payload.db");
+
+  // Normalize a stored cart_data row into a light {name, quantity}
+  // list for the email. cart_data is the storefront zustand cart:
+  // [{ product: { nameAr, ... }, quantity }, ...].
+  const toItems = (cartData: any): Array<{ name: string; quantity: number }> => {
+    const arr = Array.isArray(cartData) ? cartData : [];
+    return arr.map((it: any) => ({
+      name: it?.product?.nameAr || it?.product?.name?.ar || it?.product?.nameEn || "منتج",
+      quantity: Number(it?.quantity ?? 1),
+    }));
+  };
+
+  const runTier = async (
+    tier: 1 | 2,
+    interval: string,
+    sentCol: "reminder_3h_sent_at" | "reminder_6h_sent_at",
+    requirePrev: boolean,
+  ): Promise<number> => {
+    const prevGuard = requirePrev ? "AND reminder_3h_sent_at IS NOT NULL" : "";
+    const { rows } = await pool.query(`
+      SELECT user_email, user_name, cart_data
+        FROM abandoned_carts
+       WHERE completed_at IS NULL
+         AND ${sentCol} IS NULL
+         AND cart_data IS NOT NULL
+         AND jsonb_typeof(cart_data) = 'array'
+         AND jsonb_array_length(cart_data) > 0
+         AND updated_at < NOW() - INTERVAL '${interval}'
+         ${prevGuard}
+       LIMIT 200
+    `);
+    let sent = 0;
+    for (const r of rows) {
+      const ok = await sendAbandonedCartEmail({
+        email: r.user_email,
+        name: r.user_name,
+        items: toItems(r.cart_data),
+        which: tier,
+      });
+      if (ok) {
+        await pool.query(
+          `UPDATE abandoned_carts SET ${sentCol} = NOW() WHERE user_email = $1 AND completed_at IS NULL`,
+          [r.user_email],
+        );
+        sent += 1;
+      }
+    }
+    return sent;
+  };
+
+  const sent3h = await runTier(1, "3 hours", "reminder_3h_sent_at", false);
+  const sent6h = await runTier(2, "6 hours", "reminder_6h_sent_at", true);
+  return { sent3h, sent6h };
+}
+
 async function runOrderMaintenance(db: any): Promise<{ confirmed: number; autoReviews: number }> {
   const pool = db.pool ?? db.drizzle?.session?.client ?? db.client;
   if (!pool?.query) throw new Error("DB pool not found on payload.db");

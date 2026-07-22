@@ -270,3 +270,73 @@ async function getAdminEmails(payload: any): Promise<string[]> {
 
   return [...emails];
 }
+
+/**
+ * Abandoned-cart reminder email. Sent by the hourly sweep (see
+ * runAbandonedCartReminders in payload.config.ts) 3h then 6h after a
+ * signed-in shopper leaves items in the cart without checking out.
+ *
+ * `which` (1 = 3h, 2 = 6h) only tweaks the copy; the 6h nudge is a
+ * little more urgent. Returns whether Resend accepted the send so the
+ * caller can decide whether to stamp reminder_Nh_sent_at.
+ */
+export async function sendAbandonedCartEmail(opts: {
+  email: string;
+  name: string;
+  items: Array<{ name: string; quantity: number }>;
+  which: 1 | 2;
+}): Promise<boolean> {
+  const storeUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
+  const first = opts.name?.trim() || "عزيزنا العميل";
+
+  const headline = opts.which === 2
+    ? "سلتك لا تزال بانتظارك ⏳"
+    : "نسيت شيئاً في سلتك؟ 🛒";
+  const sub = opts.which === 2
+    ? "منتجاتك قد تنفد قريباً — أكمل طلبك الآن قبل فوات الفرصة."
+    : "لقد تركت بعض المنتجات في سلتك. أكمل طلبك في أي وقت.";
+
+  const rows = opts.items
+    .map(
+      (it) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #EDE9FE;color:#1e1b4b;font-size:14px;">${it.name || "منتج"}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #EDE9FE;color:#6b7280;font-size:13px;text-align:left;">×${it.quantity}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:40px 20px;background:#F3F0FF;font-family:'Cairo','Tajawal',Arial,sans-serif;direction:rtl;">
+  <div style="max-width:560px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(124,58,237,0.12);">
+    <div style="background:linear-gradient(135deg,#9c65fa,#7C3AED);padding:30px 32px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:6px;">🛍️</div>
+      <h1 style="color:white;margin:0;font-size:20px;font-weight:700;">${headline}</h1>
+      <p style="color:#EDE9FE;margin:8px 0 0;font-size:14px;">مرحباً ${first}</p>
+    </div>
+    <div style="padding:32px;">
+      <p style="color:#4b5563;font-size:14px;text-align:center;margin:0 0 22px;">${sub}</p>
+      <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      <div style="text-align:center;margin-top:28px;">
+        <a href="${storeUrl}/cart"
+           style="display:inline-block;background:linear-gradient(135deg,#9c65fa,#7C3AED);color:white;text-decoration:none;padding:13px 34px;border-radius:12px;font-weight:700;font-size:15px;">
+          إكمال الطلب
+        </a>
+      </div>
+    </div>
+    <div style="background:#F3F0FF;padding:18px 32px;text-align:center;">
+      <p style="color:#6D28D9;margin:0;font-size:13px;">فريق الدعم جاهز لمساعدتك على مدار الساعة</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return sendViaResend({
+    to: opts.email,
+    subject: opts.which === 2 ? "⏳ سلتك بانتظارك — أكمل طلبك" : "🛒 نسيت شيئاً في سلتك؟",
+    html,
+  });
+}
