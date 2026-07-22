@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "@/components/ui/link";
-import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, ShieldCheck, Headphones, BadgeCheck, Minus, Plus, X, PenLine, Loader2 } from "lucide-react";
+import { Heart, Share2, ShoppingCart, Zap, Star, ShoppingBag, BadgeCheck, Minus, Plus, X, PenLine, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import { useLocaleStore } from "@/lib/locale-store";
@@ -450,9 +450,16 @@ export function ProductDetailClient({ product, productName }: Props) {
               reads like a real payment strip; a hairline divider
               separates the payment list from the support / trusted
               cards below. */}
-          <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#9c65fa] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]">
-            <div className="mb-4 text-right text-sm font-black">{L.paymentMethodsTitle}</div>
-            <div className="flex flex-wrap justify-end gap-2.5 text-xs">
+          {/* dir flips the whole card's alignment: RTL (Arabic) packs
+              the title + pills + feature glyphs to the right; LTR
+              (English) mirrors them to the left. `text-start` /
+              `justify-start` are logical, so they follow the dir. */}
+          <div
+            dir={isEn ? "ltr" : "rtl"}
+            className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#9c65fa] via-[#7C3AED] to-[#6D28D9] p-6 text-white shadow-[0_18px_40px_rgba(124,58,237,0.3)]"
+          >
+            <div className="mb-4 text-start text-sm font-black">{L.paymentMethodsTitle}</div>
+            <div className="flex flex-wrap justify-start gap-2.5 text-xs">
               <PaymentPill label={L.payVisa}       mark={<i className="fa-brands fa-cc-visa text-[15px] leading-none" />} />
               <PaymentPill label={L.payMastercard} mark={<i className="fa-brands fa-cc-mastercard text-[15px] leading-none" />} />
               <PaymentPill label={L.payApplePay}   mark={<i className="fa-brands fa-apple-pay text-[16px] leading-none" />} />
@@ -466,23 +473,21 @@ export function ProductDetailClient({ product, productName }: Props) {
                 gradient without introducing a hard color. */}
             <div className="my-5 h-px w-full bg-white/20" />
 
-            {/* Support + trusted-store row lives INSIDE the same card
-                now. Two columns on all breakpoints so the row is a
-                consistent height regardless of language length. Each
-                heading pairs a small solid star/headset glyph with the
-                title on the RTL start, matching the reference. */}
+            {/* Support + trusted-store row. Each heading pairs a small
+                Font Awesome glyph with the title on the reading start
+                (right in AR, left in EN). */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-right">
-                <div className="mb-1 flex items-center justify-end gap-2">
+              <div className="text-start">
+                <div className="mb-1 flex items-center justify-start gap-2">
                   <span className="text-sm font-black">{L.supportTitle}</span>
-                  <Headphones className="h-4 w-4 shrink-0 text-white" strokeWidth={2.25} />
+                  <i className="fa-solid fa-headset shrink-0 text-[14px] text-white" />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/75">{L.supportBody}</p>
               </div>
-              <div className="text-right">
-                <div className="mb-1 flex items-center justify-end gap-2">
+              <div className="text-start">
+                <div className="mb-1 flex items-center justify-start gap-2">
                   <span className="text-sm font-black">{L.trustedTitle}</span>
-                  <Star className="h-4 w-4 shrink-0 fill-white text-white" strokeWidth={2.25} />
+                  <i className="fa-solid fa-star shrink-0 text-[14px] text-white" />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/75">{L.trustedBody}</p>
               </div>
