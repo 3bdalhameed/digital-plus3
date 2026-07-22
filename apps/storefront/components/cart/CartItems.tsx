@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "@/components/ui/link";
 import { useEffect, useState } from "react";
-import { Trash2, Plus, Minus, AlertCircle } from "lucide-react";
+import { Trash2, Plus, Minus, AlertCircle, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocaleStore } from "@/lib/locale-store";
 import { formatPrice } from "@/lib/utils";
@@ -11,10 +11,33 @@ import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
 import { useT } from "@/lib/i18n";
 import type { DeliveryField } from "@my-store/types";
 
-function getMissingRequired(fields: DeliveryField[], info: Record<string, string> | undefined): string[] {
-  return fields
-    .filter((f) => f.required && !info?.[f.id || "0"]?.trim())
-    .map((f) => f.id || "0");
+/**
+ * Per-unit delivery-field key. When quantity > 1 each unit needs its
+ * own set of delivery inputs (e.g. an email/number asked once per
+ * copy). Unit 0 keeps the bare field id for back-compat with values
+ * captured on the product page + single-quantity carts; units 1+ get
+ * a "#<n>" suffix.
+ */
+function unitKey(fieldId: string, unit: number): string {
+  return unit === 0 ? fieldId : `${fieldId}#${unit}`;
+}
+
+/** Required keys still empty, checked across every unit of the item. */
+function getMissingRequired(
+  fields: DeliveryField[],
+  info: Record<string, string> | undefined,
+  quantity: number,
+): string[] {
+  const missing: string[] = [];
+  const units = Math.max(1, quantity || 1);
+  for (let u = 0; u < units; u++) {
+    for (const f of fields) {
+      if (!f.required) continue;
+      const k = unitKey(f.id || "0", u);
+      if (!info?.[k]?.trim()) missing.push(k);
+    }
+  }
+  return missing;
 }
 
 export function CartItems() {
@@ -67,16 +90,27 @@ export function CartItems() {
 
   const canCheckout = !anyOutOfStock && items.every((item) => {
     const fields: DeliveryField[] = (item.product as any).deliveryFields || [];
-    return getMissingRequired(fields, item.deliveryInfo).length === 0;
+    return getMissingRequired(fields, item.deliveryInfo, item.quantity).length === 0;
   });
 
   return (
     <div className="space-y-4">
+      {/* Back / continue shopping */}
+      <Link
+        href="/products"
+        className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-800"
+        dir={dir}
+      >
+        <ArrowRight className="h-4 w-4 rtl:rotate-0 ltr:rotate-180" strokeWidth={2.5} />
+        <span>{isEn ? "Continue shopping" : "متابعة التسوق"}</span>
+      </Link>
+
       {items.map((item) => {
         const imageUrl = item.product.images?.[0]?.image?.url;
         const deliveryFields: DeliveryField[] = (item.product as any).deliveryFields || [];
-        const missingKeys = getMissingRequired(deliveryFields, item.deliveryInfo);
+        const missingKeys = getMissingRequired(deliveryFields, item.deliveryInfo, item.quantity);
         const hasUnfilled = missingKeys.length > 0;
+        const units = Math.max(1, item.quantity || 1);
 
         const oos = isOutOfStock(item.product.id);
 
@@ -134,20 +168,32 @@ export function CartItems() {
                 <p className="mt-1 text-sm font-semibold text-brand-600">
                   {formatPrice(item.product.price, item.product.currency, userCurrency, rates, lang)}
                 </p>
-                {/* Filled delivery info summary */}
+                {/* Filled delivery info summary — one group per unit
+                    when quantity > 1. */}
                 {item.deliveryInfo && deliveryFields.length > 0 && !hasUnfilled && (
-                  <div className="mt-2 space-y-0.5">
-                    {deliveryFields.map((field, idx) => {
-                      const key = field.id || String(idx);
-                      const value = item.deliveryInfo?.[key];
-                      if (!value) return null;
-                      return (
-                        <p key={key} className="text-xs text-gray-500">
-                          <span className="font-medium text-brand-700">{field.labelAr}:</span>{" "}
-                          {value}
-                        </p>
-                      );
-                    })}
+                  <div className="mt-2 space-y-1.5">
+                    {Array.from({ length: units }).map((_, u) => (
+                      <div key={u} className="space-y-0.5">
+                        {units > 1 && (
+                          <p className="text-[11px] font-bold text-brand-500">
+                            {isEn ? `Copy ${u + 1}` : `النسخة ${u + 1}`}
+                          </p>
+                        )}
+                        {deliveryFields.map((field, idx) => {
+                          const key = unitKey(field.id || String(idx), u);
+                          const value = item.deliveryInfo?.[key];
+                          if (!value) return null;
+                          return (
+                            <p key={key} className="text-xs text-gray-500">
+                              <span className="font-medium text-brand-700">
+                                {isEn && field.labelEn ? field.labelEn : field.labelAr}:
+                              </span>{" "}
+                              {value}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -203,74 +249,84 @@ export function CartItems() {
                     </p>
                   </div>
                 )}
-                <div className="space-y-3">
-                  {deliveryFields.map((field, idx) => {
-                    const key = field.id || String(idx);
-                    const hasError = missingKeys.includes(key);
-                    const inputClass = `w-full rounded-xl border px-4 py-2.5 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe] bg-white ${hasError ? "border-red-400" : "border-[#e8e4f8]"}`;
+                {/* One block of delivery fields PER UNIT. If the cart
+                    holds 2 of a product whose delivery field asks for a
+                    number/email, the customer fills it twice — once per
+                    copy — and each copy is stored under its own key. */}
+                <div className="space-y-4">
+                  {Array.from({ length: units }).map((_, u) => (
+                    <div key={u} className={units > 1 ? "rounded-xl border border-[#e8e4f8] bg-brand-50/40 p-3" : ""}>
+                      {units > 1 && (
+                        <p className="mb-2 text-xs font-bold text-brand-600">
+                          {isEn ? `Copy ${u + 1} of ${units}` : `النسخة ${u + 1} من ${units}`}
+                        </p>
+                      )}
+                      <div className="space-y-3">
+                        {deliveryFields.map((field, idx) => {
+                          const key = unitKey(field.id || String(idx), u);
+                          const hasError = missingKeys.includes(key);
+                          const inputClass = `w-full rounded-xl border px-4 py-2.5 text-sm text-[#1e1b4b] placeholder:text-[#9ca3af] focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#ddd6fe] bg-white ${hasError ? "border-red-400" : "border-[#e8e4f8]"}`;
+                          const setValue = (val: string) =>
+                            updateDeliveryInfo(item.product.id, {
+                              ...(item.deliveryInfo || {}),
+                              [key]: val,
+                            });
 
-                    return (
-                      <div key={key}>
-                        <label className="mb-1 block text-sm font-medium text-[#1e1b4b]">
-                          {isEn && field.labelEn ? field.labelEn : field.labelAr}
-                          {field.required && <span className="text-red-500"> *</span>}
-                        </label>
-                        {field.helpText && (
-                          <p className="mb-1 text-xs text-[#6b7280]">{field.helpText}</p>
-                        )}
-                        {field.fieldType === "select" ? (
-                          <select
-                            value={item.deliveryInfo?.[key] || ""}
-                            onChange={(e) =>
-                              updateDeliveryInfo(item.product.id, {
-                                ...(item.deliveryInfo || {}),
-                                [key]: e.target.value,
-                              })
-                            }
-                            className={inputClass}
-                          >
-                            <option value="">{isEn ? "-- Please select --" : "-- الرجاء التحديد --"}</option>
-                            {(field.selectOptions || "")
-                              .split(",")
-                              .map((o) => o.trim())
-                              .filter(Boolean)
-                              .map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                          </select>
-                        ) : (
-                          <input
-                            type={
-                              field.fieldType === "tel"
-                                ? "tel"
-                                : field.fieldType === "email"
-                                ? "email"
-                                : "text"
-                            }
-                            value={item.deliveryInfo?.[key] || ""}
-                            onChange={(e) =>
-                              updateDeliveryInfo(item.product.id, {
-                                ...(item.deliveryInfo || {}),
-                                [key]: e.target.value,
-                              })
-                            }
-                            placeholder={field.placeholder || ""}
-                            className={inputClass}
-                            dir={
-                              field.fieldType === "tel" || field.fieldType === "email"
-                                ? "ltr"
-                                : undefined
-                            }
-                          />
-                        )}
-                        {hasError && (
-                          <p className="mt-1 text-xs text-red-500">{isEn ? "This field is required" : "هذا الحقل مطلوب"}</p>
-                        )}
+                          return (
+                            <div key={key}>
+                              <label className="mb-1 block text-sm font-medium text-[#1e1b4b]">
+                                {isEn && field.labelEn ? field.labelEn : field.labelAr}
+                                {field.required && <span className="text-red-500"> *</span>}
+                              </label>
+                              {field.helpText && (
+                                <p className="mb-1 text-xs text-[#6b7280]">{field.helpText}</p>
+                              )}
+                              {field.fieldType === "select" ? (
+                                <select
+                                  value={item.deliveryInfo?.[key] || ""}
+                                  onChange={(e) => setValue(e.target.value)}
+                                  className={inputClass}
+                                >
+                                  <option value="">{isEn ? "-- Please select --" : "-- الرجاء التحديد --"}</option>
+                                  {(field.selectOptions || "")
+                                    .split(",")
+                                    .map((o) => o.trim())
+                                    .filter(Boolean)
+                                    .map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type={
+                                    field.fieldType === "tel"
+                                      ? "tel"
+                                      : field.fieldType === "email"
+                                      ? "email"
+                                      : "text"
+                                  }
+                                  value={item.deliveryInfo?.[key] || ""}
+                                  onChange={(e) => setValue(e.target.value)}
+                                  placeholder={field.placeholder || ""}
+                                  className={inputClass}
+                                  dir={
+                                    field.fieldType === "tel" || field.fieldType === "email"
+                                      ? "ltr"
+                                      : undefined
+                                  }
+                                />
+                              )}
+                              {hasError && (
+                                <p className="mt-1 text-xs text-red-500">{isEn ? "This field is required" : "هذا الحقل مطلوب"}</p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

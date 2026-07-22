@@ -29,10 +29,10 @@ const schema = z.object({
       name:      z.string(),
       quantity:  z.coerce.number().min(1),
       unitPrice: z.coerce.number().min(0),
-      // Per-item activation email (optional). Persisted to the order
-      // item's delivery_info so support knows where to activate each
-      // product when the cart has more than one.
-      activationEmail: z.string().email().max(160).optional(),
+      // Per-item delivery info collected at the cart (per-unit
+      // delivery fields keyed by field id, plus an optional
+      // activationEmail). Persisted to the order item's delivery_info.
+      deliveryInfo: z.record(z.any()).optional(),
     })
   ).min(1),
   totalAmount:    z.coerce.number().min(0),
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         productId: i.productId,
         quantity:  i.quantity,
         unitPrice: i.unitPrice,
-        deliveryInfo: i.activationEmail ? { activationEmail: i.activationEmail } : null,
+        deliveryInfo: i.deliveryInfo && Object.keys(i.deliveryInfo).length > 0 ? i.deliveryInfo : null,
       })),
     });
 

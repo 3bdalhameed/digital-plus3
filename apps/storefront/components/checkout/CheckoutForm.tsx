@@ -200,17 +200,24 @@ export function CheckoutForm() {
     setError(null);
 
     const commonBody: Record<string, any> = {
-      items: items.map((i) => ({
-        productId: String(i.product.id),
-        name:      (i.product as any).nameAr ?? i.product.name?.ar ?? "",
-        quantity:  Number(i.quantity),
-        unitPrice: Number(i.product.price),
-        // Only send a per-item activation email when the cart has >1
-        // product and this item's field was filled.
-        ...(multiItem && (itemEmails[String(i.product.id)] || "").trim()
-          ? { activationEmail: itemEmails[String(i.product.id)].trim() }
-          : {}),
-      })),
+      items: items.map((i) => {
+        // The cart now collects per-unit delivery fields into
+        // item.deliveryInfo (keyed by field id, with a "#<n>" suffix
+        // for units beyond the first). Merge in the optional
+        // checkout-level activation email so the order item carries
+        // everything support needs to fulfil it.
+        const deliveryInfo: Record<string, any> = { ...(i.deliveryInfo || {}) };
+        if (multiItem && (itemEmails[String(i.product.id)] || "").trim()) {
+          deliveryInfo.activationEmail = itemEmails[String(i.product.id)].trim();
+        }
+        return {
+          productId: String(i.product.id),
+          name:      (i.product as any).nameAr ?? i.product.name?.ar ?? "",
+          quantity:  Number(i.quantity),
+          unitPrice: Number(i.product.price),
+          ...(Object.keys(deliveryInfo).length ? { deliveryInfo } : {}),
+        };
+      }),
       totalAmount: Number(totalAfterDiscount()),
       currency:    items[0]?.product.currency || "USD",
     };
