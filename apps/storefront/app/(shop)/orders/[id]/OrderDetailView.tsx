@@ -3,7 +3,6 @@
 import Link from "@/components/ui/link";
 import { ArrowRight, Star, Clock } from "lucide-react";
 import { UsageConfirmButton } from "@/components/evidence/UsageConfirmButton";
-import { ConfirmOrderButton } from "@/components/orders/ConfirmOrderButton";
 import { RateProductButton } from "@/components/orders/RateProductButton";
 import { getOrderStatusLabel, getOrderStatusColor, formatPrice } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
@@ -164,24 +163,6 @@ export function OrderDetailView({
         </div>
       </div>
 
-      {order.status === "paid" && (
-        <div className="brand-card border-r-4 border-brand-500">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="mb-1 text-lg font-bold text-brand-800">{L.confirmTitle}</h2>
-              <p className="text-sm text-gray-500">{L.confirmBody}</p>
-              {autoAt && (
-                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  <span>{L.autoConfirmIn} {timeUntil(autoAt, isEn)}</span>
-                </p>
-              )}
-            </div>
-            <ConfirmOrderButton orderId={order.id} />
-          </div>
-        </div>
-      )}
-
       {order.status === "delivered" && order.digitalDeliveryLog && (
         <div className="brand-card border-r-4 border-green-500">
           <h2 className="mb-3 text-lg font-bold text-green-800">{L.deliveryTitle}</h2>
@@ -193,15 +174,35 @@ export function OrderDetailView({
         </div>
       )}
 
+      {/* Single confirm block. The old "confirm order" (paid→delivered)
+          and "confirm receipt & use" were two separate buttons that
+          confused customers. Merged into one: the button both flips the
+          order to delivered (when still paid) AND logs the usage
+          confirmation. The auto-confirm hint only shows while the order
+          is still paid. */}
       {(order.status === "delivered" || order.status === "paid") && (
-        <div className="brand-card">
-          <h2 className="mb-4 text-lg font-bold text-brand-800">{L.receiptTitle}</h2>
-          <UsageConfirmButton
-            orderId={order.id}
-            customerId={sessionUserId}
-            productId={order.items?.[0]?.product?.id || ""}
-            alreadyConfirmed={usageConfirmed}
-          />
+        <div className="brand-card border-r-4 border-brand-500">
+          <h2 className="mb-1 text-lg font-bold text-brand-800">{L.confirmTitle}</h2>
+          {order.status === "paid" && (
+            <>
+              <p className="text-sm text-gray-500">{L.confirmBody}</p>
+              {autoAt && (
+                <p className="mt-2 mb-4 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700">
+                  <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  <span>{L.autoConfirmIn} {timeUntil(autoAt, isEn)}</span>
+                </p>
+              )}
+            </>
+          )}
+          <div className={order.status === "paid" ? "" : "mt-1"}>
+            <UsageConfirmButton
+              orderId={order.id}
+              customerId={sessionUserId}
+              productId={order.items?.[0]?.product?.id || ""}
+              alreadyConfirmed={usageConfirmed}
+              confirmOrder={order.status === "paid"}
+            />
+          </div>
         </div>
       )}
     </div>

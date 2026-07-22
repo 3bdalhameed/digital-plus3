@@ -10,6 +10,10 @@ interface UsageConfirmButtonProps {
   customerId: string;
   productId: string;
   alreadyConfirmed?: boolean;
+  /** When true, confirming also flips the order paid→delivered via
+   *  /api/orders/:id/confirm. Lets this single button replace the
+   *  separate "confirm order" button on the order detail page. */
+  confirmOrder?: boolean;
 }
 
 function StarRating({
@@ -142,6 +146,7 @@ export function UsageConfirmButton({
   customerId,
   productId,
   alreadyConfirmed = false,
+  confirmOrder = false,
 }: UsageConfirmButtonProps) {
   const { isEn } = useT();
   const [step, setStep] = useState<"confirm" | "rate" | "done">(
@@ -177,6 +182,17 @@ export function UsageConfirmButton({
       });
 
       if (!res.ok) throw new Error(L.confirmErr);
+
+      // When merged with the old "confirm order" button, also flip the
+      // order paid→delivered. Fire-and-forget-ish: a failure here
+      // shouldn't block the rating step since usage is already logged,
+      // and the 7-day auto-sweep will still deliver the order.
+      if (confirmOrder) {
+        try {
+          await fetch(`/api/orders/${orderId}/confirm`, { method: "POST" });
+        } catch { /* auto-sweep covers it */ }
+      }
+
       setStep("rate");
     } catch (err: any) {
       setError(err.message || L.genericErr);
