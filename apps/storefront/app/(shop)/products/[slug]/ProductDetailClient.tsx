@@ -759,15 +759,14 @@ export function ProductDetailClient({ product, productName }: Props) {
           - Desktop: full-width bar with centered button group and stacked
             quantity on the end side. */}
       <div className="fixed inset-x-0 bottom-0 z-40 sm:bottom-0">
-        {/* Mobile floating bar — matches the reference: a purple
-            gradient rounded card with ONE white-outlined pill inside
-            wrapping the add-to-cart button (RTL start / right) and the
-            quantity control + "الكمية" label (RTL end / left). */}
-        <div className="mx-3 mb-3 rounded-[26px] bg-gradient-to-r from-[#7C3AED] to-[#9333EA] p-2 shadow-[0_10px_30px_rgba(91,33,182,0.35)] sm:hidden">
-          <div
-            className="flex items-center justify-between gap-2 rounded-[20px] border border-white/40 px-2 py-1.5"
-            dir="rtl"
-          >
+        {/* Mobile floating bar — thick WHITE border on the outer edge,
+            18px radius, and a neon purple glow. The white outline is
+            the bar's own border now (no inner outlined pill), matching
+            the reference. */}
+        <div
+          className="mx-3 mb-3 flex items-center justify-between gap-2 rounded-[18px] border-[3px] border-white bg-gradient-to-l from-[#9c65fa] to-[#7C3AED] px-2.5 py-2 shadow-[0_0_16px_rgba(156,101,250,0.9),0_0_34px_rgba(124,58,237,0.6)] sm:hidden"
+          dir="rtl"
+        >
             {/* Add to cart pill — flips to "Out of stock" (LTR) when
                 inStock=false. */}
             <button
@@ -806,7 +805,6 @@ export function ProductDetailClient({ product, productName }: Props) {
               </div>
               <span className="text-xs font-bold opacity-90">{L.quantityLabel}</span>
             </div>
-          </div>
         </div>
 
         {/* Desktop bar — matches reference:
