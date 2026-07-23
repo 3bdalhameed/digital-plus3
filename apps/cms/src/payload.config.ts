@@ -381,7 +381,7 @@ export default buildConfig({
           try {
             tpl = (await req.payload.findGlobal({ slug: "email-templates", overrideAccess: true })) ?? {};
           } catch { /* use defaults */ }
-          const ok = await sendAbandonedCartEmail({
+          const result = await sendAbandonedCartEmail({
             email,
             name: "عميل تجريبي",
             items: [
@@ -391,10 +391,14 @@ export default buildConfig({
             which: which as 1 | 2,
             tpl,
           });
-          if (!ok) {
-            res.status(502).json({
+          if (!result.ok) {
+            // Return 200 with ok:false, not 502 -- a 5xx from the
+            // origin gets replaced by Cloudflare's own error page, so
+            // the admin never sees the real reason (bad key, unverified
+            // sender domain, etc). 200 lets the message through.
+            res.json({
               ok: false,
-              error: "لم يتم الإرسال — تحقق من إعداد RESEND_API_KEY في الخادم",
+              error: result.error || "لم يتم الإرسال — تحقق من إعداد البريد",
             });
             return;
           }
@@ -1199,7 +1203,7 @@ async function runAbandonedCartReminders(payload: any): Promise<{ sent3h: number
     `);
     let sent = 0;
     for (const r of rows) {
-      const ok = await sendAbandonedCartEmail({
+      const { ok } = await sendAbandonedCartEmail({
         email: r.user_email,
         name: r.user_name,
         items: toItems(r.cart_data),

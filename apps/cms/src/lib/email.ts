@@ -22,14 +22,19 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled:   "#ef4444",
 };
 
-async function sendViaResend(opts: {
+/** Low-level send. Returns rich diagnostics so callers (esp. the
+ *  admin "test email" tool) can surface WHY a send failed instead of a
+ *  bare boolean. */
+export async function sendViaResendDetailed(opts: {
   to: string | string[];
   subject: string;
   html: string;
-}): Promise<boolean> {
+}): Promise<{ ok: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from   = process.env.RESEND_FROM_EMAIL || "noreply@example.com";
-  if (!apiKey || apiKey === "placeholder") return false;
+  if (!apiKey || apiKey === "placeholder") {
+    return { ok: false, error: "RESEND_API_KEY غير مضبوط على خادم الـ CMS" };
+  }
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -45,11 +50,25 @@ async function sendViaResend(opts: {
         html: opts.html,
       }),
     });
-    return res.ok;
-  } catch (err) {
+    if (res.ok) return { ok: true };
+    // Surface Resend's error (bad API key, unverified sender domain,
+    // invalid `from`, etc.) so it's actionable in the admin UI.
+    const body = await res.text().catch(() => "");
+    console.error(`[email] Resend ${res.status}:`, body);
+    return { ok: false, error: `Resend ${res.status}: ${body.slice(0, 300) || "no body"}` };
+  } catch (err: any) {
     console.error("[email] send failed:", err);
-    return false;
+    return { ok: false, error: err?.message || "network error" };
   }
+}
+
+/** Back-compat boolean wrapper used by the status-change email. */
+async function sendViaResend(opts: {
+  to: string | string[];
+  subject: string;
+  html: string;
+}): Promise<boolean> {
+  return (await sendViaResendDetailed(opts)).ok;
 }
 
 /** Default customer-facing message per status (used when the CMS
@@ -277,8 +296,9 @@ async function getAdminEmails(payload: any): Promise<string[]> {
  * signed-in shopper leaves items in the cart without checking out.
  *
  * `which` (1 = 3h, 2 = 6h) only tweaks the copy; the 6h nudge is a
- * little more urgent. Returns whether Resend accepted the send so the
- * caller can decide whether to stamp reminder_Nh_sent_at.
+ * little more urgent. Returns { ok, error } so the sweep can decide
+ * whether to stamp reminder_Nh_sent_at and the admin test tool can
+ * show why a send failed.
  */
 export async function sendAbandonedCartEmail(opts: {
   email: string;
@@ -288,7 +308,7 @@ export async function sendAbandonedCartEmail(opts: {
   /** Optional CMS Email Templates global. Any blank field falls back
    *  to the built-in default below. */
   tpl?: any;
-}): Promise<boolean> {
+}): Promise<{ ok: boolean; error?: string }> {
   const storeUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
   const first = opts.name?.trim() || "عزيزنا العميل";
   const tpl = opts.tpl ?? {};
@@ -351,7 +371,7 @@ export async function sendAbandonedCartEmail(opts: {
     ? pick(tpl.cartReminderSecondSubject, "⏳ سلتك بانتظارك — أكمل طلبك")
     : pick(tpl.cartReminderFirstSubject, "🛒 نسيت شيئاً في سلتك؟");
 
-  return sendViaResend({
+  return sendViaResendDetailed({
     to: opts.email,
     subject,
     html,
