@@ -62,6 +62,7 @@ const ICONS: Record<string, any> = {
   customers: Users,
   "evidence-logs": FileText,
   "support-tickets": MessageSquare,
+  "abandoned-carts": ShoppingCart,
   media: ImageIcon,
   users: UserIcon,
   // globals
@@ -250,6 +251,19 @@ const OttertagNav: React.FC = () => {
         label: "مراجعة التقييمات",
         href: `${adminRoute}/reviews-moderation`,
         group: "المتجر",
+      });
+    }
+
+    // Custom admin view: abandoned carts. Same rationale as the
+    // reviews queue -- not a Payload collection, so we hand-add the
+    // link and gate it by role.
+    if (currentRole && ["super_admin", "admin", "orders", "support"].includes(currentRole)) {
+      items.push({
+        id: "abandoned-carts",
+        slug: "abandoned-carts",
+        label: "السلات المتروكة",
+        href: `${adminRoute}/abandoned-carts`,
+        group: "الطلبات",
       });
     }
 

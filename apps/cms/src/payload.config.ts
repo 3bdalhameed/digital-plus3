@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import Dashboard from "./admin/components/Dashboard";
 import ThemeProvider from "./admin/components/ThemeProvider";
 import ReviewsModerationView from "./admin/views/ReviewsModerationView";
+import AbandonedCartsView from "./admin/views/AbandonedCartsView";
 import OttertagNav from "./admin/components/OttertagNav";
 
 // Collections
@@ -62,6 +63,11 @@ export default buildConfig({
         ReviewsModeration: {
           path: "/reviews-moderation",
           Component: ReviewsModerationView as any,
+        } as any,
+        // Abandoned carts list + test-email tool at /admin/abandoned-carts.
+        AbandonedCarts: {
+          path: "/abandoned-carts",
+          Component: AbandonedCartsView as any,
         } as any,
       },
     },
@@ -310,6 +316,91 @@ export default buildConfig({
           res.json({ ok: true });
         } catch (e: any) {
           res.status(500).json({ error: e?.message ?? "Update failed" });
+        }
+      },
+    },
+
+    /* ═════════════════════════════════════════════════════════════
+       Abandoned carts. Not a Payload collection (the storefront's
+       cart-sync writes the table directly), so the admin view reads
+       it via these raw endpoints. GET lists active carts; POST
+       /test-email fires a sample reminder so admins can verify the
+       Resend wiring without waiting on the hourly sweep.
+    ═════════════════════════════════════════════════════════════ */
+    {
+      path: "/abandoned-carts",
+      method: "get",
+      handler: async (req, res) => {
+        const role = (req.user as any)?.role as string | undefined;
+        if (!role || !["super_admin", "admin", "orders", "support"].includes(role)) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+        const db = req.payload.db as any;
+        const pool = db?.pool ?? db?.drizzle?.session?.client ?? db?.client;
+        if (!pool?.query) {
+          res.status(500).json({ error: "DB pool unavailable" });
+          return;
+        }
+        const raw = String((req.query as any)?.status ?? "active").toLowerCase();
+        const where = raw === "all" ? "" : "WHERE completed_at IS NULL";
+        try {
+          const { rows } = await pool.query(`
+            SELECT user_email, user_name, cart_data, completed_at,
+                   updated_at, created_at,
+                   reminder_3h_sent_at, reminder_6h_sent_at
+              FROM abandoned_carts
+              ${where}
+             ORDER BY updated_at DESC
+             LIMIT 300
+          `);
+          res.json({ carts: rows });
+        } catch (e: any) {
+          res.status(500).json({ error: e?.message ?? "Query failed" });
+        }
+      },
+    },
+    {
+      path: "/abandoned-carts/test-email",
+      method: "post",
+      handler: async (req, res) => {
+        const role = (req.user as any)?.role as string | undefined;
+        if (!role || !["super_admin", "admin", "orders", "support"].includes(role)) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+        const body = (req.body ?? {}) as { email?: unknown; which?: unknown };
+        const email = String(body.email ?? "").trim().toLowerCase();
+        if (!email || !email.includes("@")) {
+          res.status(400).json({ error: "بريد غير صالح" });
+          return;
+        }
+        const which = Number(body.which) === 2 ? 2 : 1;
+        try {
+          let tpl: any = {};
+          try {
+            tpl = (await req.payload.findGlobal({ slug: "email-templates", overrideAccess: true })) ?? {};
+          } catch { /* use defaults */ }
+          const ok = await sendAbandonedCartEmail({
+            email,
+            name: "عميل تجريبي",
+            items: [
+              { name: "منتج تجريبي ١", quantity: 1 },
+              { name: "منتج تجريبي ٢", quantity: 2 },
+            ],
+            which: which as 1 | 2,
+            tpl,
+          });
+          if (!ok) {
+            res.status(502).json({
+              ok: false,
+              error: "لم يتم الإرسال — تحقق من إعداد RESEND_API_KEY في الخادم",
+            });
+            return;
+          }
+          res.json({ ok: true });
+        } catch (e: any) {
+          res.status(500).json({ error: e?.message ?? "Send failed" });
         }
       },
     },
