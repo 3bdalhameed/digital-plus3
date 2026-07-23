@@ -83,6 +83,50 @@ const ProductsList: React.FC<{
 
   const [searchInput, setSearchInput] = useState(currentSearch);
 
+  /* ─── Bulk selection + status change ────────────────────────── */
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<'published' | 'draft' | 'archived'>('draft');
+  const [applying, setApplying] = useState(false);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelected(new Set()), []);
+
+  const applyBulkStatus = useCallback(async () => {
+    if (selected.size === 0 || applying) return;
+    setApplying(true);
+    try {
+      const ids = [...selected];
+      // PATCH each product's status. Payload's per-doc update endpoint
+      // enforces the same catalog write access as the edit form, so a
+      // viewer can't flip statuses.
+      const results = await Promise.all(
+        ids.map((id) =>
+          fetch(`${serverURL}/api/products/${id}`, {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: bulkStatus }),
+          }).then((r) => r.ok),
+        ),
+      );
+      if (results.some((ok) => !ok)) {
+        console.error('[ProductsList] some bulk updates failed');
+      }
+      // Reload so the list controller re-fetches with the new statuses
+      // + updated stat counts.
+      window.location.reload();
+    } catch (e) {
+      console.error('[ProductsList] bulk status failed', e);
+      setApplying(false);
+    }
+  }, [selected, bulkStatus, applying, serverURL]);
+
   /* ─── Subcategories for the filter dropdown ─────────────────── */
   const [subcategories, setSubcategories] = useState<Array<{ id: string; nameAr?: string; nameEn?: string }>>([]);
   useEffect(() => {
@@ -276,6 +320,34 @@ const ProductsList: React.FC<{
         </div>
       </div>
 
+      {/* ── Bulk action bar — appears when products are selected ── */}
+      {selected.size > 0 && (
+        <div className="pl__bulkbar">
+          <span className="pl__bulkbar-count">{selected.size.toLocaleString('en-US')} محدد</span>
+          <span className="pl__bulkbar-sep">تغيير الحالة إلى</span>
+          <select
+            className="pl__bulkbar-select"
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as any)}
+          >
+            <option value="published">منشور</option>
+            <option value="draft">مسودة</option>
+            <option value="archived">مؤرشف</option>
+          </select>
+          <button
+            type="button"
+            className="pl__bulkbar-apply"
+            onClick={applyBulkStatus}
+            disabled={applying}
+          >
+            {applying ? '...' : 'تطبيق'}
+          </button>
+          <button type="button" className="pl__bulkbar-clear" onClick={clearSelection}>
+            إلغاء التحديد
+          </button>
+        </div>
+      )}
+
       {/* ── Cards grid ──────────────────────────────── */}
       {docs.length === 0 ? (
         <div className="pl__empty">
@@ -306,9 +378,25 @@ const ProductsList: React.FC<{
                 ? firstImage.url || (firstImage.sizes?.thumbnail?.url ?? '')
                 : '');
             const editUrl = `/admin/collections/products/${p.id}`;
+            const isSelected = selected.has(String(p.id));
 
             return (
-              <NavLink key={p.id} to={editUrl} className="pl-card">
+              <NavLink key={p.id} to={editUrl} className={`pl-card ${isSelected ? 'pl-card--selected' : ''}`}>
+                {/* Selection checkbox — preventDefault stops the card's
+                    navigation so clicking it only toggles selection. */}
+                <button
+                  type="button"
+                  className={`pl-card__select ${isSelected ? 'is-checked' : ''}`}
+                  aria-label={isSelected ? 'إلغاء التحديد' : 'تحديد'}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSelect(String(p.id));
+                  }}
+                >
+                  {isSelected ? '✓' : ''}
+                </button>
+
                 {/* Thumbnail with status dot */}
                 <div className="pl-card__thumb">
                   {thumb ? (
