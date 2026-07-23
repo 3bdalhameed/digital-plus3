@@ -45,7 +45,9 @@ const hoursAgo = (d?: string | null): string => {
 function itemsOf(cartData: any): Array<{ name: string; quantity: number }> {
   const arr = Array.isArray(cartData) ? cartData : [];
   return arr.map((it: any) => ({
-    name: it?.product?.nameAr || it?.product?.name?.ar || it?.product?.nameEn || "منتج",
+    // cart-sync stores items flat as { productId, name, quantity, ... }
+    // so the name is at it.name; fall back to a nested product object.
+    name: it?.name || it?.product?.nameAr || it?.product?.name?.ar || it?.product?.nameEn || "منتج",
     quantity: Number(it?.quantity ?? 1),
   }));
 }

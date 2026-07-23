@@ -1172,12 +1172,14 @@ async function runAbandonedCartReminders(payload: any): Promise<{ sent3h: number
   }
 
   // Normalize a stored cart_data row into a light {name, quantity}
-  // list for the email. cart_data is the storefront zustand cart:
-  // [{ product: { nameAr, ... }, quantity }, ...].
+  // list for the email. cart-sync (storefront /api/cart/sync) stores
+  // each item FLAT as { productId, name, quantity, price, currency },
+  // so the name lives at `it.name` -- older/full rows may instead
+  // carry a nested `product` object, hence the fallbacks.
   const toItems = (cartData: any): Array<{ name: string; quantity: number }> => {
     const arr = Array.isArray(cartData) ? cartData : [];
     return arr.map((it: any) => ({
-      name: it?.product?.nameAr || it?.product?.name?.ar || it?.product?.nameEn || "منتج",
+      name: it?.name || it?.product?.nameAr || it?.product?.name?.ar || it?.product?.nameEn || "منتج",
       quantity: Number(it?.quantity ?? 1),
     }));
   };
