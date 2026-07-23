@@ -822,7 +822,7 @@ export function ProductDetailClient({ product, productName }: Props) {
               {inStock ? (
                 <span>{L.addToCart}</span>
               ) : (
-                <span dir="ltr">Out of stock</span>
+                <span dir={isEn ? "ltr" : "rtl"}>{L.outOfStock}</span>
               )}
             </button>
 
@@ -903,7 +903,7 @@ export function ProductDetailClient({ product, productName }: Props) {
                   {inStock ? (
                     <span>{L.addToCart}</span>
                   ) : (
-                    <span dir="ltr">Out of stock</span>
+                    <span dir={isEn ? "ltr" : "rtl"}>{L.outOfStock}</span>
                   )}
                 </button>
                 <button
